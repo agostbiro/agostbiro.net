@@ -19,12 +19,12 @@
 [[redirects]]
   from = "/2023/06/paxos-from-first-principles/"
   to   = "/posts/2023-06-paxos-from-first-principles/"
-  status = 302
+  status = 301
 
 [[redirects]]
   from = "/2022/04/icloud-keychain-security/"
   to   = "/posts/2022-04-icloud-keychain-security/"
-  status = 302
+  status = 301
 
 [[headers]]
   for = "/*"
