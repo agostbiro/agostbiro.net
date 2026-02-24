@@ -16,6 +16,16 @@
 [context.branch-deploy]
   command = "hugo --gc --minify -b $DEPLOY_PRIME_URL"
 
+[[redirects]]
+  from = "/2023/06/paxos-from-first-principles/"
+  to   = "/posts/2023-06-paxos-from-first-principles/"
+  status = 302
+
+[[redirects]]
+  from = "/2022/04/icloud-keychain-security/"
+  to   = "/posts/2022-04-icloud-keychain-security/"
+  status = 302
+
 [[headers]]
   for = "/*"
   [headers.values]
