@@ -1,6 +1,6 @@
 # Agost's Blog
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/650c677d-fa91-4187-a693-6eb0bc186f1c/deploy-status)](https://app.netlify.com/sites/happy-meninsky-b501d0/deploys)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/dff118e6-5e1c-4fa8-b77c-3dca271c89a2/deploy-status)](https://app.netlify.com/projects/agost-site/deploys)
 
 A personal blog built with [Hugo](https://gohugo.io/) using the [nostyleplease](https://github.com/hanwenguo/hugo-theme-nostyleplease) theme.
 
