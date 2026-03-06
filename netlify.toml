@@ -17,6 +17,11 @@
   command = "hugo --gc --minify -b $DEPLOY_PRIME_URL"
 
 [[redirects]]
+  from = "https://blog.agostbiro.net/*"
+  to = "https://agostbiro.net/:splat"
+  status = 302
+
+[[redirects]]
   from = "/2023/06/paxos-from-first-principles/"
   to   = "/posts/2023-06-paxos-from-first-principles/"
   status = 301
