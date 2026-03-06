@@ -19,7 +19,7 @@
 [[redirects]]
   from = "https://blog.agostbiro.net/*"
   to = "https://agostbiro.net/:splat"
-  status = 302
+  status = 200
 
 [[redirects]]
   from = "/2023/06/paxos-from-first-principles/"
