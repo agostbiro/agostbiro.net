@@ -1,0 +1,67 @@
+{{/* Overrides the theme's head.html. Identical to it, except that the MathJax
+     partial is dropped (the site renders math to MathML at build time via
+     layouts/_markup/render-passthrough.html) and the math styles below are
+     added. Re-check against the theme's copy if the submodule is updated. */ -}}
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  {{ if .IsPage }} <meta name="description" content="{{ .Summary }}">  {{ end }}
+
+  <title>
+    {{ if not .IsHome }}
+      {{ .Title }}
+    {{ else }}
+      {{ $.Site.Title }}
+    {{ end }}
+  </title>
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="{{ $.Site.Params.favicon | relURL }}" />
+  {{ $options := (dict "outputStyle" "compressed" "enableSourceMap" (not hugo.IsProduction)) }}
+  {{ $sass := resources.Get "css/main.scss" }}
+  {{ $style := $sass | css.Sass $options | resources.Fingerprint "sha512" }}
+  <link rel="stylesheet" href="{{ $style.Permalink | relURL }}" integrity="{{ $style.Data.Integrity }}" />
+  <style>
+    /* The theme's .w wrapper keeps a flat 2rem side padding at every width,
+       which costs 64px of an already narrow phone screen. */
+    @media (max-width: 480px) {
+      .w { padding: 2rem 1rem; }
+    }
+
+    /* Paired with layouts/_markup/render-table.html. */
+    .table-wrap { overflow-x: auto; }
+
+    /* Injected by partials/appearance_toggle.html. Anchored to the content
+       column rather than the viewport: a fixed element is placed against the
+       layout viewport, which mobile browsers widen to fit an over-wide page,
+       putting the button off screen. Absolute keeps it in the column's own
+       padding, above the content, so it costs no layout height. */
+    .w { position: relative; }
+    .appearance-toggle {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font: inherit;
+      color: inherit;
+      background: none;
+      border: 0;
+      padding: 0.25rem;
+      cursor: pointer;
+    }
+    .appearance-toggle:hover { text-decoration: underline; }
+    @media (max-width: 480px) {
+      .appearance-toggle { top: 0.25rem; right: 0.5rem; }
+    }
+  </style>
+  {{- /* Only pages that actually contain math pay for the KaTeX stylesheet.
+         The delimiters here must match hugo.toml's passthrough config. */ -}}
+  {{- if and .RawContent (findRE `\$|\\\(|\\\[` .RawContent 1) }}
+  <link rel="stylesheet" href="{{ "katex/katex.min.css" | relURL }}" />
+  <style>
+    /* A display formula wider than the column scrolls on its own rather than
+       widening the page. */
+    .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.2em 0; }
+  </style>
+  {{- end }}
+</head>

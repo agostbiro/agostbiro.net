@@ -1,0 +1,32 @@
+{{- /* Wraps every Markdown table in its own scroll container.
+
+       The theme sets `table { width: 100% }`, which only sets a preferred
+       width. A table whose min-content width is larger grows past it anyway,
+       and the cells here hold inline math, which KaTeX marks
+       `white-space: nowrap`, so they cannot shrink. Without a wrapper the
+       table widens the whole document on a phone. */ -}}
+<div class="table-wrap">
+  <table
+    {{- range $k, $v := .Attributes }}
+      {{- if $v }} {{ $k }}="{{ $v }}"{{ end }}
+    {{- end }}>
+    <thead>
+      {{- range .THead }}
+      <tr>
+        {{- range . }}
+        <th {{- with .Alignment }} style="text-align: {{ . }}"{{ end }}>{{ .Text }}</th>
+        {{- end }}
+      </tr>
+      {{- end }}
+    </thead>
+    <tbody>
+      {{- range .TBody }}
+      <tr>
+        {{- range . }}
+        <td {{- with .Alignment }} style="text-align: {{ . }}"{{ end }}>{{ .Text }}</td>
+        {{- end }}
+      </tr>
+      {{- end }}
+    </tbody>
+  </table>
+</div>

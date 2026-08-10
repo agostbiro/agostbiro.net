@@ -1,0 +1,67 @@
+{{/* Client-side light/dark toggle, included as the first thing inside <body>.
+
+     The theme only picks an appearance at build time, rendering the body's
+     "a" attribute from params.theme_config.appearance. The SCSS already has
+     body[a="dark"] and body[a="light"] rules that beat the prefers-color-scheme
+     media queries used for a="auto", so flipping that attribute is all a
+     runtime toggle needs to do.
+
+     Restoring the saved choice runs here rather than in head.html because
+     <body> does not exist yet while <head> is parsing. Running it as body's
+     first child means the attribute is set before anything paints, so there is
+     no flash of the wrong theme.
+
+     The button is built in JS so it never renders for a visitor without it. */ -}}
+<script>
+  (function () {
+    var KEY = "appearance";
+    var body = document.body;
+
+    var stored = null;
+    try { stored = localStorage.getItem(KEY); } catch (e) { /* private mode */ }
+    if (stored === "dark" || stored === "light") body.setAttribute("a", stored);
+
+    var media = window.matchMedia("(prefers-color-scheme: dark)");
+
+    // What the reader is actually looking at: an explicit choice if there is
+    // one, otherwise whatever "auto" resolves to right now.
+    function active() {
+      var a = body.getAttribute("a");
+      return a === "dark" || a === "light" ? a : (media.matches ? "dark" : "light");
+    }
+
+    var button = document.createElement("button");
+    button.className = "appearance-toggle";
+    button.type = "button";
+
+    // The label names where a click takes you, not where you are.
+    function sync() {
+      var next = active() === "dark" ? "light" : "dark";
+      button.textContent = "[" + next + "]";
+      button.setAttribute("aria-label", "Switch to " + next + " mode");
+    }
+
+    button.addEventListener("click", function () {
+      var next = active() === "dark" ? "light" : "dark";
+      body.setAttribute("a", next);
+      try { localStorage.setItem(KEY, next); } catch (e) { /* private mode */ }
+      sync();
+    });
+
+    // Keep the label honest if the OS flips while we are still on "auto".
+    if (media.addEventListener) {
+      media.addEventListener("change", sync);
+    } else if (media.addListener) {
+      media.addListener(sync);
+    }
+
+    sync();
+
+    // The button lives inside .w so it positions against the content column.
+    // That element is not parsed yet, hence the wait.
+    document.addEventListener("DOMContentLoaded", function () {
+      var column = document.querySelector(".w") || body;
+      column.insertBefore(button, column.firstChild);
+    });
+  })();
+</script>
