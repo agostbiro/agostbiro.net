@@ -31,6 +31,11 @@ title = "Agost's Site"
       [markup.goldmark.parser.attribute]
         block = true
         title = true
+    [markup.goldmark.extensions.passthrough]
+      enable = true
+      [markup.goldmark.extensions.passthrough.delimiters]
+        block  = [['$$', '$$'], ['\[', '\]']]
+        inline = [['$', '$'], ['\(', '\)']]
 
   [markup.highlight]
     anchorLineNos      = false

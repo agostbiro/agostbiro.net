@@ -1,0 +1,401 @@
+---
+title: "Anatomy of a Lean Proof for Software Engineers"
+date: "2026-08-10"
+draft: true
+---
+
+I recently worked through a problem from a theory of computation textbook that asked me to prove a property of a language using finite automata.
+The informal proof is a very simple constructive proof where you build an automaton and show that it recognizes the language.
+This is kind of similar to program verification, so I thought it'd be interesting to see what it takes to formalize the proof.
+I first looked at using the Rocq proof assistant, but it turns out Lean is a better choice, because its [Mathlib](https://lean-lang.org/use-cases/mathlib/) has all the theorems needed for the problem.
+
+After finishing the formal proof, I decided to write it up, because I think it provides fellow software engineers good insight into what it takes to formally prove properties of a system with what I think is an interesting, but approachable example.
+Finite automata are not only important for theory, they're also the machinery behind regular expressions, where a [bug](https://blog.cloudflare.com/details-of-the-cloudflare-outage-on-july-2-2019/) once took a significant portion of the internet down.
+And because the construction we prove is itself a program we write in Lean, we don't just end up with a mathematical proof, but also a verified program.
+
+## Background
+
+Feel free to skip this section if you're comfortable with DFAs and regular languages.
+
+### Deterministic Finite Automaton (DFA)
+
+Finite automata provide a model of computation with fixed memory. 
+A **deterministic finite automaton** (DFA) is a machine with a fixed, finite set of states that reads its input one symbol at a time, left to right, updating its state with each symbol with a deterministic transition function.
+After the last symbol, the machine either sits in an *accepting* state (input accepted) or not (rejected).
+
+If you've ever written a simple regular expression like `-?[0-9]+`, then you've constructed a DFA. 
+This regex matches integer literals like `12` and `-123` and the corresponding DFA looks like this:
+
+![DFA figure for integer literal regex DFA](./assets/int-lit-regex-dfa.svg)
+This DFA has four states:
+- Start: this is where we start before processing the first character. Since the start state is not an accepting state, we reject the empty string.
+- Sign: we move from start to sign when we encounter the `-` character in the start state. We can skip the sign state and jump directly to digits from start, since the sign character is optional (`-?`). If we're in this state at the end of the string, then we reject the string.
+- Digits: we move from start or sign to digits when we encounter a digit character (`[0-9]`). If we're in the digits state and encounter a digit character again, then we stay in the digit state. The digit state is the only accepting state of the DFA. If we're in this state after we've processed the input string, then the DFA accepts the string.
+- Dead: we get into this state if we encounter any other character than a digit (unless it's a negative sign at the start). If we're in the dead state at the end of the string, then the DFA rejects the string. Once we're in the dead state, we stay in it, so the dead state in this DFA is a *sink*.
+
+The set of input symbols to the machine is defined by the set $\Sigma$. 
+In our regex example, $\Sigma = \left\{-, 0, 1, 2, \ldots, 9\right\}$.
+
+### Regular Languages
+
+A **language** is just a set of strings, and a language is called **regular** if some DFA accepts the strings in it. 
+Recognizing regular languages is the class of decision problems solvable with a constant amount of memory (in the input size).
+Regular languages have useful closure properties: the union, intersection, complement, and (important for us) **reversal** of a regular language is regular.
+
+We can describe a language $A$ with set-builder notation: 
+$$A = \bigl\{\, w \in \Sigma^{*} \bigm| w \text{ is well-formed} \,\bigr\},$$
+For example, we can describe the regular language $A$ recognized by the regex `-?[0-9]+` as
+
+where a string is well-formed if it's non-empty and only its first character can be a negative sign.
+
+$\Sigma^{*}$ means the set of strings that are created by all possible concatanations of symbols in $\Sigma$, for example `""`, `"123"`, `"-123"`, `"2-65"`, etc.
+
+The standard way to prove that a language is regular is to build a DFA and argue that it accepts exactly that language.
+
+
+## Problem
+
+The problem is from the Introduction to the Theory of Computation, 3rd ed. by Michael Sipser:
+
+> **1.32** Let
+>
+> $$\Sigma_3 = \left\{ \begin{bmatrix}0\\0\\0\end{bmatrix}, \begin{bmatrix}0\\0\\1\end{bmatrix}, \begin{bmatrix}0\\1\\0\end{bmatrix}, \ldots, \begin{bmatrix}1\\1\\1\end{bmatrix} \right\}.$$
+>
+> $\Sigma_3$ is the set of all height-3 columns of 0s and 1s, so a string over
+> $\Sigma_3$ determines three rows of bits. Reading each row as a binary number,
+> define
+>
+> $$B = \bigl\{\, w \in \Sigma_3^{*} \bigm| \text{the bottom row of } w \text{ equals the sum of the top two rows} \,\bigr\}.$$
+>
+> Show that $B$ is regular. (Hint: it is easier to work with $B^{\mathcal{R}}$.)
+
+The problem defines an unusual alphabet.
+Instead of regular characters like `[a-z]`, the alphabet is made up of columns of three bits.
+So instead of language that consists of strings like `"apple"`, `"banana"`, etc, the language consists of two dimensional bit strings like
+
+```
+011
+001
+100
+```
+
+where the first column is the first "character" and so on.
+
+The rule to decide whether a string is in the language is to add the first two rows of the string and check whether they match the third.
+
+For example the following string is in the language:
+
+```
+011 # First term is 3 in decimal
+001 # Second term is 1 in decimal
+100 # Sum is 4 which is equal to 3 + 1
+```
+
+But the following string is not in the language:
+
+```
+01 # First term is 1 in decimal
+00 # Second term is 0
+11 # Sum is 3 which is not equal to 1 + 0
+```
+
+While a language like this may look weird at first, it's actually a lot easier to write a program that recognizes this language vs a program that recognizes a natural language, since we just need to check the equivalence
+
+```
+first row + second row = third row
+```
+
+to determine whether a string is in the language. 
+The challenge in this problem is that we need to do this with a fixed amount of memory for arbitrarty long strings.
+
+## Solution
+
+The trick is to remember how you add numbers by hand: you work from the **least significant digit** to the most significant, and the only thing you carry from one column to the next is the carry.
+
+But a DFA reads left to right, and the problem presents the numbers most significant bit first.
+So we don't recognize $B$ directly. 
+Instead we build a DFA to recognize its **reversal** $B^R$ which is the same strings that are in $B$ written backwards, so the machine sees the least significant column first.
+At this point we have proven that $B^R$ is regular.
+Here is the DFA that recognizes $B^R$:
+
+![DFA figure for the carry automaton recognizing B reversed](./assets/carry-dfa.svg)
+
+The DFA has three states:
+
+- Carry 0: We're in this state if the carry is 0 before processing the next column. This is both the starting and the accepting state, since a leftover carry at the end would mean the sum overflowed the bottom row. 
+- Carry 1: We're in this state if the carry is 1 before processing the next column. This state is non-accepting — a word ending here has a carry left over, so the sum overflowed — but unlike the dead state we can still leave it, since a `001` column absorbs the pending carry and takes us back to carry 0. 
+- Dead: We end up in this state if the sum doesn't match. This is a sink state meaning it's terminal.
+
+Let's trace the first example through the DFA:
+
+```
+011 # x row: 3 in decimal
+001 # y row: 1 in decimal
+100 # z row: 4 in decimal
+```
+
+Read left to right, the columns of this word are $(0,0,1)$, $(1,0,0)$, $(1,1,0)$.
+But the DFA recognizes $B^R$, so it reads them backwards, least significant column first: $(1,1,0)$, then $(1,0,0)$, then $(0,0,1)$.
+At each step it checks the sum bit $z = x \oplus y \oplus c$ and, if that holds, moves to the state for the carry out $\mathrm{maj}(x, y, c)$:
+
+| Step | Column $(x,y,z)$ | State before | Sum bit check | Carry out | State after |
+|---|---|---|---|---|---|
+| 1 | $(1,1,0)$ | carry 0 | $1 \oplus 1 \oplus 0 = 0 = z$ ✓ | $\mathrm{maj}(1,1,0) = 1$ | carry 1 |
+| 2 | $(1,0,0)$ | carry 1 | $1 \oplus 0 \oplus 1 = 0 = z$ ✓ | $\mathrm{maj}(1,0,1) = 1$ | carry 1 |
+| 3 | $(0,0,1)$ | carry 1 | $0 \oplus 0 \oplus 1 = 1 = z$ ✓ | $\mathrm{maj}(0,0,1) = 0$ | carry 0 |
+
+The run ends in carry 0, the accepting state, so the reversed word is in $B^R$ — which is to say the original word is in $B$, as expected.
+
+Note that the machine passes *through* the non-accepting carry 1 state twice.
+Had the word stopped after either of the first two columns, it would have been rejected — correctly, since `1 + 1 = 0` and `11 + 01 = 00` are both wrong without somewhere to put the carry.
+
+Now the second example, which should be rejected:
+
+```
+01 # x row: 1 in decimal
+00 # y row: 0 in decimal
+11 # z row: 3 in decimal
+```
+
+Its columns are $(0,0,1)$ and $(1,0,1)$, so the machine sees $(1,0,1)$ first:
+
+| Step | Column $(x,y,z)$ | State before | Sum bit check | Carry out | State after |
+|---|---|---|---|---|---|
+| 1 | $(1,0,1)$ | carry 0 | $1 \oplus 0 \oplus 0 = 1 = z$ ✓ | $\mathrm{maj}(1,0,0) = 0$ | carry 0 |
+| 2 | $(0,0,1)$ | carry 0 | $0 \oplus 0 \oplus 0 = 0 \neq 1 = z$ ✗ | — | dead |
+
+The low column is fine on its own — `1 + 0` really is `1` — so the machine can't tell anything is wrong yet.
+It's the high column that fails: with no carry pending, `0 + 0` must produce `0`, but the bottom row claims `1`.
+That column contradicts the addition, the machine goes to dead, and since dead is a sink it stays there no matter what follows.
+The run ends outside the accepting state, so the word is rejected.
+
+## Informal Proof
+
+Before looking at Lean, here's an informal proof to complete the problem. 
+Everything hinges on one **run invariant**, proved by induction on the word:
+> **Invariant.** Running the machine over a (little-endian) word $w$ starting with carry $c_{\mathrm{in}}$ ends in state $\mathtt{carry}\ c_{\mathrm{out}}$ if and only if
+>
+> $$\mathrm{row}_1(w) + \mathrm{row}_2(w) + c_{\mathrm{in}} = \mathrm{row}_3(w) + c_{\mathrm{out}} \cdot 2^{|w|}$$
+>
+> where the rows are read as little-endian binary numbers.
+
+This is just the grade-school addition invariant: after processing the low $|w|$ columns, the columns seen so far add up correctly, and the pending carry is worth $2^{|w|}$ — it's waiting to be added at the next position.
+
+- **Base case** (empty word): the machine doesn't move, and the equation degenerates to $c_{\mathrm{in}} = c_{\mathrm{out}}$ (both sides are just the carries, since all rows are 0 and $2^0 = 1$).
+- **Inductive step**: peel off the first (lowest) column. The single-column transition is correct precisely when $x + y + c_{\mathrm{in}} = z + 2 c_{\mathrm{mid}}$ — the defining equation of a full adder — and the rest of the run is handled by the induction hypothesis with $c_{\mathrm{mid}}$ as the new carry-in. Algebraically, this corresponds to splitting an addition equation into its low bit plus the remaining high bits.
+
+Instantiate the invariant with $c_{\mathrm{in}} = c_{\mathrm{out}} = \mathtt{false}$ (no carry into the lowest column; no carry out of the highest, or the sum overflowed) and the carry terms vanish:
+
+$$\mathrm{row}_1(w) + \mathrm{row}_2(w) = \mathrm{row}_3(w)$$
+
+— which is exactly membership in $B^R$.
+
+Finally: the machine has finitely many states, so $B^R$ is regular, so $B$ is regular by closure under reversal. $\blacksquare$
+
+## The Lean formalization
+
+The full file is [`Chapter1_Problem32.lean`](https://github.com/agostbiro/my-lean/blob/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32.lean); everything below is excerpted from it. It splits cleanly into three layers:
+
+1. **Specification** — what the problem says, translated into definitions.
+2. **Implementation** — the automaton, as executable code.
+3. **Proof** — the run invariant and the theorems, connecting 1 and 2.
+
+![Diagram of the three layers of the Lean file and the dependencies between their definitions and theorems](./assets/proof-structure.svg "The specification and the implementation meet in the proof layer")
+
+### Layer 1: the specification
+
+The alphabet is a triple of booleans, and a binary interpretation of a bit list is a two-line recursive function:
+
+```lean
+/-- A symbol in the alphabet `Σ₃`: a column of three bits. -/
+abbrev Sigma3 := Bool × Bool × Bool
+
+/-- Little endian interpretation of a list of bools. -/
+def valueLE : List Bool → Nat
+  | [] => 0
+  | b :: bs => b.toNat + 2 * valueLE bs
+
+/-- Big endian interpretation: reading a list most significant bit first
+is reading its reverse least significant bit first. -/
+def valueBE (bs : List Bool) : Nat := valueLE bs.reverse
+```
+
+That one-liner `valueBE` is the load-bearing definition of the whole file. It states, exactly once, the insight the solution rests on: the problem is big-endian (fixed by the problem statement), the automaton is little-endian (fixed by the direction carries flow), and `reverse` is what connects them.
+
+The language itself is a set-builder over words, straight out of the book:
+
+```lean
+def row1 (w : List Sigma3) : List Bool := w.map fun (x, _, _) => x
+def row2 (w : List Sigma3) : List Bool := w.map fun (_, y, _) => y
+def row3 (w : List Sigma3) : List Bool := w.map fun (_, _, z) => z
+
+/-- The language `B`: words whose bottom row is the sum of the top two rows. -/
+def B : Language Sigma3 :=
+  { wBE | valueBE (row3 wBE) = valueBE (row1 wBE) + valueBE (row2 wBE) }
+```
+
+Note what's *not* here: nothing about automata, states, or carries. The specification only says what B means. If you got this part wrong, no amount of proof below would save you — this is the part a human still has to review. It's short enough that you can.
+
+### Layer 2: the automaton is just a program
+
+Here is the entire machine. This is the part I want to dwell on, because it looks exactly like code you'd write in any functional language — because it is:
+
+```lean
+inductive DfaState where
+  /-- The columns read so far produced carry `c`. -/
+  | carry (c : Bool)
+  /-- A column has already contradicted the addition; the word is rejected. -/
+  | dead
+  deriving DecidableEq, Fintype
+
+/-- The transition function: a one-bit full adder with a sink. -/
+def dfaStep : DfaState → Sigma3 → DfaState
+  | .dead, _ => .dead
+  | .carry c, (x, y, z) =>
+      if z = (x ^^ y ^^ c) then       -- sum bit checks out?
+        .carry (Bool.atLeastTwo x y c) -- carry-out = majority(x, y, c)
+      else
+        .dead
+
+def carryDFA : DFA Sigma3 DfaState where
+  step := dfaStep
+  start := .carry false
+  accept := {.carry false}
+```
+
+An enum with three values, a pattern match, an `if`. `z = x ^^ y ^^ c` is the sum output of a full adder; `Bool.atLeastTwo x y c` (majority) is its carry output. If you've ever drawn a full adder out of XOR and majority gates, this is that circuit, transcribed.
+
+And because Lean is a programming language, **this runs**. `#eval carryDFA.eval [(true, false, true)]` computes an actual answer. The file exploits this to check every edge of the state diagram against the code, using `decide` — a tactic that literally *executes* the proposition and checks it comes out `true`:
+
+```lean
+-- `carry 0 --110--> carry 1`: `1 + 1` is `0` carry `1`.
+example : dfaStep (.carry false) (true, true, false) = .carry true := by decide
+-- `carry 1 --001--> carry 0`: `0 + 0 + 1` is `1` carry `0`.
+example : dfaStep (.carry true) (false, false, true) = .carry false := by decide
+-- Spot checks for the dead state.
+example : dfaStep (.carry false) (false, false, true) = .dead := by decide
+```
+
+These are unit tests, except they live in the same file as the implementation, are checked at compile time, and can never silently rot. That's the low end of a spectrum: `decide`-style checks verify *specific inputs*, the theorems in the next section verify *all* inputs, and both talk about the same executable definition. There is no gap between "the model we verified" and "the code we run."
+
+The `DFA` structure itself comes from Mathlib (`Mathlib.Computability.NFA`), along with its evaluation function `evalFrom`, which is nothing more than a left fold of `step` over the input — again, exactly the code you'd write yourself.
+
+### Layer 3: the proof
+
+**Step 1: one transition = one adder equation.** The first lemma characterizes a single step arithmetically:
+
+```lean
+lemma dfaStep_carry_iff (x y z carryIn carryOut : Bool) :
+    dfaStep (.carry carryIn) (x, y, z) = .carry carryOut ↔
+      x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryOut.toNat := by
+  cases x <;> cases y <;> cases z <;> cases carryIn <;> cases carryOut <;>
+    simp [dfaStep]
+```
+
+Read the statement: "the step function moves from carry `carryIn` to carry `carryOut` on column `(x,y,z)` **iff** `x + y + carryIn = z + 2·carryOut` as natural numbers." This is the bridge between the boolean world of the program (`^^`, `atLeastTwo`) and the arithmetic world of the specification (`+`, `*`). The proof is brute force: `cases` splits on all five booleans — 32 cases — and `simp` evaluates each one. Machine-checked truth tables are free; you'd never write this proof by hand, and you never have to.
+
+**Step 2: the dead state is a sink.** A one-lemma induction showing no suffix rescues a word once a column has contradicted the addition:
+
+```lean
+lemma evalFrom_dead (w : List Sigma3) : carryDFA.evalFrom .dead w = .dead
+```
+
+**Step 3: the arithmetic core.** The inductive step of the invariant needs a fact that has nothing to do with automata: an addition equation splits into its low bit and its high bits, linked by a carry.
+
+```lean
+lemma low_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
+    (x.toNat + 2 * a) + (y.toNat + 2 * b) + carryIn.toNat
+        = (z.toNat + 2 * d) + 2 * k ↔
+      ∃ carryMid : Bool,
+        x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryMid.toNat ∧
+        a + b + carryMid.toNat = d + k := by
+  cases x <;> cases y <;> cases z <;> cases carryIn <;> simp <;> omega
+```
+
+The `∃ carryMid` is doing quiet double duty: when the low bit has the wrong parity, *no* intermediate carry satisfies the right-hand side — which matches the run entering `dead` on the automaton side. The dead-column case of the induction falls out for free. The proof is `cases` on the booleans followed by `omega`, Mathlib's decision procedure for linear integer arithmetic — the workhorse tactic that dispatches "obvious" arithmetic goals so you don't spend an afternoon shuffling `add_comm`.
+
+**Step 4: the run invariant.** Now the centerpiece, the induction from the whiteboard sketch, stated exactly as we stated it on paper:
+
+```lean
+lemma evalFrom_carry_iff (wLE : List Sigma3) (carryIn carryOut : Bool) :
+    carryDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
+      valueLE (row1 wLE) + valueLE (row2 wLE) + carryIn.toNat
+        = valueLE (row3 wLE) + carryOut.toNat * 2 ^ wLE.length := by
+  induction wLE generalizing carryIn with
+  | nil =>
+    cases carryIn <;> cases carryOut <;>
+      simp [valueLE, row1, row2, row3, DFA.evalFrom]
+  | cons column columnsLE induction_hypothesis =>
+    obtain ⟨x, y, z⟩ := column
+    rw [evalFrom_cons_carry_iff]
+    simp_rw [dfaStep_carry_iff, induction_hypothesis]
+    ...
+```
+
+Two details are worth calling out.
+
+First, `generalizing carryIn`. The induction hypothesis must apply to the *tail* of the run, which starts from whatever intermediate carry the first column produced — not from the original `carryIn`. Generalizing makes the hypothesis quantify over all carry-in values. Forgetting this is the classic way inductions get stuck, in Lean and on paper alike: your inductive hypothesis is too weak because you fixed something that changes as the computation proceeds.
+
+Second, look at the shape of the inductive step. A helper lemma (`evalFrom_cons_carry_iff`) rewrites "the run over `column :: columnsLE` ends in `carry carryOut`" into "there is an intermediate carry: the first step produces it, and the rest of the run finishes from it." Then `dfaStep_carry_iff` turns the first step into an adder equation, the induction hypothesis turns the rest of the run into an addition equation, and `low_bit_split` glues the two equations back into one. The structure of the proof *is* the structure of the computation — each lemma peels off exactly one layer.
+
+**Step 5: the main theorem.** With the invariant in hand, the language equality is bookkeeping:
+
+```lean
+theorem carryDFA_accepts : carryDFA.accepts = B.reverse := by
+  ext wLE
+  have invariant := evalFrom_carry_iff wLE false false
+  ...
+```
+
+`ext wLE` reduces "these two languages are equal" to "an arbitrary word is in one iff it's in the other." Instantiating the invariant at `false, false` kills the carry terms. What remains is translating between the two endianness conventions: membership in `B.reverse` unfolds to a statement about `wLE.reverse`, `reverse` gets pushed down onto the rows, `valueBE` unfolds to `valueLE ∘ reverse`, and the two reversals cancel via `List.reverse_reverse`. A final `eq_comm` flips the equation around (the problem writes `row3 = row1 + row2`, the invariant writes `row1 + row2 = row3`) and the goal closes.
+
+**Step 6: regularity.** The payoff theorems are now one line each:
+
+```lean
+theorem B_reverse_isRegular : B.reverse.IsRegular :=
+  ⟨DfaState, inferInstance, carryDFA, carryDFA_accepts⟩
+
+theorem B_isRegular : B.IsRegular :=
+  Language.isRegular_reverse_iff.mp B_reverse_isRegular
+```
+
+The first is the definition of regularity made concrete: a regular language is one for which there *exists* a state type, a proof it's finite, a DFA over it, and a proof the DFA accepts the language. We hand over all four: `DfaState`, its `Fintype` instance (found automatically by `inferInstance`, thanks to the `deriving Fintype` clause back on the enum), the machine, and the theorem. The second applies Mathlib's closure-under-reversal theorem, `Language.isRegular_reverse_iff` — the one piece of textbook theory we didn't have to prove ourselves, because someone already contributed it.
+
+And to close the loop with the problem statement, the book's own examples become compile-time checks:
+
+```lean
+/-- `011 + 001 = 100`, so this word is in `B`. -/
+example : [(false, false, true), (true, false, false), (true, true, false)] ∈ B := by
+  rw [mem_B_iff]; decide
+```
+
+## What the anatomy tells us
+
+Stepping back, the file has a shape worth internalizing, because it's the shape of most program verification:
+
+| Layer | Size | Trust story |
+|---|---|---|
+| Specification (`B`, `valueBE`) | ~10 lines | Must be reviewed by a human against the informal problem |
+| Implementation (`dfaStep`, `carryDFA`) | ~15 lines | Ordinary executable code; unit-testable with `decide` / `#eval` |
+| Proof (invariant + theorems) | ~100 lines | Checked by Lean's kernel; a human only needs the *statements* |
+
+A few takeaways for the working engineer:
+
+- **The program and the proof share one definition.** `dfaStep` is simultaneously the thing you execute and the thing the theorems are about. Verification here isn't modeling your code in a separate tool and hoping the model matches — the code is the model.
+- **Proofs decompose like programs do.** One lemma per concept: a step lemma, a sink lemma, an arithmetic lemma, an induction that composes them. The proof of the inductive step reads like a call stack.
+- **The hard part is finding the invariant, not fighting the prover.** Once `evalFrom_carry_iff` is stated correctly — with the carry-out weighted by `2^|w|`, and generalized over the carry-in — the tactics (`cases`, `simp`, `omega`, `decide`) do the drudgery. The 32-case truth table and the linear arithmetic cost zero human effort.
+- **Endianness is a proof-level concern, exactly once.** The mismatch between "the problem reads big-endian" and "the adder runs little-endian" is confined to one definition (`valueBE`) and one closure theorem (reversal). Everything else lives happily in a single convention. Good factoring is good factoring, in proofs as in code.
+
+The exercise asks you to *show that B is regular*. The Lean file does something stronger: it hands you a two-state adder you can run, and a machine-checked certificate that this adder is *exactly* the language of correct binary additions — no more, no less, for every input, forever.
+
+## Working on this with LLMs
+
+<!-- TODO: fill in notes on the experience of using LLMs on this problem. Some prompts to cover:
+  - What was delegated to the model vs. done by hand (finding the invariant? stating lemmas? tactic golf?)
+  - Where the model shone (boilerplate, simp/omega incantations, recalling Mathlib names like `Language.isRegular_reverse_iff`?)
+  - Where it struggled or hallucinated (nonexistent lemmas, wrong endianness, weak induction hypotheses?)
+  - How the Lean feedback loop (compiler errors, goal states) changed the dynamic vs. ordinary code generation
+  - Verdict: did machine-checked proofs make LLM output more trustworthy to accept?
+-->
+
+*The full source is in [`Chapter1_Problem32.lean`](https://github.com/agostbiro/my-lean/blob/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32.lean).*

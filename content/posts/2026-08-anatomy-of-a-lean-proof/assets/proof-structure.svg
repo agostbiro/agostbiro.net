@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="640" viewBox="0 0 700 640" role="img">
+  <title>The three layers of the Lean file. The specification defines the language B from a binary value function; the implementation defines the transition function and the DFA built on it; the proof layer derives the run invariant from a step lemma, an arithmetic lemma and a sink lemma, and combines the invariant with the specification and the machine to prove that the DFA accepts B reversed, hence that B is regular.</title>
+  <style>
+    text { font-family: system-ui, sans-serif; }
+    .n  { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; font-weight: 500; text-anchor: middle; }
+    .d  { font-size: 10.5px; fill: #444441; text-anchor: middle; }
+    .gt { font-size: 12px; fill: #444441; text-anchor: middle; }
+    .grp { fill: none; stroke: #C9C6BC; stroke-width: 1; stroke-dasharray: 4 4; }
+    .arr { stroke: #5F5E5A; stroke-width: 1.5; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .gt  { fill: #D6D4CC; }
+      .grp { stroke: #6B6960; }
+      .arr { stroke: #A8A69E; }
+      marker path { stroke: #A8A69E; }
+    }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- groups -->
+  <rect class="grp" x="20" y="36" width="320" height="170" rx="8"/>
+  <text class="gt" x="180" y="58">Specification</text>
+
+  <rect class="grp" x="360" y="36" width="320" height="170" rx="8"/>
+  <text class="gt" x="520" y="58">Implementation — executable</text>
+
+  <rect class="grp" x="20" y="246" width="660" height="360" rx="8"/>
+  <text class="gt" x="350" y="270">Proof</text>
+
+  <!-- specification -->
+  <rect x="50" y="70" width="260" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="180" y="88" fill="#2C2C2A">valueBE / valueLE</text>
+  <text class="d" x="180" y="104">binary value of a bit list</text>
+
+  <rect x="50" y="142" width="260" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="180" y="160" fill="#2C2C2A">B : Language Sigma3</text>
+  <text class="d" x="180" y="176">the language, straight from the book</text>
+
+  <path d="M180 114 V140" class="arr" marker-end="url(#arrow)"/>
+
+  <!-- implementation -->
+  <rect x="390" y="70" width="260" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="520" y="88" fill="#2C2C2A">dfaStep</text>
+  <text class="d" x="520" y="104">full adder + sink</text>
+
+  <rect x="390" y="142" width="260" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="520" y="160" fill="#2C2C2A">carryDFA : DFA Sigma3 DfaState</text>
+  <text class="d" x="520" y="176">the machine</text>
+
+  <path d="M520 114 V140" class="arr" marker-end="url(#arrow)"/>
+
+  <!-- proof: supporting lemmas -->
+  <rect x="87.5" y="289" width="165" height="54" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="170" y="309" fill="#2C2C2A">dfaStep_carry_iff</text>
+  <text class="d" x="170" y="324">one step =</text>
+  <text class="d" x="170" y="337">one adder equation</text>
+
+  <rect x="267.5" y="289" width="165" height="54" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="350" y="312" fill="#2C2C2A">low_bit_split</text>
+  <text class="d" x="350" y="330">pure arithmetic</text>
+
+  <rect x="447.5" y="289" width="165" height="54" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="530" y="312" fill="#2C2C2A">evalFrom_dead</text>
+  <text class="d" x="530" y="330">dead is a sink</text>
+
+  <!-- proof: invariant and payoff -->
+  <rect x="225" y="382" width="250" height="44" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="n" x="350" y="400" fill="#04342C">evalFrom_carry_iff</text>
+  <text class="d" x="350" y="416">the run invariant, by induction</text>
+
+  <rect x="205" y="468" width="290" height="44" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="n" x="350" y="486" fill="#04342C">carryDFA_accepts</text>
+  <text class="d" x="350" y="502">carryDFA.accepts = B.reverse</text>
+
+  <rect x="260" y="547" width="180" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="n" x="350" y="570" fill="#04342C">B_isRegular</text>
+
+  <!-- edges into the invariant -->
+  <path d="M170 343 V364 H295 V380" class="arr" marker-end="url(#arrow)"/>
+  <path d="M350 343 V380" class="arr" marker-end="url(#arrow)"/>
+  <path d="M530 343 V364 H405 V380" class="arr" marker-end="url(#arrow)"/>
+
+  <!-- invariant to the main theorem to regularity -->
+  <path d="M350 426 V466" class="arr" marker-end="url(#arrow)"/>
+  <path d="M350 512 V545" class="arr" marker-end="url(#arrow)"/>
+
+  <!-- specification and machine meet the invariant at the main theorem -->
+  <path d="M180 186 V214 H45 V490 H203" class="arr" marker-end="url(#arrow)"/>
+  <path d="M520 186 V214 H655 V490 H497" class="arr" marker-end="url(#arrow)"/>
+</svg>

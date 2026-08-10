@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="336" viewBox="0 0 680 336" role="img">
+  <title>DFA for a decimal integer literal, including the dead state</title>
+  <style>
+    text { font-family: system-ui, sans-serif; }
+    .t  { font-size: 14px; font-weight: 500; }
+    .ts { font-size: 12px; fill: #444441; }
+    .arr { stroke: #5F5E5A; stroke-width: 1.5; fill: none; }
+    /* Labels and arrows sit on the page background, so they have to follow the
+       page's colour scheme. The state circles keep their own light fills. */
+    @media (prefers-color-scheme: dark) {
+      .ts  { fill: #D6D4CC; }
+      .arr { stroke: #A8A69E; }
+      marker path { stroke: #A8A69E; }
+    }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <circle cx="150" cy="110" r="32" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="t" x="150" y="110" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">start</text>
+  <circle cx="340" cy="110" r="32" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="t" x="340" y="110" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">sign</text>
+  <circle cx="530" cy="110" r="36" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <circle cx="530" cy="110" r="30" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="t" x="530" y="110" fill="#04342C" text-anchor="middle" dominant-baseline="central">digits</text>
+  <circle cx="340" cy="258" r="34" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.5"/>
+  <text class="t" x="340" y="258" fill="#501313" text-anchor="middle" dominant-baseline="central">dead</text>
+
+  <line x1="182" y1="110" x2="298" y2="110" class="arr" marker-end="url(#arrow)"/>
+  <text class="ts" x="240" y="98" text-anchor="middle">-</text>
+  <line x1="372" y1="110" x2="486" y2="110" class="arr" marker-end="url(#arrow)"/>
+  <text class="ts" x="429" y="98" text-anchor="middle">0-9</text>
+
+  <path d="M174 83 Q 340 10 508 85" class="arr" marker-end="url(#arrow)"/>
+  <text class="ts" x="340" y="32" text-anchor="middle">0-9</text>
+  <path d="M560 92 C 600 78 600 142 560 128" class="arr" marker-end="url(#arrow)"/>
+  <text class="ts" x="606" y="110" dominant-baseline="central">0-9</text>
+
+  <line x1="175" y1="130" x2="310" y2="236" class="arr" marker-end="url(#arrow)"/>
+  <text class="ts" x="200" y="192" text-anchor="end">other</text>
+  <line x1="340" y1="142" x2="340" y2="220" class="arr" marker-end="url(#arrow)"/>
+  <text class="ts" x="352" y="186">other</text>
+  <line x1="505" y1="130" x2="370" y2="236" class="arr" marker-end="url(#arrow)"/>
+  <text class="ts" x="448" y="192">other</text>
+
+  <path d="M308 238 C 266 222 266 294 308 278" class="arr" marker-end="url(#arrow)"/>
+  <text class="ts" x="258" y="258" text-anchor="end" dominant-baseline="central">any</text>
+</svg>
