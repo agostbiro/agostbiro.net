@@ -1,0 +1,76 @@
+// Code styling. Loaded by layouts/partials/head.html, after the theme's
+// main.scss.
+//
+// The theme ships no syntax colors of its own, and it is a submodule, so this
+// lives here instead. hugo.toml sets `noClasses = false`, which makes Chroma
+// emit class names instead of inline styles, so the colors below can follow the
+// light/dark appearance the way the rest of the site does.
+//
+// Two kinds of code block appear on the site and they must look the same:
+//
+//   <div class="highlight"><pre class="chroma"><code>   fenced with a language
+//   <pre><code>                                          fenced without one
+//
+// The second kind never reaches Chroma (`guessSyntax = false`), so only the
+// background below gives it a block of its own. Both selectors are listed on
+// every background rule for that reason.
+
+@import "chroma-light";
+@import "chroma-dark";
+
+// Chroma tags each run of whitespace inside a highlighted block as
+// `<span class="w">`, and `.w` is also the theme's content wrapper
+// (max-width: 720px; margin: 0 auto; padding: 4rem 2rem, plus position:
+// relative from head.html). Without this reset every single space in a code
+// block carries 2rem of side padding, which blows the block far past the column
+// width. The class names collide by accident; neither side can be renamed, so
+// undo the wrapper's box here.
+.chroma .w {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  position: static;
+}
+
+// Background shared by every code surface: both kinds of block, and inline
+// code. The page background is pure white / pure black in this theme, so code
+// needs its own shade to read as a distinct surface.
+//
+// `pre.chroma` outranks the `.chroma` background that comes from the generated
+// color tables. The bare `pre` rule and the inline code rule tie with the
+// theme's own rules and win on source order, since this stylesheet is linked
+// after main.scss.
+@mixin code-surface($bg) {
+  pre, pre.chroma { background: $bg; }
+
+  // The theme inverts inline code (background: text color, color: page
+  // background), which reads as a black chip in light mode and matches
+  // neither kind of block. Use the block background instead and let the text
+  // keep the body color.
+  code:not(pre > code) {
+    background-color: $bg;
+    color: inherit;
+  }
+}
+
+@mixin code-light-appearance {
+  @include chroma-light;
+  @include code-surface(#f2f2f2);
+}
+
+@mixin code-dark-appearance {
+  @include chroma-dark;
+  @include code-surface(#161616);
+}
+
+// Mirrors the appearance switching in the theme's main.scss.
+body[a="light"] { @include code-light-appearance; }
+body[a="dark"] { @include code-dark-appearance; }
+
+@media (prefers-color-scheme: light) {
+  body[a="auto"] { @include code-light-appearance; }
+}
+
+@media (prefers-color-scheme: dark) {
+  body[a="auto"] { @include code-dark-appearance; }
+}

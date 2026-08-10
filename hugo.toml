@@ -37,6 +37,10 @@ title = "Agost's Site"
         block  = [['$$', '$$'], ['\[', '\]']]
         inline = [['$', '$'], ['\(', '\)']]
 
+  # `noClasses = false` makes Chroma emit class names rather than inline styles,
+  # so the colors can follow the light/dark appearance. That also makes `style`
+  # irrelevant: the colors come from assets/css/_chroma-light.scss and
+  # _chroma-dark.scss instead.
   [markup.highlight]
     anchorLineNos      = false
     codeFences         = true
@@ -47,9 +51,8 @@ title = "Agost's Site"
     lineNoStart        = 1
     lineNos            = false
     lineNumbersInTable = true
-    noClasses          = true
+    noClasses          = false
     noHl               = false
-    style              = 'rrt'
     tabWidth           = 4
 
   [markup.tableOfContents]

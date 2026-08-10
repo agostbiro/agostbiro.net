@@ -22,6 +22,12 @@
   {{ $sass := resources.Get "css/main.scss" }}
   {{ $style := $sass | css.Sass $options | resources.Fingerprint "sha512" }}
   <link rel="stylesheet" href="{{ $style.Permalink | relURL }}" integrity="{{ $style.Data.Integrity }}" />
+  {{- /* Syntax colors and code block backgrounds. Must come after the theme's
+         stylesheet: its `pre` background rule has the same specificity as the
+         one in code.scss, so source order decides. */ -}}
+  {{ $codeSass := resources.Get "css/code.scss" }}
+  {{ $codeStyle := $codeSass | css.Sass $options | resources.Fingerprint "sha512" }}
+  <link rel="stylesheet" href="{{ $codeStyle.Permalink | relURL }}" integrity="{{ $codeStyle.Data.Integrity }}" />
   <style>
     /* The theme's .w wrapper keeps a flat 2rem side padding at every width,
        which costs 64px of an already narrow phone screen. */
