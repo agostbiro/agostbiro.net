@@ -1,5 +1,5 @@
 baseURL = 'https://agostbiro.net/'
-languageCode = 'en-us'
+locale = 'en-us'
 title = "Agost's Site"
 theme = 'nostyleplease'
 
