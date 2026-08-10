@@ -1,12 +1,27 @@
 baseURL = 'https://agostbiro.net/'
 locale = 'en-us'
 title = "Agost's Site"
-theme = 'nostyleplease'
 
 [module]
   [module.hugoVersion]
     extended = true
     min      = "0.41.0"
+
+  # Imported explicitly instead of via the `theme` key so the mounts can leave
+  # out the theme's content/ directory. It ships 11 demo posts that are all
+  # draft: true, which Hugo would otherwise merge into the site and list
+  # whenever the server runs with -D.
+  [[module.imports]]
+    path = "nostyleplease"
+    [[module.imports.mounts]]
+      source = "assets"
+      target = "assets"
+    [[module.imports.mounts]]
+      source = "data"
+      target = "data"
+    [[module.imports.mounts]]
+      source = "layouts"
+      target = "layouts"
 
 [markup]
   [markup.goldmark]
