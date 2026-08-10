@@ -28,6 +28,9 @@ title = "Agost's Site"
     [markup.goldmark.renderer]
       unsafe = true
     [markup.goldmark.parser]
+      # layouts/_markup/render-image.html emits a <figure> for a standalone
+      # image, which cannot live inside the <p> Goldmark wraps it in by default.
+      wrapStandAloneImageWithinParagraph = false
       [markup.goldmark.parser.attribute]
         block = true
         title = true

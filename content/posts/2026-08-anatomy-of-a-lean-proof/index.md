@@ -27,6 +27,7 @@ If you've ever written a simple regular expression like `-?[0-9]+`, then you've 
 This regex matches integer literals like `12` and `-123` and the corresponding DFA looks like this:
 
 ![DFA figure for integer literal regex DFA](./assets/int-lit-regex-dfa.svg)
+
 This DFA has four states:
 - Start: this is where we start before processing the first character. Since the start state is not an accepting state, we reject the empty string.
 - Sign: we move from start to sign when we encounter the `-` character in the start state. We can skip the sign state and jump directly to digits from start, since the sign character is optional (`-?`). If we're in this state at the end of the string, then we reject the string.
@@ -134,20 +135,19 @@ Let's trace the first example through the DFA:
 100 # z row: 4 in decimal
 ```
 
-Read left to right, the columns of this word are $(0,0,1)$, $(1,0,0)$, $(1,1,0)$.
-But the DFA recognizes $B^R$, so it reads them backwards, least significant column first: $(1,1,0)$, then $(1,0,0)$, then $(0,0,1)$.
-At each step it checks the sum bit $z = x \oplus y \oplus c$ and, if that holds, moves to the state for the carry out $\mathrm{maj}(x, y, c)$:
+Unrolling the run turns it into a straight line with one copy of the state per step:
 
-| Step | Column $(x,y,z)$ | State before | Sum bit check | Carry out | State after |
-|---|---|---|---|---|---|
-| 1 | $(1,1,0)$ | carry 0 | $1 \oplus 1 \oplus 0 = 0 = z$ ✓ | $\mathrm{maj}(1,1,0) = 1$ | carry 1 |
-| 2 | $(1,0,0)$ | carry 1 | $1 \oplus 0 \oplus 1 = 0 = z$ ✓ | $\mathrm{maj}(1,0,1) = 1$ | carry 1 |
-| 3 | $(0,0,1)$ | carry 1 | $0 \oplus 0 \oplus 1 = 1 = z$ ✓ | $\mathrm{maj}(0,0,1) = 0$ | carry 0 |
+![The run of the carry automaton on the accepted word, unrolled into a chain of states](./assets/carry-dfa-run-accept.svg)
 
-The run ends in carry 0, the accepting state, so the reversed word is in $B^R$ — which is to say the original word is in $B$, as expected.
+The DFA recognizes $B^R$, so it reads the columns backwards.
+At each step it checks the sum bit $z = x \oplus y \oplus c$ where $x, y, z$ are the rows of the input column written above the arrow and $c$ is the carry in the previous state.
+If this equation holds, it moves to the state determined by the carry.
+
+The run ends in carry 0, the accepting state, so the reversed word is in $B^R$. 
+Due to the closure property of reversal, the original word is in $B$ as well.
 
 Note that the machine passes *through* the non-accepting carry 1 state twice.
-Had the word stopped after either of the first two columns, it would have been rejected — correctly, since `1 + 1 = 0` and `11 + 01 = 00` are both wrong without somewhere to put the carry.
+Had the word stopped after either of the first two column, it would have been rejected, since `1 + 1 = 0` and `11 + 01 = 00` are both wrong without somewhere to put the carry.
 
 Now the second example, which should be rejected:
 
@@ -157,15 +157,10 @@ Now the second example, which should be rejected:
 11 # z row: 3 in decimal
 ```
 
-Its columns are $(0,0,1)$ and $(1,0,1)$, so the machine sees $(1,0,1)$ first:
+![The run of the carry automaton on the rejected word, unrolled into a chain of states ending in dead](./assets/carry-dfa-run-reject.svg)
 
-| Step | Column $(x,y,z)$ | State before | Sum bit check | Carry out | State after |
-|---|---|---|---|---|---|
-| 1 | $(1,0,1)$ | carry 0 | $1 \oplus 0 \oplus 0 = 1 = z$ ✓ | $\mathrm{maj}(1,0,0) = 0$ | carry 0 |
-| 2 | $(0,0,1)$ | carry 0 | $0 \oplus 0 \oplus 0 = 0 \neq 1 = z$ ✗ | — | dead |
-
-The low column is fine on its own — `1 + 0` really is `1` — so the machine can't tell anything is wrong yet.
-It's the high column that fails: with no carry pending, `0 + 0` must produce `0`, but the bottom row claims `1`.
+The first column is fine on its own (`1 + 0` really is `1`) so the machine can't tell anything is wrong yet.
+It's the second column that fails: with no carry pending, `0 + 0` must produce `0`, but the bottom row claims `1`.
 That column contradicts the addition, the machine goes to dead, and since dead is a sink it stays there no matter what follows.
 The run ends outside the accepting state, so the word is rejected.
 

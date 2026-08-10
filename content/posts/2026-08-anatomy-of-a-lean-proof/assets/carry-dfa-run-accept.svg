@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="fig-run-accept" width="760" height="110" viewBox="0 0 760 110" role="img">
+  <title>The run of the carry automaton on the accepted word, unrolled: starting from carry 0 the machine reads the columns (1,1,0), (1,0,0), (0,0,1) and passes through carry 1, carry 1, carry 0, ending in the accepting state.</title>
+  <style>
+    /* Labels, brackets and arrows sit on the page background, so they have to
+       follow the page's colour scheme. The state circles keep their own light
+       fills, so the text inside them stays dark.
+
+       Every selector is scoped to the figure's own class: this file is inlined
+       into the page (layouts/_markup/render-image.html), so bare class names
+       would leak into the document and collide with the other figures. */
+    .fig-run-accept {
+      --ink: #2C2C2A;   /* labels on the page background */
+      --line: #5F5E5A;  /* arrows and arrowheads */
+      --rule: #6B6963;  /* column brackets */
+    }
+    /* The appearance toggle flips body[a], which the inlined figure can read.
+       Opened on its own the SVG is the root element and has no body above it,
+       so svg:root falls back to the OS preference. */
+    body[a="dark"] .fig-run-accept {
+      --ink: #D6D4CC; --line: #A8A69E; --rule: #B4B1A8;
+    }
+    @media (prefers-color-scheme: dark) {
+      body[a="auto"] .fig-run-accept,
+      svg.fig-run-accept:root {
+        --ink: #D6D4CC; --line: #A8A69E; --rule: #B4B1A8;
+      }
+    }
+    .fig-run-accept text { font-family: system-ui, sans-serif; }
+    .fig-run-accept .t  { font-size: 14px; font-weight: 500; }
+    .fig-run-accept .ts { font-size: 12px; fill: var(--ink); }
+    .fig-run-accept .b  { font-size: 11px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+    .fig-run-accept .chk { font-size: 11px; fill: var(--ink); text-anchor: middle; }
+    .fig-run-accept .brk { stroke: var(--rule); stroke-width: 1; fill: none; }
+    .fig-run-accept .arr { stroke: var(--line); stroke-width: 1.5; fill: none; }
+    .fig-run-accept marker path { stroke: var(--line); }
+  </style>
+  <defs>
+    <marker id="arrow-run-accept" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- states -->
+  <circle cx="126" cy="60" r="38" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <circle cx="126" cy="60" r="32" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="t" x="126" y="60" fill="#04342C" text-anchor="middle" dominant-baseline="central">carry 0</text>
+
+  <circle cx="318" cy="60" r="34" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="t" x="318" y="60" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">carry 1</text>
+
+  <circle cx="506" cy="60" r="34" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="t" x="506" y="60" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">carry 1</text>
+
+  <circle cx="698" cy="60" r="38" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <circle cx="698" cy="60" r="32" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="t" x="698" y="60" fill="#04342C" text-anchor="middle" dominant-baseline="central">carry 0</text>
+
+  <!-- start -->
+  <line x1="40" y1="60" x2="86" y2="60" class="arr" marker-end="url(#arrow-run-accept)"/>
+  <text class="ts" x="32" y="60" text-anchor="end" dominant-baseline="central">start</text>
+
+  <!-- step 1 -->
+  <line x1="168" y1="60" x2="282" y2="60" class="arr" marker-end="url(#arrow-run-accept)"/>
+  <path class="brk" d="M220 12 H217 V46 H220"/>
+  <path class="brk" d="M230 12 H233 V46 H230"/>
+  <text class="b"><tspan x="225" y="17">1</tspan><tspan x="225" y="29">1</tspan><tspan x="225" y="41">0</tspan></text>
+  <text class="chk" x="225" y="82">1 &#8853; 1 &#8853; 0 = 0 &#10003;</text>
+  <text class="chk" x="225" y="98">carry = 1</text>
+
+  <!-- step 2 -->
+  <line x1="356" y1="60" x2="470" y2="60" class="arr" marker-end="url(#arrow-run-accept)"/>
+  <path class="brk" d="M408 12 H405 V46 H408"/>
+  <path class="brk" d="M418 12 H421 V46 H418"/>
+  <text class="b"><tspan x="413" y="17">1</tspan><tspan x="413" y="29">0</tspan><tspan x="413" y="41">0</tspan></text>
+  <text class="chk" x="413" y="82">1 &#8853; 0 &#8853; 1 = 0 &#10003;</text>
+  <text class="chk" x="413" y="98">carry = 1</text>
+
+  <!-- step 3 -->
+  <line x1="544" y1="60" x2="658" y2="60" class="arr" marker-end="url(#arrow-run-accept)"/>
+  <path class="brk" d="M596 12 H593 V46 H596"/>
+  <path class="brk" d="M606 12 H609 V46 H606"/>
+  <text class="b"><tspan x="601" y="17">0</tspan><tspan x="601" y="29">0</tspan><tspan x="601" y="41">1</tspan></text>
+  <text class="chk" x="601" y="82">0 &#8853; 0 &#8853; 1 = 1 &#10003;</text>
+  <text class="chk" x="601" y="98">carry = 0</text>
+</svg>

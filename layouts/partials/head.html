@@ -38,6 +38,23 @@
     /* Paired with layouts/_markup/render-table.html. */
     .table-wrap { overflow-x: auto; }
 
+    /* Paired with layouts/_markup/render-image.html, which inlines SVG
+       figures. The theme's img rule cannot reach them, so they need the same
+       centring and shrink-to-fit treatment. width/height on the element would
+       otherwise pin an inlined SVG to its intrinsic size. */
+    figure { margin: 1rem 0; }
+    figure svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+    }
+    /* The theme paints figcaption with its secondary text colour, which is
+       #000000 in the dark palette: invisible on the dark background. Matching
+       its body[a="…"] specificity and coming later in the cascade, this wins.
+       The theme's own `opacity: 0.5` still sets the caption apart. */
+    body[a] figcaption { color: inherit; }
+
     /* Injected by partials/appearance_toggle.html. Anchored to the content
        column rather than the viewport: a fixed element is placed against the
        layout viewport, which mobile browsers widen to fit an over-wide page,
