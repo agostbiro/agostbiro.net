@@ -43,13 +43,5 @@ li > span:first-child { margin-right: 0.75em; }
 
 // ------------------------ MEASURE ------------------------ //
 
-// ~70 characters per line, overriding the theme's 640px. In ch rather than px
-// so the measure tracks both the font size and whichever family in the stack
-// above actually resolves. 1ch is the advance of "0", which runs a little
-// wider than the average lowercase letter, so 66ch lands at roughly 70
-// characters of real text.
-//
-// This supersedes the 720px from de884c5 ("Make text wider in posts"), which
-// lived in the theme and has been reverted. 720px was ~75 characters of 16px
-// monospace, but would be nearer 100 in a proportional face.
+// ~80 characters per line, overriding the theme's 640px. 
 .w { max-width: 65ch; }
