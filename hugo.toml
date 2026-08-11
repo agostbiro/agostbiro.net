@@ -12,7 +12,7 @@ title = "Agost's Site"
   # draft: true, which Hugo would otherwise merge into the site and list
   # whenever the server runs with -D.
   [[module.imports]]
-    path = "nostyleplease"
+    path = "github.com/hanwenguo/hugo-theme-nostyleplease"
     [[module.imports.mounts]]
       source = "assets"
       target = "assets"
