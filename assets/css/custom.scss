@@ -41,7 +41,4 @@ pre { font-size: 0.9em; }
 // The monospace body used to space these; a proportional one needs it stated.
 li > span:first-child { margin-right: 0.75em; }
 
-// ------------------------ MEASURE ------------------------ //
-
-// ~80 characters per line, overriding the theme's 640px. 
-.w { max-width: 65ch; }
+.w { max-width: 720px; }
