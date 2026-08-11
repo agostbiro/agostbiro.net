@@ -72,17 +72,22 @@
     .appearance-toggle {
       position: absolute;
       top: 1rem;
-      right: 1rem;
+      /* Offsets resolve against .w's padding box, so this matches its side
+         padding to put the label's right edge on the text column's, lined up
+         with the post date sitting directly below. Nothing horizontal in the
+         padding below, for the same reason. */
+      right: 2rem;
       font: inherit;
       color: inherit;
       background: none;
       border: 0;
-      padding: 0.25rem;
+      padding: 0.25rem 0;
       cursor: pointer;
     }
     .appearance-toggle:hover { text-decoration: underline; }
     @media (max-width: 480px) {
-      .appearance-toggle { top: 0.25rem; right: 0.5rem; }
+      /* Tracking the narrow-screen padding set for .w above. */
+      .appearance-toggle { top: 0.25rem; right: 1rem; }
     }
   </style>
   {{- /* Only pages that actually contain math pay for the KaTeX stylesheet.
