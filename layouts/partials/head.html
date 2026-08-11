@@ -33,6 +33,12 @@
        which costs 64px of an already narrow phone screen. */
     @media (max-width: 480px) {
       .w { padding: 2rem 1rem; }
+
+      /* Browsers indent a blockquote by 40px on each side. That is a quarter
+         of a phone screen spent on nothing, and the theme puts a border and
+         another 1rem of padding inside it, so the text ends up in a very
+         narrow strip. Let the quote use the whole content column. */
+      blockquote { margin-left: 0; margin-right: 0; }
     }
 
     /* Paired with layouts/_markup/render-table.html. */
