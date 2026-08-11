@@ -27,10 +27,22 @@ pre, code, kbd, samp {
 }
 
 // A monospace face set at the body size reads noticeably larger than the serif
-// around it. The theme already drops inline code to 90%; only `pre` is left.
-// Deliberately not `pre, code`, which would hit `pre > code` a second time and
-// compound to 0.81em.
-pre { font-size: 0.9em; }
+// around it. Matching x-heights alone lands on 0.9em — Charter's x-height is
+// 0.481em against roughly 0.537em for the mono faces named above — and that is
+// where this used to sit, but the code still read bigger. The rest of the
+// mismatch is width and weight, not height: a mono advance is 0.6em flat,
+// where Charter's lowercase averages nearer 0.47em, so the same x-height
+// spreads over ~15% more page, and mono's uniform stems look heavier than
+// Charter's modulated ones. Going under on x-height is what actually evens
+// them out; 0.8em sets it about 11% under, which is where the two stopped
+// competing by eye.
+//
+// `code:not(pre > code)` is the theme's own selector for inline code, repeated
+// here so the two stay on one value; matching its specificity, source order
+// decides. Deliberately not `pre, code`, which would hit `pre > code` a second
+// time and compound to 0.64em.
+pre { font-size: 0.8em; }
+code:not(pre > code) { font-size: 0.8em; }
 
 // Dates. The serif families above default to oldstyle, proportional figures,
 // which neither sit on the baseline nor line up down the post list.
