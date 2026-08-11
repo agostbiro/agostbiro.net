@@ -12,7 +12,7 @@
 
 body {
   font-family: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1.6;
 }
 
@@ -52,4 +52,4 @@ li > span:first-child { margin-right: 0.75em; }
 // This supersedes the 720px from de884c5 ("Make text wider in posts"), which
 // lived in the theme and has been reverted. 720px was ~75 characters of 16px
 // monospace, but would be nearer 100 in a proportional face.
-.w { max-width: 66ch; }
+.w { max-width: 65ch; }
