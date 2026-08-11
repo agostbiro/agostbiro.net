@@ -75,13 +75,15 @@ body[a="light"] { @include light-appearance; }
 html { height: 100%; }
 
 body {
-  font-family: monospace;
-  font-size: 16px;
-  line-height: 1.4;
+  font-family: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  font-size: 18px;
+  line-height: 1.6;
   margin: 0;
   min-height: 100%;
   overflow-wrap: break-word;
 }
+
+h1, h2, h3, h4, h5, h6 { line-height: 1.25; }
 
 h2, h3, h4, h5, h6 { margin-top: 1.5rem; }
 
@@ -115,6 +117,16 @@ table, th, td {
   padding: 0.4rem;
 }
 
+/* The UA sheet already makes these monospace. What it picks is the browser's
+   generic, which is Courier New on Windows and holds up badly at this size,
+   so name better families first and leave `monospace` as the last resort.
+   0.9em because a monospace face set at the same size as the serif body reads
+   noticeably larger. */
+pre, code, kbd, samp {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.9em;
+}
+
 code {
   text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
@@ -124,7 +136,6 @@ code {
 
 code:not(pre > code) {
   padding: 0.1em 0.2em;
-  font-size: 90%;
 }
 
 code.has-jax {
@@ -170,8 +181,21 @@ details[open] summary {
   align-items: center;
 }
 
+/* Dates: the serif families above default to oldstyle, proportional figures,
+   which neither sit on the baseline nor line up down the post list. */
+.post-meta time, li > span:first-child {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+li > span:first-child { margin-right: 0.75em; }
+
+/* ~70 characters per line. Sized in ch rather than px so the measure tracks
+   both the font size and whichever family in the stack above actually
+   resolves. 1ch is the advance of "0", which runs a little wider than the
+   average lowercase letter, so 66ch lands at roughly 70 characters of real
+   text. */
 .w {
-  max-width: 720px;
+  max-width: 66ch;
   margin: 0 auto;
   padding: 4rem 2rem;
 }
