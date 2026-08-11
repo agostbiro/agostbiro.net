@@ -1,7 +1,9 @@
 {{/* Overrides the theme's head.html. Identical to it, except that the MathJax
      partial is dropped (the site renders math to MathML at build time via
-     layouts/_markup/render-passthrough.html) and the math styles below are
-     added. Re-check against the theme's copy if the submodule is updated. */ -}}
+     layouts/_markup/render-passthrough.html), the math styles below are added,
+     and the stylesheet entry point is assets/css/custom.scss rather than the
+     theme's css/main.scss (custom.scss imports it, then overrides).
+     Re-check against the theme's copy if the submodule is updated. */ -}}
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -19,7 +21,7 @@
 
   <link rel="shortcut icon" type="image/x-icon" href="{{ $.Site.Params.favicon | relURL }}" />
   {{ $options := (dict "outputStyle" "compressed" "enableSourceMap" (not hugo.IsProduction)) }}
-  {{ $sass := resources.Get "css/main.scss" }}
+  {{ $sass := resources.Get "css/custom.scss" }}
   {{ $style := $sass | css.Sass $options | resources.Fingerprint "sha512" }}
   <link rel="stylesheet" href="{{ $style.Permalink | relURL }}" integrity="{{ $style.Data.Integrity }}" />
   <style>
