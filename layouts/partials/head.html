@@ -95,6 +95,26 @@
   {{- if and .RawContent (findRE `\$|\\\(|\\\[` .RawContent 1) }}
   <link rel="stylesheet" href="{{ "katex/katex.min.css" | relURL }}" />
   <style>
+    /* KaTeX ships `.katex { font: normal 1.21em … }`. That 1.21 is upstream's
+       correction for Computer Modern sitting small on a Times-like body: it
+       lifts the math x-height to roughly Times's. Charter's x-height is much
+       larger (0.481em against Times's 0.450em and Computer Modern's 0.435em),
+       so the same correction overshoots and the math ends up set noticeably
+       bigger than the prose around it.
+
+       No single factor can match both metrics, because Computer Modern's
+       x-height-to-cap ratio (0.63) is far below Charter's (0.72): matching
+       x-heights needs 1.11em and leaves the capitals 14% too tall, matching
+       capitals needs 0.97em and leaves the lowercase 10% too short. 1.05em
+       splits the difference, landing 5% under on x-height and 8% over on caps
+       — both small enough to read as the same size. Only the `font-size` is
+       overridden, so the shorthand's family and line-height still apply.
+
+       Note this also scales sub- and superscripts, which KaTeX sets at 0.7 of
+       the math size. They were already below the body size and now sit at
+       ~0.74em of it, which matters for a post leaning on $B^R$ inline. */
+    .katex { font-size: 1.05em; }
+
     /* A display formula wider than the column scrolls on its own rather than
        widening the page. */
     .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.2em 0; }
