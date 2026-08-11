@@ -1,0 +1,47 @@
+// Site-level overrides for the nostyleplease theme, loaded by
+// layouts/partials/head.html in place of the theme's main.scss. Everything
+// specific to this site goes below the import so the theme's own stylesheet
+// stays untouched and its vendored copy can be replaced wholesale.
+//
+// `@import` rather than `@use`: no dart-sass on the build path, so Hugo falls
+// back to libsass, which has no module system. The bare "main" resolves
+// through Hugo's union filesystem to the theme's assets/css/main.scss.
+@import "main";
+
+// ---------------------- TYPOGRAPHY ---------------------- //
+
+body {
+  font-family: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  font-size: 20px;
+  line-height: 1.6;
+}
+
+// The looser leading above is for prose. It spreads headings out too much.
+h1, h2, h3, h4, h5, h6 { line-height: 1.25; }
+
+// The UA sheet already makes these monospace. What it picks is the browser's
+// generic, which is Courier New on Windows and holds up badly at this size, so
+// name better families first and leave `monospace` as the last resort.
+pre, code, kbd, samp {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+// A monospace face set at the body size reads noticeably larger than the serif
+// around it. The theme already drops inline code to 90%; only `pre` is left.
+// Deliberately not `pre, code`, which would hit `pre > code` a second time and
+// compound to 0.81em.
+pre { font-size: 0.9em; }
+
+// Dates. The serif families above default to oldstyle, proportional figures,
+// which neither sit on the baseline nor line up down the post list.
+.post-meta time, li > span:first-child {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+// The monospace body used to space these; a proportional one needs it stated.
+li > span:first-child { margin-right: 0.75em; }
+
+// ------------------------ MEASURE ------------------------ //
+
+// ~80 characters per line, overriding the theme's 640px. 
+.w { max-width: 65ch; }
