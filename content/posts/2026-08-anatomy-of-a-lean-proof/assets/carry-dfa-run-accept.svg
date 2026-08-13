@@ -30,6 +30,7 @@
     .fig-run-accept .ts { font-size: 12px; fill: var(--ink); }
     .fig-run-accept .b  { font-size: 11px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
     .fig-run-accept .chk { font-size: 11px; fill: var(--ink); text-anchor: middle; }
+    .fig-run-accept .sub { font-size: 8px; }
     .fig-run-accept .brk { stroke: var(--rule); stroke-width: 1; fill: none; }
     .fig-run-accept .arr { stroke: var(--line); stroke-width: 1.5; fill: none; }
     .fig-run-accept marker path { stroke: var(--line); }
@@ -65,7 +66,7 @@
   <path class="brk" d="M230 12 H233 V46 H230"/>
   <text class="b"><tspan x="225" y="17">1</tspan><tspan x="225" y="29">1</tspan><tspan x="225" y="41">0</tspan></text>
   <text class="chk" x="225" y="82">1 &#8853; 1 &#8853; 0 = 0 &#10003;</text>
-  <text class="chk" x="225" y="98">carry = 1</text>
+  <text class="chk" x="225" y="98">c<tspan class="sub" dy="2">out</tspan><tspan dy="-2"> = 1</tspan></text>
 
   <!-- step 2 -->
   <line x1="356" y1="60" x2="470" y2="60" class="arr" marker-end="url(#arrow-run-accept)"/>
@@ -73,7 +74,7 @@
   <path class="brk" d="M418 12 H421 V46 H418"/>
   <text class="b"><tspan x="413" y="17">1</tspan><tspan x="413" y="29">0</tspan><tspan x="413" y="41">0</tspan></text>
   <text class="chk" x="413" y="82">1 &#8853; 0 &#8853; 1 = 0 &#10003;</text>
-  <text class="chk" x="413" y="98">carry = 1</text>
+  <text class="chk" x="413" y="98">c<tspan class="sub" dy="2">out</tspan><tspan dy="-2"> = 1</tspan></text>
 
   <!-- step 3 -->
   <line x1="544" y1="60" x2="658" y2="60" class="arr" marker-end="url(#arrow-run-accept)"/>
@@ -81,5 +82,5 @@
   <path class="brk" d="M606 12 H609 V46 H606"/>
   <text class="b"><tspan x="601" y="17">0</tspan><tspan x="601" y="29">0</tspan><tspan x="601" y="41">1</tspan></text>
   <text class="chk" x="601" y="82">0 &#8853; 0 &#8853; 1 = 1 &#10003;</text>
-  <text class="chk" x="601" y="98">carry = 0</text>
+  <text class="chk" x="601" y="98">c<tspan class="sub" dy="2">out</tspan><tspan dy="-2"> = 0</tspan></text>
 </svg>

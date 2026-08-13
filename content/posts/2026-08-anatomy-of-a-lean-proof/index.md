@@ -12,8 +12,8 @@ Lean is a good choice for this, because its [Mathlib](https://lean-lang.org/use-
 After finishing the formal proof, I decided to write it up, because I think it provides good insight into what it takes to formally prove properties of a system.
 The construction that we're going prove is itself a program we write in Lean, so we don't just end up with a mathematical proof, but also a verified program.
 
-I tried to make the subject approachable in this post.
-If you're comfortable with statically typed languages, basic set operations and inductive proofs, you should have no difficulties following along.
+I tried to make the subject approachable.
+If you're comfortable with modern statically typed programming languages (such as TypeScript or Rust), binary arithmetic, basic set operations and inductive proofs, you should have no difficulties following along.
 
 ## Background: DFAs & Regular Languages
 
@@ -110,7 +110,7 @@ But the following string is not in the language:
 
 While a language like this may look weird at first, it's actually a lot easier to write a program that recognizes this language as opposed to a program that recognizes a natural language, since we just need to check the equation
 
-$$ x + y = z $$
+$$ x + y = z$$
 
 to determine whether a string is in the language. 
 The challenge in this problem is that we need to do this with a fixed amount of memory for arbitrarty long strings.
@@ -122,7 +122,9 @@ The trick is to remember how you add numbers by hand: you work from the **least 
 But a DFA reads left to right, and the problem presents the numbers most significant bit first.
 So we don't recognize $B$ directly. 
 Instead we build a DFA to recognize its **reversal** $B^R$ which is the same strings that are in $B$ written backwards, so the machine sees the least significant column first.
-At this point we have proven that $B^R$ is regular.
+
+If we can build a DFA to recognize $B^R$, then we can conclude that $B^R$ is a regular language.
+Since $B^R$ reversed is $B$, we can use of the closure property of the reversal of natural languages to conlcude that $B$ is regular as well which concludes the solution.
 
 Here is the DFA that recognizes $B^R$:
 
@@ -142,13 +144,15 @@ Let's trace the first example through the DFA:
 100 # z row: 4 in decimal
 ```
 
-Unrolling the run turns it into a straight line with one copy of the state per step:
+Unrolling the run turns it into a straight line with one copy of the state per step.
+The DFA recognizes $B^R$, so it reads the columns backwards.
 
 ![The run of the carry automaton on the accepted word, unrolled into a chain of states](./assets/carry-dfa-run-accept.svg)
 
-The DFA recognizes $B^R$, so it reads the columns backwards.
-At each step it checks the sum bit $z = x \oplus y \oplus c$ where $x, y, z$ are the rows of the input column written above the arrow and $c$ is the carry in the previous state.
-If this equation holds, it moves to the state determined by the carry.
+At each step, the DFA checks that the following equation holds for the sum bit 
+$$x_i \oplus y_i \oplus c_{in} = z_i$$ 
+where $x, y, z$ are the rows of the input respectively from the top, $i$ denotes the ordinal of the current column, and $c_{in}$ is the input carry (from the state before the arrow).
+If this equation holds, the DFA moves to the state determined by the output carry denoted by $c_{out}$.
 
 The run ends in carry 0 (the accepting state), so the reversed word is in $B^R$. 
 Due to the closure property of reversal, the original word is in $B$ as well.
@@ -168,14 +172,48 @@ Now the second example, which should be rejected:
 
 The first column is fine on its own ($\mathtt{1} + \mathtt{0}$ really is $\mathtt{1}$) so the machine can't tell anything is wrong yet.
 It's the second column that fails: with no carry pending, $\mathtt{0} + \mathtt{0}$ must produce $\mathtt{0}$, but the bottom row claims $\mathtt{1}$.
-That column contradicts the addition, the machine goes to dead, and since dead is a sink it stays there no matter what follows.
-The run ends outside the accepting state, so the word is rejected.
+The run ends outside the accepting state, so the second exmaple is rejected.
+
+Note that since the dead state is a sink state, the string would get rejected even if there were more valid columns after the second column.
 
 ## Informal Proof
 
-Before looking at Lean, here's an informal proof to complete the problem. 
+Before looking at formalization in Lean, we give an informal inductive proof to complete the problem.
+
+Recall that at each step, the DFA checks 
+
+$$ x_i \oplus y_i \oplus c_i = z_i$$
+
+where $x, y, z$ are the rows of the input respectively from the top, $i$ denotes the ordinal of the current column, and $c_{in}$ is the input carry. 
+
+If the equation for $z_i$ holds, the DFA moves to the state determined by the output carry denoted by $c_{out}$ which is defined as follows:
+
+$$c_{out} = (x_i \wedge y_i) \vee \left( c_{in} \wedge (x_i \oplus y_i) \right)$$
+
+This means that that there is a carry either if both terms are $\mathtt{1}$ or there was an input carry and least one of the terms is $\mathtt{1}$. Note that a simpler way to compute $c_{out}$ is to check if at least two of $x_i$, $y_i$ and $c_{in}$ are $\mathtt{1}$ (we'll make use of this in the Lean proof).
+
+Next, recall that we need to check the equation
+
+$$ x + y = z $$
+
+to determine whether whether an input string is in the language $B$. Let's expand this to include information about the length of the string (denoted as $n$), and the steps ($i$ as before, zero indexed): 
+
+$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i = \sum_{i=0}^{n-1} z_i 2^i$$
+
+This lets us verify that the first $n$ bits of the sum of the two top rows matches the bottom row.
+But we also need to check that the the sum didn't overflow, so we need to add the final carry to the equation ($c_{out}$ is the carry after $n-1$ steps):
+
+$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i = \sum_{i=0}^{n-1} z_i 2^i + c_{out} \cdot 2^n$$
+
+As we've seen, the value of $c_{out}$ not only depends on $x_i$ and $y_i$, but also on $c_{in}$, so we need to add this term to create a link between the DFA and the mathematical formulation ($c_{in}$ is the carry before the first step):
+
+
+$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i + c_{in} = \sum_{i=0}^{n-1} z_i 2^i + c_{out} \cdot 2^n$$
+
+Note that $c_{in}$ will be always zero at the start of the DFA, but formulated this way, we can talk about intermediate steps where $c_{in}$ may be non-zero.
+
 Everything hinges on one **run invariant**, proved by induction on the word:
-> **Invariant.** Running the machine over a (little-endian) word $w$ starting with carry $c_{\mathrm{in}}$ ends in state $\mathtt{carry}\ c_{\mathrm{out}}$ if and only if
+> **Invariant.** Running the machine over a (little-endian) word $w$ starting with carry $c_{\mathrm{in}}$ ends in state $c_{\mathrm{out}}$ if and only if
 >
 > $$\mathrm{row}_1(w) + \mathrm{row}_2(w) + c_{\mathrm{in}} = \mathrm{row}_3(w) + c_{\mathrm{out}} \cdot 2^{|w|}$$
 >

@@ -32,6 +32,7 @@
     .fig-run-reject .b  { font-size: 11px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
     .fig-run-reject .chk { font-size: 11px; fill: var(--ink); text-anchor: middle; }
     .fig-run-reject .bad { font-size: 11px; fill: var(--bad); text-anchor: middle; }
+    .fig-run-reject .sub { font-size: 8px; }
     .fig-run-reject .brk { stroke: var(--rule); stroke-width: 1; fill: none; }
     .fig-run-reject .arr { stroke: var(--line); stroke-width: 1.5; fill: none; }
     .fig-run-reject marker path { stroke: var(--line); }
@@ -64,7 +65,7 @@
   <path class="brk" d="M269 12 H272 V46 H269"/>
   <text class="b"><tspan x="264" y="17">1</tspan><tspan x="264" y="29">0</tspan><tspan x="264" y="41">1</tspan></text>
   <text class="chk" x="264" y="82">1 &#8853; 0 &#8853; 0 = 1 &#10003;</text>
-  <text class="chk" x="264" y="98">carry = 0</text>
+  <text class="chk" x="264" y="98">c<tspan class="sub" dy="2">out</tspan><tspan dy="-2"> = 0</tspan></text>
 
   <!-- step 2 -->
   <line x1="444" y1="60" x2="638" y2="60" class="arr" marker-end="url(#arrow-run-reject)"/>
