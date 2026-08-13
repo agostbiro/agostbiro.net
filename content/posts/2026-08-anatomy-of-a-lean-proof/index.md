@@ -154,7 +154,7 @@ The run ends in carry 0 (the accepting state), so the reversed word is in $B^R$.
 Due to the closure property of reversal, the original word is in $B$ as well.
 
 Note that the machine passes *through* the non-accepting carry 1 state twice.
-Had the word stopped after either of the first two column, it would have been rejected, since `1 + 1 = 0` and `11 + 01 = 00` are both wrong without somewhere to put the carry.
+Had the word stopped after either of the first two column, it would have been rejected, since $\mathtt{1} + \mathtt{1} = \mathtt{0}$ and $\mathtt{11} + \mathtt{01} = \mathtt{00}$ are both wrong without somewhere to put the carry.
 
 Now the second example, which should be rejected:
 
@@ -166,8 +166,8 @@ Now the second example, which should be rejected:
 
 ![The run of the carry automaton on the rejected word, unrolled into a chain of states ending in dead](./assets/carry-dfa-run-reject.svg)
 
-The first column is fine on its own (`1 + 0` really is `1`) so the machine can't tell anything is wrong yet.
-It's the second column that fails: with no carry pending, `0 + 0` must produce `0`, but the bottom row claims `1`.
+The first column is fine on its own ($\mathtt{1} + \mathtt{0}$ really is $\mathtt{1}$) so the machine can't tell anything is wrong yet.
+It's the second column that fails: with no carry pending, $\mathtt{0} + \mathtt{0}$ must produce $\mathtt{0}$, but the bottom row claims $\mathtt{1}$.
 That column contradicts the addition, the machine goes to dead, and since dead is a sink it stays there no matter what follows.
 The run ends outside the accepting state, so the word is rejected.
 
