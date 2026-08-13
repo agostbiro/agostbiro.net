@@ -131,7 +131,7 @@ Here is the DFA that recognizes $B^R$:
 The DFA has three states:
 
 - **Carry 0:** We're in this state if the carry is 0 before processing the next column. This is both the starting and the accepting state, since a leftover carry at the end would mean the sum overflowed the bottom row. 
-- **Carry 1:** We're in this state if the carry is 1 before processing the next column. This state is non-accepting, since a word ending here has a carry left over, so the sum overflowed. But unlike the dead state we can still leave it, since a `001` column absorbs the pending carry and takes us back to carry 0. 
+- **Carry 1:** We're in this state if the carry is 1 before processing the next column. This state is non-accepting, since a word ending here has a carry left over, so the sum overflowed. But unlike the dead state we can still leave it, since a $\left[\begin{smallmatrix}\mathtt{0}\\\mathtt{0}\\\mathtt{1}\end{smallmatrix}\right]$ column absorbs the pending carry and takes us back to carry 0. 
 - **Dead:** We end up in this state if the sum doesn't match. This is a sink state meaning it's terminal.
 
 Let's trace the first example through the DFA:
