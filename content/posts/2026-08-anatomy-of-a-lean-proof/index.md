@@ -5,23 +5,28 @@ draft: true
 ---
 
 I recently worked through a problem from a theory of computation textbook that asked me to prove a property of a language using finite automata.
-The informal proof is a very simple constructive proof where you build an automaton and show that it recognizes the language.
+The informal proof is a simple constructive proof where you build an automaton and show that it recognizes the language.
 This is kind of similar to program verification, so I thought it'd be interesting to see what it takes to formalize the proof.
-I first looked at using the Rocq proof assistant, but it turns out Lean is a better choice, because its [Mathlib](https://lean-lang.org/use-cases/mathlib/) has all the theorems needed for the problem.
+Lean is a good choice for this, because its [Mathlib](https://lean-lang.org/use-cases/mathlib/) has all the theorems needed for the problem.
 
-After finishing the formal proof, I decided to write it up, because I think it provides fellow software engineers good insight into what it takes to formally prove properties of a system with what I think is an interesting, but approachable example.
-Finite automata are not only important for theory, they're also the machinery behind regular expressions, where a [bug](https://blog.cloudflare.com/details-of-the-cloudflare-outage-on-july-2-2019/) once took a significant portion of the internet down.
-And because the construction we prove is itself a program we write in Lean, we don't just end up with a mathematical proof, but also a verified program.
+After finishing the formal proof, I decided to write it up, because I think it provides good insight into what it takes to formally prove properties of a system.
+The construction that we're going prove is itself a program we write in Lean, so we don't just end up with a mathematical proof, but also a verified program.
 
-## Background
+I tried to make the subject approachable in this post.
+If you're comfortable with statically typed languages, basic set operations and inductive proofs, you should have no difficulties following along.
 
-Feel free to skip this section if you're comfortable with DFAs and regular languages.
+## Background: DFAs & Regular Languages
+
+*Feel free to skip this section if you're comfortable with DFAs and regular languages.*
+
+Finite automata provide a model of computation with fixed memory.
+Finite automata are not only important for theory, they also have important practical applications. 
+For example, finite automata are relevant for regular expressions, where a [bug](https://blog.cloudflare.com/details-of-the-cloudflare-outage-on-july-2-2019/) once took a significant portion of the internet down.
 
 ### Deterministic Finite Automaton (DFA)
 
-Finite automata provide a model of computation with fixed memory. 
-A **deterministic finite automaton** (DFA) is a machine with a fixed, finite set of states that reads its input one symbol at a time, left to right, updating its state with each symbol with a deterministic transition function.
-After the last symbol, the machine either sits in an *accepting* state (input accepted) or not (rejected).
+A **deterministic finite automaton** (DFA) is a machine with a fixed, finite set of states that reads its input one symbol at a time, left to right, updating its state with each symbol using a deterministic transition function.
+After the last symbol, the machine either sits in an *accepting* state (input is accepted) or not (input is rejected).
 
 If you've ever written a simple regular expression like `-?[0-9]+`, then you've constructed a DFA. 
 This regex matches integer literals like `12` and `-123` and the corresponding DFA looks like this:
@@ -29,10 +34,10 @@ This regex matches integer literals like `12` and `-123` and the corresponding D
 ![DFA figure for integer literal regex DFA](./assets/int-lit-regex-dfa.svg)
 
 This DFA has four states:
-- Start: this is where we start before processing the first character. Since the start state is not an accepting state, we reject the empty string.
-- Sign: we move from start to sign when we encounter the `-` character in the start state. We can skip the sign state and jump directly to digits from start, since the sign character is optional (`-?`). If we're in this state at the end of the string, then we reject the string.
-- Digits: we move from start or sign to digits when we encounter a digit character (`[0-9]`). If we're in the digits state and encounter a digit character again, then we stay in the digit state. The digit state is the only accepting state of the DFA. If we're in this state after we've processed the input string, then the DFA accepts the string.
-- Dead: we get into this state if we encounter any other character than a digit (unless it's a negative sign at the start). If we're in the dead state at the end of the string, then the DFA rejects the string. Once we're in the dead state, we stay in it, so the dead state in this DFA is a *sink*.
+- **Start:** this is where we start before processing the first character. Since the start state is not an accepting state, we reject the empty string.
+- **Sign:** we move from start to sign when we encounter the `-` character in the start state. We can skip the sign state and jump directly to digits from start, since the sign character is optional (`-?`). If we're in this state at the end of the string, then we reject the string.
+- **Digits:** we move from start or sign to digits when we encounter a digit character (`[0-9]`). If we're in the digits state and encounter a digit character again, then we stay in the digit state. The digit state is the only accepting state of the DFA. If we're in this state after we've processed the input string, then the DFA accepts the string.
+- **Dead:** we get into this state if we encounter any other character than a digit (unless it's a negative sign at the start). If we're in the dead state at the end of the string, then the DFA rejects the string. Once we're in the dead state, we stay in it, so the dead state in this DFA is a *sink*.
 
 The set of input symbols to the machine is defined by the set $\Sigma$. 
 In our regex example, $\Sigma = \left\{-, 0, 1, 2, \ldots, 9\right\}$.
@@ -40,21 +45,22 @@ In our regex example, $\Sigma = \left\{-, 0, 1, 2, \ldots, 9\right\}$.
 ### Regular Languages
 
 A **language** is just a set of strings, and a language is called **regular** if some DFA accepts the strings in it. 
-Recognizing regular languages is the class of decision problems solvable with a constant amount of memory (in the input size).
+Recognizing regular languages is the class of decision problems solvable with a constant amount of memory in the input size.
+
 Regular languages have useful closure properties: the union, intersection, complement, and (important for us) **reversal** of a regular language is regular.
-
-We can describe a language $A$ with set-builder notation: 
-$$A = \bigl\{\, w \in \Sigma^{*} \bigm| w \text{ is well-formed} \,\bigr\},$$
-For example, we can describe the regular language $A$ recognized by the regex `-?[0-9]+` as
-
-where a string is well-formed if it's non-empty and only its first character can be a negative sign.
-
-$\Sigma^{*}$ means the set of strings that are created by all possible concatanations of symbols in $\Sigma$, for example `""`, `"123"`, `"-123"`, `"2-65"`, etc.
 
 The standard way to prove that a language is regular is to build a DFA and argue that it accepts exactly that language.
 
+We can describe a language $A$ with set-builder notation: 
+$$A = \bigl\{\, w \in \Sigma^{*} \bigm| P(w) \,\bigr\}$$
 
-## Problem
+
+$\Sigma^{*}$ means the set of strings that are created by all possible concatanations of symbols in $\Sigma$ and $P(w)$ is the logical proposition (a statement that is either true or false) that the string $w$ is well-formed.
+
+Let's apply this notation to our regex example: `-?[0-9]+`. Then $\Sigma^{*}$ contains string like `""`, `"123"`, `"-111"`, `"2-625-"`, etc. and $P(w)$ is defined as "$w$ is not empty and only its first character can be a negative sign". 
+
+
+## The Problem
 
 The problem is from the Introduction to the Theory of Computation, 3rd ed. by Michael Sipser:
 
@@ -66,13 +72,15 @@ The problem is from the Introduction to the Theory of Computation, 3rd ed. by Mi
 > $\Sigma_3$ determines three rows of bits. Reading each row as a binary number,
 > define
 >
-> $$B = \bigl\{\, w \in \Sigma_3^{*} \bigm| \text{the bottom row of } w \text{ equals the sum of the top two rows} \,\bigr\}.$$
+> $$B = \bigl\{\, w \in \Sigma_3^{*} \bigm| P(w)  \,\bigr\}$$
+>
+> where $P(w)$ is the proposition that the the bottom row of $w$ equals the sum of the top two rows.
 >
 > Show that $B$ is regular. (Hint: it is easier to work with $B^{\mathcal{R}}$.)
 
 The problem defines an unusual alphabet.
 Instead of regular characters like `[a-z]`, the alphabet is made up of columns of three bits.
-So instead of language that consists of strings like `"apple"`, `"banana"`, etc, the language consists of two dimensional bit strings like
+So instead of a language that consists of strings like `"apple"`, `"banana"`, etc, the language consists of two dimensional bit strings like
 
 ```
 011
@@ -84,32 +92,30 @@ where the first column is the first "character" and so on.
 
 The rule to decide whether a string is in the language is to add the first two rows of the string and check whether they match the third.
 
-For example the following string is in the language:
+For example, the following string is in the language:
 
 ```
-011 # First term is 3 in decimal
-001 # Second term is 1 in decimal
-100 # Sum is 4 which is equal to 3 + 1
+011 # x row: first term is 3 in decimal
+001 # y row: second term is 1 in decimal
+100 # z row: sum is 4 which is equal to 3 + 1
 ```
 
 But the following string is not in the language:
 
 ```
-01 # First term is 1 in decimal
-00 # Second term is 0
-11 # Sum is 3 which is not equal to 1 + 0
+01 # x row: first term is 1 in decimal
+00 # y row: second term is 0
+11 # z row: sum is 3 which is not equal to 1 + 0
 ```
 
-While a language like this may look weird at first, it's actually a lot easier to write a program that recognizes this language vs a program that recognizes a natural language, since we just need to check the equivalence
+While a language like this may look weird at first, it's actually a lot easier to write a program that recognizes this language as opposed to a program that recognizes a natural language, since we just need to check the equation
 
-```
-first row + second row = third row
-```
+$$ x + y = z $$
 
 to determine whether a string is in the language. 
 The challenge in this problem is that we need to do this with a fixed amount of memory for arbitrarty long strings.
 
-## Solution
+## The Solution
 
 The trick is to remember how you add numbers by hand: you work from the **least significant digit** to the most significant, and the only thing you carry from one column to the next is the carry.
 
@@ -117,15 +123,16 @@ But a DFA reads left to right, and the problem presents the numbers most signifi
 So we don't recognize $B$ directly. 
 Instead we build a DFA to recognize its **reversal** $B^R$ which is the same strings that are in $B$ written backwards, so the machine sees the least significant column first.
 At this point we have proven that $B^R$ is regular.
+
 Here is the DFA that recognizes $B^R$:
 
 ![DFA figure for the carry automaton recognizing B reversed](./assets/carry-dfa.svg)
 
 The DFA has three states:
 
-- Carry 0: We're in this state if the carry is 0 before processing the next column. This is both the starting and the accepting state, since a leftover carry at the end would mean the sum overflowed the bottom row. 
-- Carry 1: We're in this state if the carry is 1 before processing the next column. This state is non-accepting — a word ending here has a carry left over, so the sum overflowed — but unlike the dead state we can still leave it, since a `001` column absorbs the pending carry and takes us back to carry 0. 
-- Dead: We end up in this state if the sum doesn't match. This is a sink state meaning it's terminal.
+- **Carry 0:** We're in this state if the carry is 0 before processing the next column. This is both the starting and the accepting state, since a leftover carry at the end would mean the sum overflowed the bottom row. 
+- **Carry 1:** We're in this state if the carry is 1 before processing the next column. This state is non-accepting, since a word ending here has a carry left over, so the sum overflowed. But unlike the dead state we can still leave it, since a `001` column absorbs the pending carry and takes us back to carry 0. 
+- **Dead:** We end up in this state if the sum doesn't match. This is a sink state meaning it's terminal.
 
 Let's trace the first example through the DFA:
 
@@ -143,7 +150,7 @@ The DFA recognizes $B^R$, so it reads the columns backwards.
 At each step it checks the sum bit $z = x \oplus y \oplus c$ where $x, y, z$ are the rows of the input column written above the arrow and $c$ is the carry in the previous state.
 If this equation holds, it moves to the state determined by the carry.
 
-The run ends in carry 0, the accepting state, so the reversed word is in $B^R$. 
+The run ends in carry 0 (the accepting state), so the reversed word is in $B^R$. 
 Due to the closure property of reversal, the original word is in $B$ as well.
 
 Note that the machine passes *through* the non-accepting carry 1 state twice.
