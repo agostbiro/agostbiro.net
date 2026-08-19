@@ -13,7 +13,7 @@ After finishing the formal proof, I decided to write it up, because I think it p
 The construction that we're going prove is itself a program we write in Lean, so we don't just end up with a mathematical proof, but also a verified program.
 
 I tried to make the subject approachable.
-If you're comfortable with modern statically typed programming languages (such as TypeScript or Rust), binary arithmetic, basic set operations and inductive proofs, you should have no difficulties following along.
+If you're comfortable with modern statically typed programming languages (such as TypeScript or Rust), binary arithmetic, and inductive proofs, you should have no difficulties following along.
 
 ## Background: DFAs & Regular Languages
 
@@ -178,7 +178,7 @@ Note that since the dead state is a sink state, the string would get rejected ev
 
 ## Informal Proof
 
-Before looking at formalization in Lean, we give an informal inductive proof to complete the problem.
+Before looking at the formalization in Lean, let's complete the problem with an informal proof.
 
 Recall that at each step, the DFA checks 
 
@@ -210,7 +210,7 @@ As we've seen, the value of $c_{out}$ not only depends on $x_i$ and $y_i$, but a
 
 $$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i + c_{in} = \sum_{i=0}^{n-1} z_i 2^i + c_{out} \cdot 2^n$$
 
-Note that $c_{in}$ will be always zero at the start of the DFA, but formulated this way, we can talk about intermediate steps where $c_{in}$ may be non-zero.
+This may seem superfluous, since $c_{in}$ will be always zero at the start of the DFA, but formulated this way, we can talk about intermediate steps where $c_{in}$ may be non-zero.
 
 Everything hinges on one **run invariant**, proved by induction on the word:
 > **Invariant.** Running the machine over a (little-endian) word $w$ starting with carry $c_{\mathrm{in}}$ ends in state $c_{\mathrm{out}}$ if and only if
