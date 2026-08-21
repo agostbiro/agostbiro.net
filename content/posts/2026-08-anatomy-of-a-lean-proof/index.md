@@ -12,8 +12,8 @@ Lean is a good choice for this, because its [Mathlib](https://lean-lang.org/use-
 After finishing the formal proof, I decided to write it up, because I think it provides good insight into what it takes to formally prove properties of a system.
 The construction that we're going prove is itself a program we write in Lean, so we don't just end up with a mathematical proof, but also a verified program.
 
-I tried to make the subject approachable.
-If you're comfortable with modern statically typed programming languages (such as TypeScript or Rust), binary arithmetic, and inductive proofs, you should have no difficulties following along.
+I tried to make the subject accessible.
+If you're comfortable with a modern statically typed programming language (such as TypeScript or Rust), binary arithmetic, and inductive proofs, you should have no difficulties following along.
 
 ## Background: DFAs & Regular Languages
 
