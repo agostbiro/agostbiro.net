@@ -35,7 +35,7 @@ This regex matches integer literals like `12` and `-123` and the corresponding D
 
 This DFA has four states:
 - **Start:** this is where we start before processing the first character. Since the start state is not an accepting state, we reject the empty string.
-- **Sign:** we move from start to sign when we encounter the `-` character in the start state. We can skip the sign state and jump directly to digits from start, since the sign character is optional (`-?`). If we're in this state at the end of the string, then we reject the string.
+- **Sign:** we move to the sign state when we encounter the `-` character in the start state. We can skip the sign state and jump directly to digits from start, since the sign character is optional (`-?`). If we're in this state at the end of the string, then we reject the string.
 - **Digits:** we move from start or sign to digits when we encounter a digit character (`[0-9]`). If we're in the digits state and encounter a digit character again, then we stay in the digit state. The digit state is the only accepting state of the DFA. If we're in this state after we've processed the input string, then the DFA accepts the string.
 - **Dead:** we get into this state if we encounter any other character than a digit (unless it's a negative sign at the start). If we're in the dead state at the end of the string, then the DFA rejects the string. Once we're in the dead state, we stay in it, so the dead state in this DFA is a *sink*.
 
@@ -57,12 +57,12 @@ $$A = \bigl\{\, w \in \Sigma^{*} \bigm| P(w) \,\bigr\}$$
 
 $\Sigma^{*}$ means the set of strings that are created by all possible concatanations of symbols in $\Sigma$ and $P(w)$ is the logical proposition (a statement that is either true or false) that the string $w$ is well-formed.
 
-Let's apply this notation to our regex example: `-?[0-9]+`. Then $\Sigma^{*}$ contains string like `""`, `"123"`, `"-111"`, `"2-625-"`, etc. and $P(w)$ is defined as "$w$ is not empty and only its first character can be a negative sign". 
+Let's apply this notation to our regex example: `-?[0-9]+`. Then $\Sigma^{*}$ contains string like `""`, `"123"`, `"-111"`, `"2-625-"`, etc. and $P(w)$ can be defined as "$w$ is not empty and only its first character can be a negative sign". 
 
 
 ## The Problem
 
-The problem is from the Introduction to the Theory of Computation, 3rd ed. by Michael Sipser:
+The problem that we're going to solve is from the [Introduction to the Theory of Computation,](https://math.mit.edu/~sipser/book.html) 3rd ed. by Michael Sipser:
 
 > **1.32** Let
 >
@@ -117,11 +117,11 @@ The challenge in this problem is that we need to do this with a fixed amount of 
 
 ## The Solution
 
-The trick is to remember how you add numbers by hand: you work from the **least significant digit** to the most significant, and the only thing you carry from one column to the next is the carry.
+The trick is to remember how you add numbers by hand: you work from the least significant digit to the most significant, and the only thing you carry from one column to the next is the carry.
 
 But a DFA reads left to right, and the problem presents the numbers most significant bit first.
 So we don't recognize $B$ directly. 
-Instead we build a DFA to recognize its **reversal** $B^R$ which is the same strings that are in $B$ written backwards, so the machine sees the least significant column first.
+Instead we build a DFA to recognize its reversal $B^R$ which is the same strings that are in $B$ written backwards, so the machine sees the least significant column first.
 
 If we can build a DFA to recognize $B^R$, then we can conclude that $B^R$ is a regular language.
 Since $B^R$ reversed is $B$, we can use of the closure property of the reversal of natural languages to conlcude that $B$ is regular as well which concludes the solution.
@@ -172,15 +172,18 @@ Now the second example, which should be rejected:
 
 The first column is fine on its own ($\mathtt{1} + \mathtt{0}$ really is $\mathtt{1}$) so the machine can't tell anything is wrong yet.
 It's the second column that fails: with no carry pending, $\mathtt{0} + \mathtt{0}$ must produce $\mathtt{0}$, but the bottom row claims $\mathtt{1}$.
-The run ends outside the accepting state, so the second exmaple is rejected.
+The run ends outside the accepting state, so the second example is rejected.
 
 Note that since the dead state is a sink state, the string would get rejected even if there were more valid columns after the second column.
 
 ## Informal Proof
 
-Before looking at the formalization in Lean, let's complete the problem with an informal proof.
+Before looking at the formalization in Lean, let's complete the problem with a partial, informal proof.
+We're going to prove that the carry step is arithmetically correct. 
+We'll then argue that the DFA performs the same process. 
+In the Lean proof we will formalize this argument and fill in the gaps.
 
-Recall that at each step, the DFA checks 
+Working towards the proof, recall that at each step, the DFA checks 
 
 $$ x_i \oplus y_i \oplus c_i = z_i$$
 
