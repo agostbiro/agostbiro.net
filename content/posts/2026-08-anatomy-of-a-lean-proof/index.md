@@ -433,6 +433,13 @@ The exercise asks you to *show that B is regular*. The Lean file does something 
 
 ## Working on this with LLMs
 
+How do you find the right tactic to use? You try some and then iterate on the error messages. Similar to how you'd resolve compiler errors in a statically typed language. Or have an LLM do it for you.
+
+You still need to understand the proofs for two reasons:
+
+1. Code organization and maintainability.
+2. Weird proofs can indicate that you got something in your definitions wrong or in very rare cases a bug in the Lean kernel
+
 <!-- TODO: fill in notes on the experience of using LLMs on this problem. Some prompts to cover:
   - What was delegated to the model vs. done by hand (finding the invariant? stating lemmas? tactic golf?)
   - Where the model shone (boilerplate, simp/omega incantations, recalling Mathlib names like `Language.isRegular_reverse_iff`?)
