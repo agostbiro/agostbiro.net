@@ -29,7 +29,7 @@ A **deterministic finite automaton** (DFA) is a machine with a fixed, finite set
 After the last symbol, the machine either sits in an *accepting* state (input is accepted) or not (input is rejected).
 
 If you've ever written a simple regular expression like `-?[0-9]+`, then you've constructed a DFA. 
-This regex matches integer literals like `12` and `-123` and the corresponding DFA looks like this:
+This regex matches integer literals like `12` and `-123` and the corresponding DFA looks like this (the arrows are annotated with the symbols that lead to the next state):
 
 ![DFA figure for integer literal regex DFA](./assets/int-lit-regex-dfa.svg)
 
@@ -49,7 +49,7 @@ Recognizing regular languages is the class of decision problems solvable with a 
 
 Regular languages have useful closure properties: the union, intersection, complement, and (important for us) **reversal** of a regular language is regular.
 
-The standard way to prove that a language is regular is to build a DFA and argue that it accepts exactly that language.
+The standard way to prove that a language is regular is to build a DFA and show that it accepts exactly that language.
 
 We can describe a language $A$ with set-builder notation: 
 $$A = \bigl\{\, w \in \Sigma^{*} \bigm| P(w) \,\bigr\}$$
@@ -126,15 +126,31 @@ Instead we build a DFA to recognize its reversal $B^R$ which is the same strings
 If we can build a DFA to recognize $B^R$, then we can conclude that $B^R$ is a regular language.
 Since $B^R$ reversed is $B$, we can use of the closure property of the reversal of natural languages to conlcude that $B$ is regular as well which concludes the solution.
 
-Here is the DFA that recognizes $B^R$:
+## Adder Arithmetic
 
-![DFA figure for the carry automaton recognizing B reversed](./assets/carry-dfa.svg)
+Here is how the arithmetic works to perform binary addition with carry.
+At each step we compute the sum bit as follows: 
 
-The DFA has three states:
+$$x_i \oplus y_i \oplus c_{in} = z_i$$ 
+
+where $x, y$ are the addend bits, $z$ is the sum bit, $i$ denotes the ordinal of the current column, and $c_{in}$ is the input carry from the previous step.
+We compute the output carry denoted $c_{out}$ for the next step as follows:
+
+$$c_{out} = (x_i \wedge y_i) \vee \left( c_{in} \wedge (x_i \oplus y_i) \right)$$
+This means that that there is a carry either if both terms are $\mathtt{1}$ or there was an input carry and least one of the terms is $\mathtt{1}$. Note that a simpler way to compute $c_{out}$ is to check if at least two of $x_i$, $y_i$ and $c_{in}$ are $\mathtt{1}$ (we'll make use of this in the Lean proof).
+
+## Adder DFA
+With this in mind, here is the DFA that recognizes $B^R$ (it's basically a 1-bit full adder digital circuit):
+
+![DFA figure for the 1-bit full adder recognizing B reversed](./assets/carry-dfa.svg)
+
+The adder DFA has three states:
 
 - **Carry 0:** We're in this state if the carry is 0 before processing the next column. This is both the starting and the accepting state, since a leftover carry at the end would mean the sum overflowed the bottom row. 
 - **Carry 1:** We're in this state if the carry is 1 before processing the next column. This state is non-accepting, since a word ending here has a carry left over, so the sum overflowed. But unlike the dead state we can still leave it, since a $\left[\begin{smallmatrix}\mathtt{0}\\\mathtt{0}\\\mathtt{1}\end{smallmatrix}\right]$ column absorbs the pending carry and takes us back to carry 0. 
 - **Dead:** We end up in this state if the sum doesn't match. This is a sink state meaning it's terminal.
+
+### Example 1
 
 Let's trace the first example through the DFA:
 
@@ -148,11 +164,6 @@ Unrolling the run turns it into a straight line with one copy of the state per s
 The DFA recognizes $B^R$, so it reads the columns backwards.
 
 ![The run of the carry automaton on the accepted word, unrolled into a chain of states](./assets/carry-dfa-run-accept.svg)
-
-At each step, the DFA checks that the following equation holds for the sum bit 
-$$x_i \oplus y_i \oplus c_{in} = z_i$$ 
-where $x, y, z$ are the rows of the input respectively from the top, $i$ denotes the ordinal of the current column, and $c_{in}$ is the input carry (from the state before the arrow).
-If this equation holds, the DFA moves to the state determined by the output carry denoted by $c_{out}$.
 
 The run ends in carry 0 (the accepting state), so the reversed word is in $B^R$. 
 Due to the closure property of reversal, the original word is in $B$ as well.
@@ -176,72 +187,24 @@ The run ends outside the accepting state, so the second example is rejected.
 
 Note that since the dead state is a sink state, the string would get rejected even if there were more valid columns after the second column.
 
-## Informal Proof
 
-Before looking at the formalization in Lean, let's complete the problem with a partial, informal proof.
-We're going to prove that the carry step is arithmetically correct. 
-We'll then argue that the DFA performs the same process. 
-In the Lean proof we will formalize this argument and fill in the gaps.
+## The Lean Proof
 
-Working towards the proof, recall that at each step, the DFA checks 
+Our goal is to show that the language $B$ from [Problem 1.32](#the-problem) is [regular.](#regular-languages)
+As discussed earlier, in order to show that a language is regular, we need to build a [DFA](#deterministic-finite-automaton-dfa) and show that it accepts the language.
 
-$$ x_i \oplus y_i \oplus c_i = z_i$$
+The Lean proof will consist of three parts:
 
-where $x, y, z$ are the rows of the input respectively from the top, $i$ denotes the ordinal of the current column, and $c_{in}$ is the input carry. 
+1. A **specification** of the language $B$.
+2. An **implementation** of the [adder DFA](#the-adder-DFA).
+3. A **proof** connecting the specification and the implementation.
 
-If the equation for $z_i$ holds, the DFA moves to the state determined by the output carry denoted by $c_{out}$ which is defined as follows:
+In addition to being a proof assistant, Lean is also a functional programming language, so the specification and the implementation will look like a regular program in a statically typed functional language.
+Lean's [Mathlib](https://lean-lang.org/use-cases/mathlib/) has first class support for formal languages and DFAs, so will just need to instantiate structures from the library with our customizations to specify the language $B$ and implement the adder DFA.
 
-$$c_{out} = (x_i \wedge y_i) \vee \left( c_{in} \wedge (x_i \oplus y_i) \right)$$
-
-This means that that there is a carry either if both terms are $\mathtt{1}$ or there was an input carry and least one of the terms is $\mathtt{1}$. Note that a simpler way to compute $c_{out}$ is to check if at least two of $x_i$, $y_i$ and $c_{in}$ are $\mathtt{1}$ (we'll make use of this in the Lean proof).
-
-Next, recall that we need to check the equation
-
-$$ x + y = z $$
-
-to determine whether whether an input string is in the language $B$. Let's expand this to include information about the length of the string (denoted as $n$), and the steps ($i$ as before, zero indexed): 
-
-$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i = \sum_{i=0}^{n-1} z_i 2^i$$
-
-This lets us verify that the first $n$ bits of the sum of the two top rows matches the bottom row.
-But we also need to check that the the sum didn't overflow, so we need to add the final carry to the equation ($c_{out}$ is the carry after $n-1$ steps):
-
-$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i = \sum_{i=0}^{n-1} z_i 2^i + c_{out} \cdot 2^n$$
-
-As we've seen, the value of $c_{out}$ not only depends on $x_i$ and $y_i$, but also on $c_{in}$, so we need to add this term to create a link between the DFA and the mathematical formulation ($c_{in}$ is the carry before the first step):
-
-
-$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i + c_{in} = \sum_{i=0}^{n-1} z_i 2^i + c_{out} \cdot 2^n$$
-
-This may seem superfluous, since $c_{in}$ will be always zero at the start of the DFA, but formulated this way, we can talk about intermediate steps where $c_{in}$ may be non-zero.
-
-Everything hinges on one **run invariant**, proved by induction on the word:
-> **Invariant.** Running the machine over a (little-endian) word $w$ starting with carry $c_{\mathrm{in}}$ ends in state $c_{\mathrm{out}}$ if and only if
->
-> $$\mathrm{row}_1(w) + \mathrm{row}_2(w) + c_{\mathrm{in}} = \mathrm{row}_3(w) + c_{\mathrm{out}} \cdot 2^{|w|}$$
->
-> where the rows are read as little-endian binary numbers.
-
-This is just the grade-school addition invariant: after processing the low $|w|$ columns, the columns seen so far add up correctly, and the pending carry is worth $2^{|w|}$ — it's waiting to be added at the next position.
-
-- **Base case** (empty word): the machine doesn't move, and the equation degenerates to $c_{\mathrm{in}} = c_{\mathrm{out}}$ (both sides are just the carries, since all rows are 0 and $2^0 = 1$).
-- **Inductive step**: peel off the first (lowest) column. The single-column transition is correct precisely when $x + y + c_{\mathrm{in}} = z + 2 c_{\mathrm{mid}}$ — the defining equation of a full adder — and the rest of the run is handled by the induction hypothesis with $c_{\mathrm{mid}}$ as the new carry-in. Algebraically, this corresponds to splitting an addition equation into its low bit plus the remaining high bits.
-
-Instantiate the invariant with $c_{\mathrm{in}} = c_{\mathrm{out}} = \mathtt{false}$ (no carry into the lowest column; no carry out of the highest, or the sum overflowed) and the carry terms vanish:
-
-$$\mathrm{row}_1(w) + \mathrm{row}_2(w) = \mathrm{row}_3(w)$$
-
-— which is exactly membership in $B^R$.
-
-Finally: the machine has finitely many states, so $B^R$ is regular, so $B$ is regular by closure under reversal. $\blacksquare$
-
-## The Lean formalization
-
-The full file is [`Chapter1_Problem32.lean`](https://github.com/agostbiro/my-lean/blob/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32.lean); everything below is excerpted from it. It splits cleanly into three layers:
-
-1. **Specification** — what the problem says, translated into definitions.
-2. **Implementation** — the automaton, as executable code.
-3. **Proof** — the run invariant and the theorems, connecting 1 and 2.
+For the proof, we'll have to do more work, but Mathlib will be helpful here as well, as it contains the theorem that regular languages are closed under reversal, which will save a lot of work.
+The proof will contain a lot of unfamiliar syntax, but under the hood it's also just a program.
+In fact, Lean accepts the proof if the program compiles.
 
 ![Diagram of the three layers of the Lean file and the dependencies between their definitions and theorems](./assets/proof-structure.svg "The specification and the implementation meet in the proof layer")
 
@@ -449,3 +412,62 @@ You still need to understand the proofs for two reasons:
 -->
 
 *The full source is in [`Chapter1_Problem32.lean`](https://github.com/agostbiro/my-lean/blob/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32.lean).*
+
+## Informal Proof
+
+Before looking at the formalization in Lean, let's complete the problem with a partial, informal proof.
+We're going to prove that the carry step is arithmetically correct. 
+We'll then argue that the DFA performs the same process. 
+In the Lean proof we will formalize this argument and fill in the gaps.
+
+Working towards the proof, recall that at each step, the DFA checks 
+
+$$ x_i \oplus y_i \oplus c_i = z_i$$
+
+where $x, y, z$ are the rows of the input respectively from the top, $i$ denotes the ordinal of the current column, and $c_{in}$ is the input carry. 
+
+If the equation for $z_i$ holds, the DFA moves to the state determined by the output carry denoted by $c_{out}$ which is defined as follows:
+
+$$c_{out} = (x_i \wedge y_i) \vee \left( c_{in} \wedge (x_i \oplus y_i) \right)$$
+
+This means that that there is a carry either if both terms are $\mathtt{1}$ or there was an input carry and least one of the terms is $\mathtt{1}$. Note that a simpler way to compute $c_{out}$ is to check if at least two of $x_i$, $y_i$ and $c_{in}$ are $\mathtt{1}$ (we'll make use of this in the Lean proof).
+
+Next, recall that we need to check the equation
+
+$$ x + y = z $$
+
+to determine whether whether an input string is in the language $B$. Let's expand this to include information about the length of the string (denoted as $n$), and the steps ($i$ as before, zero indexed): 
+
+$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i = \sum_{i=0}^{n-1} z_i 2^i$$
+
+This lets us verify that the first $n$ bits of the sum of the two top rows matches the bottom row.
+But we also need to check that the the sum didn't overflow, so we need to add the final carry to the equation ($c_{out}$ is the carry after $n-1$ steps):
+
+$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i = \sum_{i=0}^{n-1} z_i 2^i + c_{out} \cdot 2^n$$
+
+As we've seen, the value of $c_{out}$ not only depends on $x_i$ and $y_i$, but also on $c_{in}$, so we need to add this term to create a link between the DFA and the mathematical formulation ($c_{in}$ is the carry before the first step):
+
+
+$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i + c_{in} = \sum_{i=0}^{n-1} z_i 2^i + c_{out} \cdot 2^n$$
+
+This may seem superfluous, since $c_{in}$ will be always zero at the start of the DFA, but formulated this way, we can talk about intermediate steps where $c_{in}$ may be non-zero.
+
+Everything hinges on one **run invariant**, proved by induction on the word:
+> **Invariant.** Running the machine over a (little-endian) word $w$ starting with carry $c_{\mathrm{in}}$ ends in state $c_{\mathrm{out}}$ if and only if
+>
+> $$\mathrm{row}_1(w) + \mathrm{row}_2(w) + c_{\mathrm{in}} = \mathrm{row}_3(w) + c_{\mathrm{out}} \cdot 2^{|w|}$$
+>
+> where the rows are read as little-endian binary numbers.
+
+This is just the grade-school addition invariant: after processing the low $|w|$ columns, the columns seen so far add up correctly, and the pending carry is worth $2^{|w|}$ — it's waiting to be added at the next position.
+
+- **Base case** (empty word): the machine doesn't move, and the equation degenerates to $c_{\mathrm{in}} = c_{\mathrm{out}}$ (both sides are just the carries, since all rows are 0 and $2^0 = 1$).
+- **Inductive step**: peel off the first (lowest) column. The single-column transition is correct precisely when $x + y + c_{\mathrm{in}} = z + 2 c_{\mathrm{mid}}$ — the defining equation of a full adder — and the rest of the run is handled by the induction hypothesis with $c_{\mathrm{mid}}$ as the new carry-in. Algebraically, this corresponds to splitting an addition equation into its low bit plus the remaining high bits.
+
+Instantiate the invariant with $c_{\mathrm{in}} = c_{\mathrm{out}} = \mathtt{false}$ (no carry into the lowest column; no carry out of the highest, or the sum overflowed) and the carry terms vanish:
+
+$$\mathrm{row}_1(w) + \mathrm{row}_2(w) = \mathrm{row}_3(w)$$
+
+— which is exactly membership in $B^R$.
+
+Finally: the machine has finitely many states, so $B^R$ is regular, so $B$ is regular by closure under reversal. $\blacksquare$
