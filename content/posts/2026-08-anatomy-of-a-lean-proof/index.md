@@ -126,9 +126,9 @@ Instead we build a DFA to recognize its reversal $B^R$ which is the same strings
 If we can build a DFA to recognize $B^R$, then we can conclude that $B^R$ is a regular language.
 Since $B^R$ reversed is $B$, we can use of the closure property of the reversal of natural languages to conlcude that $B$ is regular as well which concludes the solution.
 
-## Adder Arithmetic
+### Adder Arithmetic
 
-Here is how the arithmetic works to perform binary addition with carry.
+Here is how the arithmetic is defined to perform binary addition with carry.
 At each step we compute the sum bit as follows: 
 
 $$x_i \oplus y_i \oplus c_{in} = z_i$$ 
@@ -139,7 +139,10 @@ We compute the output carry denoted $c_{out}$ for the next step as follows:
 $$c_{out} = (x_i \wedge y_i) \vee \left( c_{in} \wedge (x_i \oplus y_i) \right)$$
 This means that that there is a carry either if both terms are $\mathtt{1}$ or there was an input carry and least one of the terms is $\mathtt{1}$. Note that a simpler way to compute $c_{out}$ is to check if at least two of $x_i$, $y_i$ and $c_{in}$ are $\mathtt{1}$ (we'll make use of this in the Lean proof).
 
-## Adder DFA
+### Adder DFA
+
+TODO explain arrows
+
 With this in mind, here is the DFA that recognizes $B^R$ (it's basically a 1-bit full adder digital circuit):
 
 ![DFA figure for the 1-bit full adder recognizing B reversed](./assets/carry-dfa.svg)
@@ -170,6 +173,8 @@ Due to the closure property of reversal, the original word is in $B$ as well.
 
 Note that the machine passes *through* the non-accepting carry 1 state twice.
 Had the word stopped after either of the first two column, it would have been rejected, since $\mathtt{1} + \mathtt{1} = \mathtt{0}$ and $\mathtt{11} + \mathtt{01} = \mathtt{00}$ are both wrong without somewhere to put the carry.
+
+### Example 2
 
 Now the second example, which should be rejected:
 

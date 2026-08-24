@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" class="fig-carry-dfa" width="740" height="420" viewBox="0 0 740 420" role="img">
-  <title>DFA recognizing B reversed: a full adder whose state is the pending carry, plus a dead state. Transitions are labelled with the three-bit column symbols of the alphabet.</title>
+  <title>DFA recognizing B reversed: a full adder whose state is the pending carry, plus a dead state. Solid arrows are the columns whose sum bit checks out, labelled with the carry they produce; dashed red arrows are the columns whose sum bit does not match and lead to the dead state.</title>
   <style>
-    /* Labels, brackets and arrows sit on the page background, so they have to
-       follow the page's colour scheme. The state circles keep their own light
-       fills, so the text inside them stays dark.
+    /* Labels and arrows sit on the page background, so they have to follow the
+       page's colour scheme. The state circles keep their own light fills, so
+       the text inside them stays dark.
 
        Every selector is scoped to the figure's own class: this file is inlined
        into the page (layouts/_markup/render-image.html), so bare class names
@@ -11,32 +11,41 @@
     .fig-carry-dfa {
       --ink: #2C2C2A;   /* labels on the page background */
       --line: #5F5E5A;  /* arrows and arrowheads */
-      --rule: #6B6963;  /* column brackets */
+      --bad: #8C2020;   /* the transitions whose check fails */
     }
     /* The appearance toggle flips body[a], which the inlined figure can read.
        Opened on its own the SVG is the root element and has no body above it,
        so svg:root falls back to the OS preference. */
     body[a="dark"] .fig-carry-dfa {
-      --ink: #D6D4CC; --line: #A8A69E; --rule: #B4B1A8;
+      --ink: #D6D4CC; --line: #A8A69E; --bad: #E39191;
     }
     @media (prefers-color-scheme: dark) {
       body[a="auto"] .fig-carry-dfa,
       svg.fig-carry-dfa:root {
-        --ink: #D6D4CC; --line: #A8A69E; --rule: #B4B1A8;
+        --ink: #D6D4CC; --line: #A8A69E; --bad: #E39191;
       }
     }
     .fig-carry-dfa text { font-family: system-ui, sans-serif; }
     .fig-carry-dfa .t  { font-size: 14px; font-weight: 500; }
     .fig-carry-dfa .ts { font-size: 12px; fill: var(--ink); }
-    .fig-carry-dfa .b  { font-size: 11px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
-    .fig-carry-dfa .cm { font-size: 12px; fill: var(--ink); text-anchor: middle; }
-    .fig-carry-dfa .brk { stroke: var(--rule); stroke-width: 1; fill: none; }
+    .fig-carry-dfa .chk { font-size: 11px; fill: var(--ink); text-anchor: middle; }
+    .fig-carry-dfa .key { font-size: 11px; fill: var(--ink); }
+    .fig-carry-dfa .sub { font-size: 8px; }
     .fig-carry-dfa .arr { stroke: var(--line); stroke-width: 1.5; fill: none; }
+    /* The check fails: dashed and in the same red the reject run figure uses. */
+    .fig-carry-dfa .arr-bad { stroke: var(--bad); stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+    /* The sink loop is solid, since it takes every column, but it stays in the
+       dead state's red. */
+    .fig-carry-dfa .arr-any { stroke: var(--bad); stroke-width: 1.5; fill: none; }
     .fig-carry-dfa marker path { stroke: var(--line); }
+    .fig-carry-dfa marker#arrow-carry-dfa-bad path { stroke: var(--bad); }
   </style>
   <defs>
     <marker id="arrow-carry-dfa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-carry-dfa-bad" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#8C2020" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </marker>
   </defs>
 
@@ -53,77 +62,29 @@
   <line x1="166" y1="239" x2="203" y2="202" class="arr" marker-end="url(#arrow-carry-dfa)"/>
   <text class="ts" x="159" y="245" text-anchor="end">start</text>
 
+  <!-- the sum bit checks out: labelled with the carry the column produces -->
   <path d="M192 157 C 152 143 152 207 192 193" class="arr" marker-end="url(#arrow-carry-dfa)"/>
-  <path d="M544 157 C 584 143 584 207 544 193" class="arr" marker-end="url(#arrow-carry-dfa)"/>
-  <path d="M252 144 Q 371 46 490 147" class="arr" marker-end="url(#arrow-carry-dfa)"/>
-  <path d="M482 155 Q 371 130 261 153" class="arr" marker-end="url(#arrow-carry-dfa)"/>
-  <line x1="254" y1="205" x2="349" y2="323" class="arr" marker-end="url(#arrow-carry-dfa)"/>
-  <line x1="489" y1="202" x2="391" y2="323" class="arr" marker-end="url(#arrow-carry-dfa)"/>
-  <path d="M336 332 C 296 318 296 382 336 368" class="arr" marker-end="url(#arrow-carry-dfa)"/>
-  <text class="ts" x="288" y="350" text-anchor="end" dominant-baseline="central">any column</text>
+  <text class="chk" x="136" y="175" dominant-baseline="central">c<tspan class="sub" dy="2">out</tspan><tspan dy="-2"> = 0</tspan></text>
 
-  <!-- c0 self -->
-    <path class="brk" d="M75.0 158 H72.0 V192 H75.0"/>
-    <path class="brk" d="M85.0 158 H88.0 V192 H85.0"/>
-    <text class="b"><tspan x="80.0" y="163">0</tspan><tspan x="80.0" y="175">0</tspan><tspan x="80.0" y="187">0</tspan></text>
-    <text class="cm" x="94.0" y="180">,</text>
-    <path class="brk" d="M103.0 158 H100.0 V192 H103.0"/>
-    <path class="brk" d="M113.0 158 H116.0 V192 H113.0"/>
-    <text class="b"><tspan x="108.0" y="163">0</tspan><tspan x="108.0" y="175">1</tspan><tspan x="108.0" y="187">1</tspan></text>
-    <text class="cm" x="122.0" y="180">,</text>
-    <path class="brk" d="M131.0 158 H128.0 V192 H131.0"/>
-    <path class="brk" d="M141.0 158 H144.0 V192 H141.0"/>
-    <text class="b"><tspan x="136.0" y="163">1</tspan><tspan x="136.0" y="175">0</tspan><tspan x="136.0" y="187">1</tspan></text>
-  <!-- c1 self -->
-    <path class="brk" d="M595.0 158 H592.0 V192 H595.0"/>
-    <path class="brk" d="M605.0 158 H608.0 V192 H605.0"/>
-    <text class="b"><tspan x="600.0" y="163">0</tspan><tspan x="600.0" y="175">1</tspan><tspan x="600.0" y="187">0</tspan></text>
-    <text class="cm" x="614.0" y="180">,</text>
-    <path class="brk" d="M623.0 158 H620.0 V192 H623.0"/>
-    <path class="brk" d="M633.0 158 H636.0 V192 H633.0"/>
-    <text class="b"><tspan x="628.0" y="163">1</tspan><tspan x="628.0" y="175">0</tspan><tspan x="628.0" y="187">0</tspan></text>
-    <text class="cm" x="642.0" y="180">,</text>
-    <path class="brk" d="M651.0 158 H648.0 V192 H651.0"/>
-    <path class="brk" d="M661.0 158 H664.0 V192 H661.0"/>
-    <text class="b"><tspan x="656.0" y="163">1</tspan><tspan x="656.0" y="175">1</tspan><tspan x="656.0" y="187">1</tspan></text>
-  <!-- c0->c1 -->
-    <path class="brk" d="M366.0 53 H363.0 V87 H366.0"/>
-    <path class="brk" d="M376.0 53 H379.0 V87 H376.0"/>
-    <text class="b"><tspan x="371.0" y="58">1</tspan><tspan x="371.0" y="70">1</tspan><tspan x="371.0" y="82">0</tspan></text>
-  <!-- c1->c0 -->
-    <path class="brk" d="M366.0 151 H363.0 V185 H366.0"/>
-    <path class="brk" d="M376.0 151 H379.0 V185 H376.0"/>
-    <text class="b"><tspan x="371.0" y="156">0</tspan><tspan x="371.0" y="168">0</tspan><tspan x="371.0" y="180">1</tspan></text>
-  <!-- c0->dead -->
-    <path class="brk" d="M182.0 268 H179.0 V302 H182.0"/>
-    <path class="brk" d="M192.0 268 H195.0 V302 H192.0"/>
-    <text class="b"><tspan x="187.0" y="273">0</tspan><tspan x="187.0" y="285">0</tspan><tspan x="187.0" y="297">1</tspan></text>
-    <text class="cm" x="201.0" y="290">,</text>
-    <path class="brk" d="M210.0 268 H207.0 V302 H210.0"/>
-    <path class="brk" d="M220.0 268 H223.0 V302 H220.0"/>
-    <text class="b"><tspan x="215.0" y="273">0</tspan><tspan x="215.0" y="285">1</tspan><tspan x="215.0" y="297">0</tspan></text>
-    <text class="cm" x="229.0" y="290">,</text>
-    <path class="brk" d="M238.0 268 H235.0 V302 H238.0"/>
-    <path class="brk" d="M248.0 268 H251.0 V302 H248.0"/>
-    <text class="b"><tspan x="243.0" y="273">1</tspan><tspan x="243.0" y="285">0</tspan><tspan x="243.0" y="297">0</tspan></text>
-    <text class="cm" x="257.0" y="290">,</text>
-    <path class="brk" d="M266.0 268 H263.0 V302 H266.0"/>
-    <path class="brk" d="M276.0 268 H279.0 V302 H276.0"/>
-    <text class="b"><tspan x="271.0" y="273">1</tspan><tspan x="271.0" y="285">1</tspan><tspan x="271.0" y="297">1</tspan></text>
-  <!-- c1->dead -->
-    <path class="brk" d="M464.0 268 H461.0 V302 H464.0"/>
-    <path class="brk" d="M474.0 268 H477.0 V302 H474.0"/>
-    <text class="b"><tspan x="469.0" y="273">0</tspan><tspan x="469.0" y="285">0</tspan><tspan x="469.0" y="297">0</tspan></text>
-    <text class="cm" x="483.0" y="290">,</text>
-    <path class="brk" d="M492.0 268 H489.0 V302 H492.0"/>
-    <path class="brk" d="M502.0 268 H505.0 V302 H502.0"/>
-    <text class="b"><tspan x="497.0" y="273">0</tspan><tspan x="497.0" y="285">1</tspan><tspan x="497.0" y="297">1</tspan></text>
-    <text class="cm" x="511.0" y="290">,</text>
-    <path class="brk" d="M520.0 268 H517.0 V302 H520.0"/>
-    <path class="brk" d="M530.0 268 H533.0 V302 H530.0"/>
-    <text class="b"><tspan x="525.0" y="273">1</tspan><tspan x="525.0" y="285">0</tspan><tspan x="525.0" y="297">1</tspan></text>
-    <text class="cm" x="539.0" y="290">,</text>
-    <path class="brk" d="M548.0 268 H545.0 V302 H548.0"/>
-    <path class="brk" d="M558.0 268 H561.0 V302 H558.0"/>
-    <text class="b"><tspan x="553.0" y="273">1</tspan><tspan x="553.0" y="285">1</tspan><tspan x="553.0" y="297">0</tspan></text>
+  <path d="M544 157 C 584 143 584 207 544 193" class="arr" marker-end="url(#arrow-carry-dfa)"/>
+  <text class="chk" x="600" y="175" dominant-baseline="central">c<tspan class="sub" dy="2">out</tspan><tspan dy="-2"> = 1</tspan></text>
+
+  <path d="M252 144 Q 371 46 490 147" class="arr" marker-end="url(#arrow-carry-dfa)"/>
+  <text class="chk" x="371" y="86">c<tspan class="sub" dy="2">out</tspan><tspan dy="-2"> = 1</tspan></text>
+
+  <path d="M482 155 Q 371 130 261 153" class="arr" marker-end="url(#arrow-carry-dfa)"/>
+  <text class="chk" x="371" y="168">c<tspan class="sub" dy="2">out</tspan><tspan dy="-2"> = 0</tspan></text>
+
+  <!-- the sum bit does not match -->
+  <line x1="254" y1="205" x2="349" y2="323" class="arr-bad" marker-end="url(#arrow-carry-dfa-bad)"/>
+  <line x1="489" y1="202" x2="391" y2="323" class="arr-bad" marker-end="url(#arrow-carry-dfa-bad)"/>
+
+  <path d="M404 332 C 444 318 444 382 404 368" class="arr-any" marker-end="url(#arrow-carry-dfa-bad)"/>
+  <text class="ts" x="452" y="350" dominant-baseline="central">any column</text>
+
+  <!-- legend -->
+  <line x1="30" y1="342" x2="70" y2="342" class="arr" marker-end="url(#arrow-carry-dfa)"/>
+  <text class="key" x="80" y="342" dominant-baseline="central">x &#8853; y &#8853; c<tspan class="sub" dy="2">in</tspan><tspan dy="-2"> = z &#10003;</tspan></text>
+  <line x1="30" y1="372" x2="70" y2="372" class="arr-bad" marker-end="url(#arrow-carry-dfa-bad)"/>
+  <text class="key" x="80" y="372" dominant-baseline="central">x &#8853; y &#8853; c<tspan class="sub" dy="2">in</tspan><tspan dy="-2"> &#8800; z &#10007;</tspan></text>
 </svg>
