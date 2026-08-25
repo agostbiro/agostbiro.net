@@ -214,43 +214,46 @@ For the proof, we'll have to do more work, but Mathlib will be helpful here as w
 The proof will contain a lot of unfamiliar syntax, but under the hood it's just a program.
 In fact, the proof is accepted if the program compiles.
 
-Below is a figure laying out the components of the program:
+Below is a figure laying out the components of the program. The full code can be found on [Github.](https://github.com/agostbiro/my-lean/tree/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32)
 
 ![Diagram of the three layers of the Lean file and the dependencies between their definitions and theorems](./assets/proof-structure.svg "The specification and the implementation meet in the proof layer")
 
-### Layer 1: the specification
 
-The alphabet is a triple of booleans, and a binary interpretation of a bit list is a two-line recursive function:
+### The Specification
+
+The alphabet from the problem is made up of columns of three bits. 
+We can represent one column in Lean with a tuple of three booleans:
 
 ```lean
-/-- A symbol in the alphabet `Σ₃`: a column of three bits. -/
 abbrev Sigma3 := Bool × Bool × Bool
 
-/-- Little endian interpretation of a list of bools. -/
-def valueLE : List Bool → Nat
-  | [] => 0
-  | b :: bs => b.toNat + 2 * valueLE bs
-
-/-- Big endian interpretation: reading a list most significant bit first
-is reading its reverse least significant bit first. -/
-def valueBE (bs : List Bool) : Nat := valueLE bs.reverse
 ```
 
-That one-liner `valueBE` is the load-bearing definition of the whole file. It states, exactly once, the insight the solution rests on: the problem is big-endian (fixed by the problem statement), the automaton is little-endian (fixed by the direction carries flow), and `reverse` is what connects them.
-
-The language itself is a set-builder over words, straight out of the book:
+Then we use [`Language`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/Language.html#Language) from Mathlib to define $B$:
 
 ```lean
-def row1 (w : List Sigma3) : List Bool := w.map fun (x, _, _) => x
-def row2 (w : List Sigma3) : List Bool := w.map fun (_, y, _) => y
-def row3 (w : List Sigma3) : List Bool := w.map fun (_, _, z) => z
-
-/-- The language `B`: words whose bottom row is the sum of the top two rows. -/
 def B : Language Sigma3 :=
   { wBE | valueBE (row3 wBE) = valueBE (row1 wBE) + valueBE (row2 wBE) }
 ```
 
-Note what's *not* here: nothing about automata, states, or carries. The specification only says what B means. If you got this part wrong, no amount of proof below would save you — this is the part a human still has to review. It's short enough that you can.
+`Language` is a generic implementation of formal languages that comes with standard operations and associated theorems.
+We instantiate it using our alphabet `Sigma3` and the predicate for membership in $B$ (recall that a language is a set of strings).
+
+`wBE` is a word in the language, which is a list of `Sigma3` values, i.e. a 2D list of binary values with three rows.
+`rowN` is a function that selects the nth row of the 2D list from the top.
+`valueBE`  is a function that turns a binary list into a natural number using a big-endian interpreation.[^1]
+So the predicate is just $z = x + y$ from our earlier examples.
+
+If you've used programming languages with set comprehensions, the set builder syntax might look familiar, but note that we're not constructing a collection here.
+`Language` is just a `Set` under the hood and `Set` in Lean is just a function that returns a proposition that can be type checked.[^2]
+So our definition of $B$ gets unrolled to a function definition under the hood where `List Sigma3 → Prop` is the type of the function:
+
+```lean
+  def B : List Sigma3 → Prop :=
+    fun wBE => 
+        valueBE (row3 wBE) = valueBE (row1 wBE) + valueBE (row2 wBE)
+```
+
 
 ### Layer 2: the automaton is just a program
 
@@ -483,3 +486,9 @@ $$\mathrm{row}_1(w) + \mathrm{row}_2(w) = \mathrm{row}_3(w)$$
 — which is exactly membership in $B^R$.
 
 Finally: the machine has finitely many states, so $B^R$ is regular, so $B$ is regular by closure under reversal. $\blacksquare$
+
+
+[^1]: Instead of using the `LE/BE` convention to distinguish between interpretations of lists of bits, we could introduce separate types for little- and big-endian lists of bits to prevent mixing them up. However this would require re-deriving many of the theorems that are already available for native lists, so it's not worth it for a project of this scope.
+
+[^2]: Set as a collection is available as `Std.HashSet` and `Std.TreeSet`.
+
