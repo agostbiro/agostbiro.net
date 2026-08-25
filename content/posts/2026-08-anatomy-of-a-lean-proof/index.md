@@ -141,9 +141,7 @@ This means that that there is a carry either if both terms are $\mathtt{1}$ or t
 
 ### Adder DFA
 
-TODO explain arrows
-
-With this in mind, here is the DFA that recognizes $B^R$ (it's basically a 1-bit full adder digital circuit):
+With this in mind, here is the DFA that recognizes $B^R$:
 
 ![DFA figure for the 1-bit full adder recognizing B reversed](./assets/carry-dfa.svg)
 
@@ -152,6 +150,12 @@ The adder DFA has three states:
 - **Carry 0:** We're in this state if the carry is 0 before processing the next column. This is both the starting and the accepting state, since a leftover carry at the end would mean the sum overflowed the bottom row. 
 - **Carry 1:** We're in this state if the carry is 1 before processing the next column. This state is non-accepting, since a word ending here has a carry left over, so the sum overflowed. But unlike the dead state we can still leave it, since a $\left[\begin{smallmatrix}\mathtt{0}\\\mathtt{0}\\\mathtt{1}\end{smallmatrix}\right]$ column absorbs the pending carry and takes us back to carry 0. 
 - **Dead:** We end up in this state if the sum doesn't match. This is a sink state meaning it's terminal.
+
+
+The arrows are annotated with the columns that lead from the input state to the output state.
+This is important, because the DFA doesn't compute the adder equation explicitly.
+It just knows that given a state and a symbol what's the next state.
+It'll be our job to show that repeated invocations of the DFA step is equivalent to checking whether the sum is correct. 
 
 ### Example 1
 
@@ -248,6 +252,8 @@ def B : Language Sigma3 :=
 Note what's *not* here: nothing about automata, states, or carries. The specification only says what B means. If you got this part wrong, no amount of proof below would save you — this is the part a human still has to review. It's short enough that you can.
 
 ### Layer 2: the automaton is just a program
+
+TODO dfaStep is cheating a bit. Theoretically, we should have a state machine and no computation
 
 Here is the entire machine. This is the part I want to dwell on, because it looks exactly like code you'd write in any functional language — because it is:
 
