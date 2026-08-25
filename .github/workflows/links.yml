@@ -1,0 +1,35 @@
+name: Links
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Hugo pulls the theme through the Go module system, so Go must be around.
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+
+      - name: Install Hugo
+        run: |
+          # Read the version from netlify.toml so CI and the deploy agree.
+          version=$(sed -n 's/^ *HUGO_VERSION *= *"\(.*\)".*/\1/p' netlify.toml)
+          curl -sSfL -o "$RUNNER_TEMP/hugo.deb" \
+            "https://github.com/gohugoio/hugo/releases/download/v$version/hugo_extended_${version}_linux-amd64.deb"
+          sudo dpkg -i "$RUNNER_TEMP/hugo.deb"
+
+      - name: Build site
+        run: hugo --gc --minify
+
+      - name: Check links
+        run: ./scripts/check-links.sh
