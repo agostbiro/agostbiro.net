@@ -10,7 +10,7 @@ This is kind of similar to program verification, so I thought it'd be interestin
 Lean is a good choice for this, because its [Mathlib](https://lean-lang.org/use-cases/mathlib/) has all the theorems needed for the problem.
 
 After finishing the formal proof, I decided to write it up, because I think it provides good insight into what it takes to formally prove properties of a system.
-The construction that we're going prove is itself a program we write in Lean, so we don't just end up with a mathematical proof, but also a verified program.
+The construction that we're going prove is itself a program, so we don't just end up with a mathematical proof, but also a verified implementation.
 
 I tried to make the subject accessible.
 If you're comfortable with a modern statically typed programming language (such as TypeScript or Rust), binary arithmetic, and inductive proofs, you should have no difficulties following along.
@@ -128,8 +128,7 @@ Since $B^R$ reversed is $B$, we can use of the closure property of the reversal 
 
 ### Adder Arithmetic
 
-Here is how the arithmetic is defined to perform binary addition with carry.
-At each step we compute the sum bit as follows: 
+When doing the arithmetic column-by-column, we compute the sum bit at each step as follows: 
 
 $$x_i \oplus y_i \oplus c_{in} = z_i$$ 
 
@@ -153,9 +152,9 @@ The adder DFA has three states:
 
 
 The arrows are annotated with the columns that lead from the input state to the output state.
-This is important, because the DFA doesn't compute the adder equation explicitly.
-It just knows that given a state and a symbol what's the next state.
-It'll be our job to show that repeated invocations of the DFA step is equivalent to checking whether the sum is correct. 
+This is important, because the DFA doesn't check the adder equation explicitly.
+It just knows that given a state and a symbol what the next state is.
+It will be our job to show that repeated invocations of the DFA step are equivalent to checking that the sum is correct.
 
 ### Example 1
 
@@ -191,7 +190,7 @@ Now the second example, which should be rejected:
 ![The run of the carry automaton on the rejected word, unrolled into a chain of states ending in dead](./assets/carry-dfa-run-reject.svg)
 
 The first column is fine on its own ($\mathtt{1} + \mathtt{0}$ really is $\mathtt{1}$) so the machine can't tell anything is wrong yet.
-It's the second column that fails: with no carry pending, $\mathtt{0} + \mathtt{0}$ must produce $\mathtt{0}$, but the bottom row claims $\mathtt{1}$.
+But the second column fails: with no carry pending, $\mathtt{0} + \mathtt{0}$ must produce $\mathtt{0}$, but the bottom row claims $\mathtt{1}$.
 The run ends outside the accepting state, so the second example is rejected.
 
 Note that since the dead state is a sink state, the string would get rejected even if there were more valid columns after the second column.
@@ -205,15 +204,17 @@ As discussed earlier, in order to show that a language is regular, we need to bu
 The Lean proof will consist of three parts:
 
 1. A **specification** of the language $B$.
-2. An **implementation** of the [adder DFA](#the-adder-DFA).
+2. An executable **implementation** of the [adder DFA](#the-adder-DFA).
 3. A **proof** connecting the specification and the implementation.
 
 In addition to being a proof assistant, Lean is also a functional programming language, so the specification and the implementation will look like a regular program in a statically typed functional language.
-Lean's [Mathlib](https://lean-lang.org/use-cases/mathlib/) has first class support for formal languages and DFAs, so will just need to instantiate structures from the library with our customizations to specify the language $B$ and implement the adder DFA.
+Lean's [Mathlib](https://lean-lang.org/use-cases/mathlib/) has first class support for formal languages and DFAs, so we will just need to instantiate structures from the library to specify the language $B$ and implement the adder DFA.
 
 For the proof, we'll have to do more work, but Mathlib will be helpful here as well, as it contains the theorem that regular languages are closed under reversal, which will save a lot of work.
-The proof will contain a lot of unfamiliar syntax, but under the hood it's also just a program.
-In fact, Lean accepts the proof if the program compiles.
+The proof will contain a lot of unfamiliar syntax, but under the hood it's just a program.
+In fact, the proof is accepted if the program compiles.
+
+Below is a figure laying out the components of the program:
 
 ![Diagram of the three layers of the Lean file and the dependencies between their definitions and theorems](./assets/proof-structure.svg "The specification and the implementation meet in the proof layer")
 

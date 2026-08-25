@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" class="fig-proof-structure" width="700" height="640" viewBox="0 0 700 640" role="img">
-  <title>The three layers of the Lean file. The specification defines the language B from a binary value function; the implementation defines the transition function and the DFA built on it; the proof layer derives the run invariant from a step lemma, an arithmetic lemma and a sink lemma, and combines the invariant with the specification and the machine to prove that the DFA accepts B reversed, hence that B is regular.</title>
+  <title>The three layers of the Lean file. The specification defines the alphabet Sigma3 and the language B over it; the implementation defines the transition function and the DFA built on it; the proof layer derives the run invariant from a step lemma, an arithmetic lemma and a sink lemma, and combines the invariant with the specification and the machine to prove that the DFA accepts B reversed, hence that B is regular.</title>
   <style>
     /* Group titles, dashed group borders and arrows sit on the page
        background, so they have to follow the page's colour scheme. The node
@@ -44,15 +44,15 @@
   <text class="gt" x="180" y="58">Specification</text>
 
   <rect class="grp" x="360" y="36" width="320" height="170" rx="8"/>
-  <text class="gt" x="520" y="58">Implementation — executable</text>
+  <text class="gt" x="520" y="58">Implementation</text>
 
   <rect class="grp" x="20" y="246" width="660" height="360" rx="8"/>
   <text class="gt" x="350" y="270">Proof</text>
 
   <!-- specification -->
   <rect x="50" y="70" width="260" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-  <text class="n" x="180" y="88" fill="#2C2C2A">valueBE / valueLE</text>
-  <text class="d" x="180" y="104">binary value of a bit list</text>
+  <text class="n" x="180" y="88" fill="#2C2C2A">Sigma3</text>
+  <text class="d" x="180" y="104">the alphabet: a column of three bits</text>
 
   <rect x="50" y="142" width="260" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
   <text class="n" x="180" y="160" fill="#2C2C2A">B : Language Sigma3</text>
