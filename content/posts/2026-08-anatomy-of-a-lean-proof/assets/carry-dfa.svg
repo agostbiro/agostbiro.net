@@ -83,9 +83,9 @@
 
   <!-- legend -->
   <line x1="30" y1="342" x2="70" y2="342" class="arr" marker-end="url(#arrow-carry-dfa)"/>
-  <text class="key" x="80" y="342" dominant-baseline="central">x &#8853; y &#8853; c<tspan class="sub" dy="2">in</tspan><tspan dy="-2"> = z &#10003;</tspan></text>
+  <text class="key" x="80" y="342" dominant-baseline="central">x<tspan class="sub" dy="2">i</tspan><tspan dy="-2"> &#8853; y</tspan><tspan class="sub" dy="2">i</tspan><tspan dy="-2"> &#8853; c</tspan><tspan class="sub" dy="2">in</tspan><tspan dy="-2"> = z</tspan><tspan class="sub" dy="2">i</tspan><tspan dy="-2"> &#10003;</tspan></text>
   <line x1="30" y1="372" x2="70" y2="372" class="arr-bad" marker-end="url(#arrow-carry-dfa-bad)"/>
-  <text class="key" x="80" y="372" dominant-baseline="central">x &#8853; y &#8853; c<tspan class="sub" dy="2">in</tspan><tspan dy="-2"> &#8800; z &#10007;</tspan></text>
+  <text class="key" x="80" y="372" dominant-baseline="central">x<tspan class="sub" dy="2">i</tspan><tspan dy="-2"> &#8853; y</tspan><tspan class="sub" dy="2">i</tspan><tspan dy="-2"> &#8853; c</tspan><tspan class="sub" dy="2">in</tspan><tspan dy="-2"> &#8800; z</tspan><tspan class="sub" dy="2">i</tspan><tspan dy="-2"> &#10007;</tspan></text>
   <!-- c0 self -->
     <path class="brk" d="M75.0 158 H72.0 V192 H75.0"/>
     <path class="brk" d="M85.0 158 H88.0 V192 H85.0"/>

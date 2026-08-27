@@ -4,6 +4,8 @@ date: "2026-08-10"
 draft: true
 ---
 
+## Intro
+
 I recently worked through a problem from a theory of computation textbook that asked me to prove a property of a language using finite automata.
 The informal proof is a simple constructive proof where you build an automaton and show that it recognizes the language.
 This is kind of similar to program verification, so I thought it'd be interesting to see what it takes to formalize the proof.
@@ -152,9 +154,7 @@ The adder DFA has three states:
 
 
 The arrows are annotated with the columns that lead from the input state to the output state.
-This is important, because the DFA doesn't check the adder equation explicitly.
-It just knows that given a state and a symbol what the next state is.
-It will be our job to show that repeated invocations of the DFA step are equivalent to checking that the sum is correct.
+If the figure looks confusing at first, the following examples will hopefully make it clearer.
 
 ### Example 1
 
@@ -226,7 +226,6 @@ We can represent one column in Lean with a tuple of three booleans:
 
 ```lean
 abbrev Sigma3 := Bool × Bool × Bool
-
 ```
 
 Then we use [`Language`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/Language.html#Language) from Mathlib to define $B$:
@@ -241,11 +240,11 @@ We instantiate it using our alphabet `Sigma3` and the predicate for membership i
 
 `wBE` is a word in the language, which is a list of `Sigma3` values, i.e. a 2D list of binary values with three rows.
 `rowN` is a function that selects the nth row of the 2D list from the top.
-`valueBE`  is a function that turns a binary list into a natural number using a big-endian interpreation.[^1]
+`valueBE`  is a function that turns a binary list into a natural number using a big-endian interpretation.[^1]
 So the predicate is just $z = x + y$ from our earlier examples.
 
 If you've used programming languages with set comprehensions, the set builder syntax might look familiar, but note that we're not constructing a collection here.
-`Language` is just a `Set` under the hood and `Set` in Lean is just a function that returns a proposition that can be type checked.[^2]
+`Language` is just a `Set` under the hood and `Set` in Lean is a function that returns a proposition that can be type checked.[^2]
 So our definition of $B$ gets unrolled to a function definition under the hood where `List Sigma3 → Prop` is the type of the function:
 
 ```lean
@@ -255,20 +254,29 @@ So our definition of $B$ gets unrolled to a function definition under the hood w
 ```
 
 
-### Layer 2: the automaton is just a program
+### The Implementation
 
-TODO dfaStep is cheating a bit. Theoretically, we should have a state machine and no computation
-
-Here is the entire machine. This is the part I want to dwell on, because it looks exactly like code you'd write in any functional language — because it is:
+We first define the states of the DFA (carry 0, carry 1, dead) as a sum type:
 
 ```lean
 inductive DfaState where
-  /-- The columns read so far produced carry `c`. -/
   | carry (c : Bool)
-  /-- A column has already contradicted the addition; the word is rejected. -/
   | dead
   deriving DecidableEq, Fintype
+```
 
+We could define the same state using an enum in Rust or a discriminated union in TypeScript.
+The `inductive` keyword does a bit more though than enums/discriminated unions:
+It generates some scaffolding that makes it easy to use the type in inductive proofs (we only use case analysis, not induction for `DfaState` later on though).
+
+Deriving something like `DecidableEq` is pretty common in programming languages.
+It just says this type supports full equality checks (same as deriving `Eq` in Rust).
+
+`Fintype` is something that's only available in proof assistants.
+It says that the type has finitely many values and it creates a list of them plus a proof that the list is complete.
+Deriving `Fintype` lets us claim later on that the language can be recognized with constant memory, therefore it's regular.
+
+```lean
 /-- The transition function: a one-bit full adder with a sink. -/
 def dfaStep : DfaState → Sigma3 → DfaState
   | .dead, _ => .dead
@@ -301,7 +309,11 @@ These are unit tests, except they live in the same file as the implementation, a
 
 The `DFA` structure itself comes from Mathlib (`Mathlib.Computability.NFA`), along with its evaluation function `evalFrom`, which is nothing more than a left fold of `step` over the input — again, exactly the code you'd write yourself.
 
-### Layer 3: the proof
+### The Proof
+
+The DFA doesn't check that the sum is correct explicitly.
+It just knows that given a state and a symbol what the next state is.
+It will be our job to show that repeated invocations of the DFA step are equivalent to checking that the sum is correct.
 
 **Step 1: one transition = one adder equation.** The first lemma characterizes a single step arithmetically:
 
@@ -408,6 +420,7 @@ A few takeaways for the working engineer:
 - **Endianness is a proof-level concern, exactly once.** The mismatch between "the problem reads big-endian" and "the adder runs little-endian" is confined to one definition (`valueBE`) and one closure theorem (reversal). Everything else lives happily in a single convention. Good factoring is good factoring, in proofs as in code.
 
 The exercise asks you to *show that B is regular*. The Lean file does something stronger: it hands you a two-state adder you can run, and a machine-checked certificate that this adder is *exactly* the language of correct binary additions — no more, no less, for every input, forever.
+
 
 ## Working on this with LLMs
 
