@@ -66,7 +66,7 @@
   <text class="d" x="520" y="104">full adder + sink</text>
 
   <rect x="390" y="142" width="260" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-  <text class="n" x="520" y="160" fill="#2C2C2A">carryDFA : DFA Sigma3 DfaState</text>
+  <text class="n" x="520" y="160" fill="#2C2C2A">adderDFA : DFA Sigma3 DfaState</text>
   <text class="d" x="520" y="176">the machine</text>
 
   <path d="M520 114 V140" class="arr" marker-end="url(#arrow-proof-structure)"/>
@@ -91,8 +91,8 @@
   <text class="d" x="350" y="416">the run invariant, by induction</text>
 
   <rect x="205" y="468" width="290" height="44" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-  <text class="n" x="350" y="486" fill="#04342C">carryDFA_accepts</text>
-  <text class="d" x="350" y="502">carryDFA.accepts = B.reverse</text>
+  <text class="n" x="350" y="486" fill="#04342C">adderDFA_accepts</text>
+  <text class="d" x="350" y="502">adderDFA.accepts = B.reverse</text>
 
   <rect x="260" y="547" width="180" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
   <text class="n" x="350" y="570" fill="#04342C">B_isRegular</text>

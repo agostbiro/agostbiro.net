@@ -158,7 +158,7 @@ If the figure looks confusing at first, the following examples will hopefully ma
 
 ### Example 1
 
-Let's trace the first example through the DFA:
+Let's trace the first example from the problem through the DFA:
 
 ```
 011 # x row: 3 in decimal
@@ -228,7 +228,7 @@ We can represent one column in Lean with a tuple of three booleans:
 abbrev Sigma3 := Bool × Bool × Bool
 ```
 
-Then we use [`Language`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/Language.html#Language) from Mathlib to define $B$:
+Then we use [`Mathlib.Computability.Language`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/Language.html#Language) to define $B$:
 
 ```lean
 def B : Language Sigma3 :=
@@ -266,48 +266,79 @@ inductive DfaState where
 ```
 
 We could define the same state using an enum in Rust or a discriminated union in TypeScript.
-The `inductive` keyword does a bit more though than enums/discriminated unions:
-It generates some scaffolding that makes it easy to use the type in inductive proofs (we only use case analysis, not induction for `DfaState` later on though).
+Lean's `inductive` type does a bit more though than a recursive sum type in these languages: it also generates some scaffolding that makes it easy to use the type in proofs. 
+We'll see more of this later.
 
-Deriving something like `DecidableEq` is pretty common in programming languages.
-It just says this type supports full equality checks (same as deriving `Eq` in Rust).
-
-`Fintype` is something that's only available in proof assistants.
+Now onto the derives. 
+`DecidableEq` just says this type supports full equality checks (same as deriving `Eq` in Rust), but `Fintype` is something that's only available in proof assistants.
 It says that the type has finitely many values and it creates a list of them plus a proof that the list is complete.
+
 Deriving `Fintype` lets us claim later on that the language can be recognized with constant memory, therefore it's regular.
 
+Next, we define the transition function of the DFA:
+
 ```lean
-/-- The transition function: a one-bit full adder with a sink. -/
 def dfaStep : DfaState → Sigma3 → DfaState
   | .dead, _ => .dead
   | .carry c, (x, y, z) =>
-      if z = (x ^^ y ^^ c) then       -- sum bit checks out?
-        .carry (Bool.atLeastTwo x y c) -- carry-out = majority(x, y, c)
+      if z = (x ^^ y ^^ c) then  -- ^^ is XOR
+        .carry (Bool.atLeastTwo x y c)
       else
         .dead
+```
 
-def carryDFA : DFA Sigma3 DfaState where
+The function has two arguments, the current state and the next symbol, and returns the next state.
+
+As we saw earlier, the dead state is a sink, so it always maps to itself.
+If we're in the carry state, and the adder equation checks out, then the next state is the value of carry out.
+Otherwise we enter the dead state.
+
+`dfaStep` is just a regular function that we can execute, so let's run a quick sanity check.
+
+![A step of the carry automaton: the column (1,1,0) takes the machine from carry 0 to carry 1](./assets/carry-dfa-carry-step.svg)
+
+```lean
+#eval dfaStep (.carry false) (true, true, false)  
+-- Prints: DfaState.carry true
+```
+
+If we want to make sure this holds, we can turn it into an example:
+
+```lean
+example :
+    dfaStep (.carry false) (true, true, false) = .carry true := by
+  decide
+```
+
+The `example : ... := by decide` structure in Lean is kind of like a unit test, except it's a proof that's checked at compile time.
+This works, because functions need to be total by default (Lean must be able to prove they terminate, unless the definition opts out explicitly), and because we derived `DecidableEq` for `DfaState`, so the equality can be checked.
+
+Finally, we use the generic [`Mathlib.Computability.DFA`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/DFA.html#DFA) structure from Mathlib to complete the implementation.
+We give it the transition function and define the start and accept states:
+
+```lean
+def adderDFA : DFA Sigma3 DfaState where
   step := dfaStep
   start := .carry false
   accept := {.carry false}
 ```
 
-An enum with three values, a pattern match, an `if`. `z = x ^^ y ^^ c` is the sum output of a full adder; `Bool.atLeastTwo x y c` (majority) is its carry output. If you've ever drawn a full adder out of XOR and majority gates, this is that circuit, transcribed.
+`DFA` integrates with `Mathlib.Computability.Language` which will make it easy to prove later on that our language is regular.
 
-And because Lean is a programming language, **this runs**. `#eval carryDFA.eval [(true, false, true)]` computes an actual answer. The file exploits this to check every edge of the state diagram against the code, using `decide` — a tactic that literally *executes* the proposition and checks it comes out `true`:
+`DFA` also comes with [`evalFrom`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/DFA.html#DFA.evalFrom), which runs the machine step-by-step from a given starting state over a list of symbols.
+We can use it to evaluate [Example 2](#example-2) as a compile-time check:
+
+![The run of the carry automaton on the rejected word, unrolled into a chain of states ending in dead](./assets/carry-dfa-run-reject.svg)
 
 ```lean
--- `carry 0 --110--> carry 1`: `1 + 1` is `0` carry `1`.
-example : dfaStep (.carry false) (true, true, false) = .carry true := by decide
--- `carry 1 --001--> carry 0`: `0 + 0 + 1` is `1` carry `0`.
-example : dfaStep (.carry true) (false, false, true) = .carry false := by decide
--- Spot checks for the dead state.
-example : dfaStep (.carry false) (false, false, true) = .dead := by decide
+example :
+    adderDFA.evalFrom (.carry false)
+      [(true, false, true), (false, false, true)] = .dead := by
+  decide
 ```
 
-These are unit tests, except they live in the same file as the implementation, are checked at compile time, and can never silently rot. That's the low end of a spectrum: `decide`-style checks verify *specific inputs*, the theorems in the next section verify *all* inputs, and both talk about the same executable definition. There is no gap between "the model we verified" and "the code we run."
+The run starts from `.carry false`  and ends in `.dead` as expected.
 
-The `DFA` structure itself comes from Mathlib (`Mathlib.Computability.NFA`), along with its evaluation function `evalFrom`, which is nothing more than a left fold of `step` over the input — again, exactly the code you'd write yourself.
 
 ### The Proof
 
@@ -330,7 +361,7 @@ Read the statement: "the step function moves from carry `carryIn` to carry `carr
 **Step 2: the dead state is a sink.** A one-lemma induction showing no suffix rescues a word once a column has contradicted the addition:
 
 ```lean
-lemma evalFrom_dead (w : List Sigma3) : carryDFA.evalFrom .dead w = .dead
+lemma evalFrom_dead (w : List Sigma3) : adderDFA.evalFrom .dead w = .dead
 ```
 
 **Step 3: the arithmetic core.** The inductive step of the invariant needs a fact that has nothing to do with automata: an addition equation splits into its low bit and its high bits, linked by a carry.
@@ -351,7 +382,7 @@ The `∃ carryMid` is doing quiet double duty: when the low bit has the wrong pa
 
 ```lean
 lemma evalFrom_carry_iff (wLE : List Sigma3) (carryIn carryOut : Bool) :
-    carryDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
+    adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
       valueLE (row1 wLE) + valueLE (row2 wLE) + carryIn.toNat
         = valueLE (row3 wLE) + carryOut.toNat * 2 ^ wLE.length := by
   induction wLE generalizing carryIn with
@@ -374,7 +405,7 @@ Second, look at the shape of the inductive step. A helper lemma (`evalFrom_cons_
 **Step 5: the main theorem.** With the invariant in hand, the language equality is bookkeeping:
 
 ```lean
-theorem carryDFA_accepts : carryDFA.accepts = B.reverse := by
+theorem adderDFA_accepts : adderDFA.accepts = B.reverse := by
   ext wLE
   have invariant := evalFrom_carry_iff wLE false false
   ...
@@ -386,7 +417,7 @@ theorem carryDFA_accepts : carryDFA.accepts = B.reverse := by
 
 ```lean
 theorem B_reverse_isRegular : B.reverse.IsRegular :=
-  ⟨DfaState, inferInstance, carryDFA, carryDFA_accepts⟩
+  ⟨DfaState, inferInstance, adderDFA, adderDFA_accepts⟩
 
 theorem B_isRegular : B.IsRegular :=
   Language.isRegular_reverse_iff.mp B_reverse_isRegular
@@ -409,7 +440,7 @@ Stepping back, the file has a shape worth internalizing, because it's the shape 
 | Layer | Size | Trust story |
 |---|---|---|
 | Specification (`B`, `valueBE`) | ~10 lines | Must be reviewed by a human against the informal problem |
-| Implementation (`dfaStep`, `carryDFA`) | ~15 lines | Ordinary executable code; unit-testable with `decide` / `#eval` |
+| Implementation (`dfaStep`, `adderDFA`) | ~15 lines | Ordinary executable code; unit-testable with `decide` / `#eval` |
 | Proof (invariant + theorems) | ~100 lines | Checked by Lean's kernel; a human only needs the *statements* |
 
 A few takeaways for the working engineer:
