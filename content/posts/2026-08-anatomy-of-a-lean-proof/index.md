@@ -57,7 +57,7 @@ We can describe a language $A$ with set-builder notation:
 $$A = \bigl\{\, w \in \Sigma^{*} \bigm| P(w) \,\bigr\}$$
 
 
-$\Sigma^{*}$ means the set of strings that are created by all possible concatanations of symbols in $\Sigma$ and $P(w)$ is the logical proposition (a statement that is either true or false) that the string $w$ is well-formed.
+$\Sigma^{*}$ means the set of strings that are created by all possible concatanations of symbols in $\Sigma$ and $P(w)$ is the logical proposition that the string $w$ is well-formed.
 
 Let's apply this notation to our regex example: `-?[0-9]+`. Then $\Sigma^{*}$ contains string like `""`, `"123"`, `"-111"`, `"2-625-"`, etc. and $P(w)$ can be defined as "$w$ is not empty and only its first character can be a negative sign". 
 
@@ -211,7 +211,7 @@ In addition to being a proof assistant, Lean is also a functional programming la
 Lean's [Mathlib](https://lean-lang.org/use-cases/mathlib/) has first class support for formal languages and DFAs, so we will just need to instantiate structures from the library to specify the language $B$ and implement the adder DFA.
 
 For the proof, we'll have to do more work, but Mathlib will be helpful here as well, as it contains the theorem that regular languages are closed under reversal, which will save a lot of work.
-The proof will contain a lot of unfamiliar syntax, but under the hood it's just a program.
+The proof will contain some unfamiliar syntax, but under the hood it's just a program.
 In fact, the proof is accepted if the program compiles.
 
 Below is a figure laying out the components of the program. The full code can be found on [Github.](https://github.com/agostbiro/my-lean/tree/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32)
@@ -222,7 +222,7 @@ Below is a figure laying out the components of the program. The full code can be
 ### The Specification
 
 The alphabet from the problem is made up of columns of three bits. 
-We can represent one column in Lean with a tuple of three booleans:
+We can represent one column with a tuple of three booleans in Lean:
 
 ```lean
 abbrev Sigma3 := Bool × Bool × Bool
@@ -238,14 +238,14 @@ def B : Language Sigma3 :=
 `Language` is a generic implementation of formal languages that comes with standard operations and associated theorems.
 We instantiate it using our alphabet `Sigma3` and the predicate for membership in $B$ (recall that a language is a set of strings).
 
-`wBE` is a word in the language, which is a list of `Sigma3` values, i.e. a 2D list of binary values with three rows.
+`wBE` is a big-endian word in the language, which is a list of `Sigma3` values, i.e. a 2D list of binary values with three rows.
 `rowN` is a function that selects the nth row of the 2D list from the top.
 `valueBE`  is a function that turns a binary list into a natural number using a big-endian interpretation.[^1]
 So the predicate is just $z = x + y$ from our earlier examples.
 
-If you've used programming languages with set comprehensions, the set builder syntax might look familiar, but note that we're not constructing a collection here.
-`Language` is just a `Set` under the hood and `Set` in Lean is a function that returns a proposition that can be type checked.[^2]
-So our definition of $B$ gets unrolled to a function definition under the hood where `List Sigma3 → Prop` is the type of the function:
+If you've used programming languages with set comprehensions, the set builder syntax might look familiar, but we're not constructing a collection here.
+`Language` is just a `Set` under the hood and `Set` in Lean is a function that tests whether an element is in the set.[^2]
+So our definition of $B$ gets unrolled to a function definition under the hood:
 
 ```lean
   def B : List Sigma3 → Prop :=
@@ -253,6 +253,16 @@ So our definition of $B$ gets unrolled to a function definition under the hood w
         valueBE (row3 wBE) = valueBE (row1 wBE) + valueBE (row2 wBE)
 ```
 
+The function has one argument of type `List Sigma3` which is a generic list that holds `Sigma3` objects. 
+This is pretty standard so far, but the return type is more interesting.
+In another programming language, you'd expect a membership test to return a boolean.
+But the return value here is `Prop` which is the type of all propositions in Lean (a proposition is something that may or may not have a proof).
+
+So how does a membership test work then?
+The expression `wBE ∈ B` applies the function to `wBE`, which gives back a proposition.
+In Lean a proposition is itself a type, and its values are proofs of the proposition.
+So instead of evaluating `wBE ∈ B` to a boolean, we prove it: to show that a word is in the language, we construct a value of the proposition's type. And to show that a word isn't in the language, we construct a value of the negated proposition.
+A membership test is a type check, not a computation at runtime.
 
 ### The Implementation
 
@@ -310,8 +320,8 @@ example :
   decide
 ```
 
-The `example : ... := by decide` structure in Lean is kind of like a unit test, except it's a proof that's checked at compile time.
-This works, because functions need to be total by default (Lean must be able to prove they terminate, unless the definition opts out explicitly), and because we derived `DecidableEq` for `DfaState`, so the equality can be checked.
+The `example : ... := by decide` structure in Lean is kind of like a unit test, except it's a proof that's checked at compile time by executing the code.
+This works, because Lean rejects functions that are not total (where it cannot be prove that they terminate), unless the definition opts out explicitly, and because we derived `DecidableEq` for `DfaState`, so the equality can be checked.
 
 Finally, we use the generic [`Mathlib.Computability.DFA`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/DFA.html#DFA) structure from Mathlib to complete the implementation.
 We give it the transition function and define the start and accept states:
@@ -344,7 +354,7 @@ The run starts from `.carry false`  and ends in `.dead` as expected.
 
 The DFA doesn't check that the sum is correct explicitly.
 It just knows that given a state and a symbol what the next state is.
-It will be our job to show that repeated invocations of the DFA step are equivalent to checking that the sum is correct.
+It's our job to show that repeated invocations of the DFA step are equivalent to checking that the sum is correct.
 
 **Step 1: one transition = one adder equation.** The first lemma characterizes a single step arithmetically:
 
