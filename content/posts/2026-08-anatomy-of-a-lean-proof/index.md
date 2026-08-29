@@ -198,7 +198,7 @@ Note that since the dead state is a sink state, the string would get rejected ev
 
 ## The Lean Proof
 
-Our goal is to show that the language $B$ from [Problem 1.32](#the-problem) is [regular.](#regular-languages)
+Our goal is to show that the language $B$ from the [problem](#the-problem) is [regular.](#regular-languages)
 As discussed earlier, in order to show that a language is regular, we need to build a [DFA](#deterministic-finite-automaton-dfa) and show that it accepts the language.
 
 The Lean proof will consist of three parts:
@@ -255,13 +255,14 @@ So our definition of $B$ gets unrolled to a function definition under the hood:
 
 The function has one argument of type `List Sigma3` which is a generic list that holds `Sigma3` objects. 
 This is pretty standard so far, but the return type is more interesting.
-In another programming language, you'd expect a membership test to return a boolean.
+In a typical programming language, you'd expect a membership test to return a boolean.
 But the return value here is `Prop` which is the type of all propositions in Lean (a proposition is something that may or may not have a proof).
 
 So how does a membership test work then?
 The expression `wBE ∈ B` applies the function to `wBE`, which gives back a proposition.
 In Lean a proposition is itself a type, and its values are proofs of the proposition.
-So instead of evaluating `wBE ∈ B` to a boolean, we prove it: to show that a word is in the language, we construct a value of the proposition's type. And to show that a word isn't in the language, we construct a value of the negated proposition.
+So instead of evaluating `wBE ∈ B` to a boolean, we prove it: to show that a word is in the language, we construct a value of the proposition's type. 
+And to show that a word isn't in the language, we construct a value of the negated proposition.
 A membership test is a type check, not a computation at runtime.
 
 ### The Implementation
@@ -282,7 +283,6 @@ We'll see more of this later.
 Now onto the derives. 
 `DecidableEq` just says this type supports full equality checks (same as deriving `Eq` in Rust), but `Fintype` is something that's only available in proof assistants.
 It says that the type has finitely many values and it creates a list of them plus a proof that the list is complete.
-
 Deriving `Fintype` lets us claim later on that the language can be recognized with constant memory, therefore it's regular.
 
 Next, we define the transition function of the DFA:
@@ -352,142 +352,62 @@ The run starts from `.carry false`  and ends in `.dead` as expected.
 
 ### The Proof
 
-The DFA doesn't check that the sum is correct explicitly.
-It just knows that given a state and a symbol what the next state is.
-It's our job to show that repeated invocations of the DFA step are equivalent to checking that the sum is correct.
+As discussed earlier, in order to prove that the language $B$ is regular, we need to first show that the adder DFA accepts the reverse of the language. 
+We can then use the closure property of the reversal of regular languages to prove that $B$ is regular.
+For the second step we can just use the [Language.isRegular_reverse_iff](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff) theorem from Mathlib, but for the first step we'll have to do some work. 
 
-**Step 1: one transition = one adder equation.** The first lemma characterizes a single step arithmetically:
+Mathlib [defines](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L353-L355) the predicate `IsRegular` for a language as follows:
 
 ```lean
-lemma dfaStep_carry_iff (x y z carryIn carryOut : Bool) :
-    dfaStep (.carry carryIn) (x, y, z) = .carry carryOut ↔
-      x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryOut.toNat := by
-  cases x <;> cases y <;> cases z <;> cases carryIn <;> cases carryOut <;>
-    simp [dfaStep]
+/-- 
+A regular language is a language that is defined by a DFA with 
+  finite states. 
+-/
+def IsRegular {T : Type u} (L : Language T) : Prop :=
+  ∃ σ : Type, ∃ _ : Fintype σ, ∃ M : DFA T σ, M.accepts = L
 ```
 
-Read the statement: "the step function moves from carry `carryIn` to carry `carryOut` on column `(x,y,z)` **iff** `x + y + carryIn = z + 2·carryOut` as natural numbers." This is the bridge between the boolean world of the program (`^^`, `atLeastTwo`) and the arithmetic world of the specification (`+`, `*`). The proof is brute force: `cases` splits on all five booleans — 32 cases — and `simp` evaluates each one. Machine-checked truth tables are free; you'd never write this proof by hand, and you never have to.
+The `{T : Type u} (L : Language T)` argument makes this a super general definition. The important part here is that the language can have any type of symbols.
+The return type is again `Prop`.
 
-**Step 2: the dead state is a sink.** A one-lemma induction showing no suffix rescues a word once a column has contradicted the addition:
+`∃ σ : Type, ∃ _ : Fintype σ` is just a tedious way of saying that the state of the DFA must have a constant number of values.
+The interesting part is `∃ M : DFA T σ, M.accepts = L` which says that a language is regular if the language accepted by some DFA equals the language. 
+So when does a DFA accept a language?
+
+The language the DFA accepts can be defined as follows:[^3]
 
 ```lean
-lemma evalFrom_dead (w : List Sigma3) : adderDFA.evalFrom .dead w = .dead
+def accepts : Language α := 
+  {word | M.evalFrom M.start x ∈ M.accept}
 ```
 
-**Step 3: the arithmetic core.** The inductive step of the invariant needs a fact that has nothing to do with automata: an addition equation splits into its low bit and its high bits, linked by a carry.
+This means that the language that the DFA accepts is the set of words for which evaluating the DFA from the starting state leads to an accepting state.
+
+Our job is now to prove that the set that is `B.reverse` is equal to the set that is `adderDFA.accepts`.
+This is formalized in our proof as follows:
 
 ```lean
-lemma low_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
-    (x.toNat + 2 * a) + (y.toNat + 2 * b) + carryIn.toNat
-        = (z.toNat + 2 * d) + 2 * k ↔
-      ∃ carryMid : Bool,
-        x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryMid.toNat ∧
-        a + b + carryMid.toNat = d + k := by
-  cases x <;> cases y <;> cases z <;> cases carryIn <;> simp <;> omega
-```
-
-The `∃ carryMid` is doing quiet double duty: when the low bit has the wrong parity, *no* intermediate carry satisfies the right-hand side — which matches the run entering `dead` on the automaton side. The dead-column case of the induction falls out for free. The proof is `cases` on the booleans followed by `omega`, Mathlib's decision procedure for linear integer arithmetic — the workhorse tactic that dispatches "obvious" arithmetic goals so you don't spend an afternoon shuffling `add_comm`.
-
-**Step 4: the run invariant.** Now the centerpiece, the induction from the whiteboard sketch, stated exactly as we stated it on paper:
-
-```lean
-lemma evalFrom_carry_iff (wLE : List Sigma3) (carryIn carryOut : Bool) :
-    adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
-      valueLE (row1 wLE) + valueLE (row2 wLE) + carryIn.toNat
-        = valueLE (row3 wLE) + carryOut.toNat * 2 ^ wLE.length := by
-  induction wLE generalizing carryIn with
-  | nil =>
-    cases carryIn <;> cases carryOut <;>
-      simp [valueLE, row1, row2, row3, DFA.evalFrom]
-  | cons column columnsLE induction_hypothesis =>
-    obtain ⟨x, y, z⟩ := column
-    rw [evalFrom_cons_carry_iff]
-    simp_rw [dfaStep_carry_iff, induction_hypothesis]
-    ...
-```
-
-Two details are worth calling out.
-
-First, `generalizing carryIn`. The induction hypothesis must apply to the *tail* of the run, which starts from whatever intermediate carry the first column produced — not from the original `carryIn`. Generalizing makes the hypothesis quantify over all carry-in values. Forgetting this is the classic way inductions get stuck, in Lean and on paper alike: your inductive hypothesis is too weak because you fixed something that changes as the computation proceeds.
-
-Second, look at the shape of the inductive step. A helper lemma (`evalFrom_cons_carry_iff`) rewrites "the run over `column :: columnsLE` ends in `carry carryOut`" into "there is an intermediate carry: the first step produces it, and the rest of the run finishes from it." Then `dfaStep_carry_iff` turns the first step into an adder equation, the induction hypothesis turns the rest of the run into an addition equation, and `low_bit_split` glues the two equations back into one. The structure of the proof *is* the structure of the computation — each lemma peels off exactly one layer.
-
-**Step 5: the main theorem.** With the invariant in hand, the language equality is bookkeeping:
-
-```lean
-theorem adderDFA_accepts : adderDFA.accepts = B.reverse := by
-  ext wLE
-  have invariant := evalFrom_carry_iff wLE false false
+theorem adderDFA_accepts_B_reverse : adderDFA.accepts = B.reverse := by
   ...
 ```
 
-`ext wLE` reduces "these two languages are equal" to "an arbitrary word is in one iff it's in the other." Instantiating the invariant at `false, false` kills the carry terms. What remains is translating between the two endianness conventions: membership in `B.reverse` unfolds to a statement about `wLE.reverse`, `reverse` gets pushed down onto the rows, `valueBE` unfolds to `valueLE ∘ reverse`, and the two reversals cancel via `List.reverse_reverse`. A final `eq_comm` flips the equation around (the problem writes `row3 = row1 + row2`, the invariant writes `row1 + row2 = row3`) and the goal closes.
-
-**Step 6: regularity.** The payoff theorems are now one line each:
+The way we're going to do this is by showing that the adder DFA computes the same equation that is the membership check for `B.reverse` which is defined as follows:
 
 ```lean
-theorem B_reverse_isRegular : B.reverse.IsRegular :=
-  ⟨DfaState, inferInstance, adderDFA, adderDFA_accepts⟩
-
-theorem B_isRegular : B.IsRegular :=
-  Language.isRegular_reverse_iff.mp B_reverse_isRegular
+B.reverse = { w | w.reverse ∈ B }
 ```
 
-The first is the definition of regularity made concrete: a regular language is one for which there *exists* a state type, a proof it's finite, a DFA over it, and a proof the DFA accepts the language. We hand over all four: `DfaState`, its `Fintype` instance (found automatically by `inferInstance`, thanks to the `deriving Fintype` clause back on the enum), the machine, and the theorem. The second applies Mathlib's closure-under-reversal theorem, `Language.isRegular_reverse_iff` — the one piece of textbook theory we didn't have to prove ourselves, because someone already contributed it.
-
-And to close the loop with the problem statement, the book's own examples become compile-time checks:
+`B` reads its rows most significant bit first with `valueBE`. 
+Reading the reversed string big-endian is the same as reading the original string least signifcant bit first.
+In other words, while we interpret bit strings big-endian for `B`, we interpret them as little-endian for `B.reverse`. 
+The membership test for `B.reverse` is therefore equivalent to:[^4]
 
 ```lean
-/-- `011 + 001 = 100`, so this word is in `B`. -/
-example : [(false, false, true), (true, false, false), (true, true, false)] ∈ B := by
-  rw [mem_B_iff]; decide
+{ wLE | valueLE (row1 wLE) + valueLE (row2 wLE) = valueLE (row3 wLE)}
 ```
 
-## What the anatomy tells us
-
-Stepping back, the file has a shape worth internalizing, because it's the shape of most program verification:
-
-| Layer | Size | Trust story |
-|---|---|---|
-| Specification (`B`, `valueBE`) | ~10 lines | Must be reviewed by a human against the informal problem |
-| Implementation (`dfaStep`, `adderDFA`) | ~15 lines | Ordinary executable code; unit-testable with `decide` / `#eval` |
-| Proof (invariant + theorems) | ~100 lines | Checked by Lean's kernel; a human only needs the *statements* |
-
-A few takeaways for the working engineer:
-
-- **The program and the proof share one definition.** `dfaStep` is simultaneously the thing you execute and the thing the theorems are about. Verification here isn't modeling your code in a separate tool and hoping the model matches — the code is the model.
-- **Proofs decompose like programs do.** One lemma per concept: a step lemma, a sink lemma, an arithmetic lemma, an induction that composes them. The proof of the inductive step reads like a call stack.
-- **The hard part is finding the invariant, not fighting the prover.** Once `evalFrom_carry_iff` is stated correctly — with the carry-out weighted by `2^|w|`, and generalized over the carry-in — the tactics (`cases`, `simp`, `omega`, `decide`) do the drudgery. The 32-case truth table and the linear arithmetic cost zero human effort.
-- **Endianness is a proof-level concern, exactly once.** The mismatch between "the problem reads big-endian" and "the adder runs little-endian" is confined to one definition (`valueBE`) and one closure theorem (reversal). Everything else lives happily in a single convention. Good factoring is good factoring, in proofs as in code.
-
-The exercise asks you to *show that B is regular*. The Lean file does something stronger: it hands you a two-state adder you can run, and a machine-checked certificate that this adder is *exactly* the language of correct binary additions — no more, no less, for every input, forever.
-
-
-## Working on this with LLMs
-
-How do you find the right tactic to use? You try some and then iterate on the error messages. Similar to how you'd resolve compiler errors in a statically typed language. Or have an LLM do it for you.
-
-You still need to understand the proofs for two reasons:
-
-1. Code organization and maintainability.
-2. Weird proofs can indicate that you got something in your definitions wrong or in very rare cases a bug in the Lean kernel
-
-<!-- TODO: fill in notes on the experience of using LLMs on this problem. Some prompts to cover:
-  - What was delegated to the model vs. done by hand (finding the invariant? stating lemmas? tactic golf?)
-  - Where the model shone (boilerplate, simp/omega incantations, recalling Mathlib names like `Language.isRegular_reverse_iff`?)
-  - Where it struggled or hallucinated (nonexistent lemmas, wrong endianness, weak induction hypotheses?)
-  - How the Lean feedback loop (compiler errors, goal states) changed the dynamic vs. ordinary code generation
-  - Verdict: did machine-checked proofs make LLM output more trustworthy to accept?
--->
-
-*The full source is in [`Chapter1_Problem32.lean`](https://github.com/agostbiro/my-lean/blob/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32.lean).*
-
-## Informal Proof
-
-Before looking at the formalization in Lean, let's complete the problem with a partial, informal proof.
-We're going to prove that the carry step is arithmetically correct. 
-We'll then argue that the DFA performs the same process. 
-In the Lean proof we will formalize this argument and fill in the gaps.
+The way we're going to prove the `adderDFA_accepts_B_reverse` theorem is by showing that running the adder DFA on `wLE` is equivalent to the membership test for `B.reverse`.
+The challenge is that the definition language is descriptive while the adder DFA is an algorithm which is prescriptive.
 
 Working towards the proof, recall that at each step, the DFA checks 
 
@@ -540,9 +460,14 @@ $$\mathrm{row}_1(w) + \mathrm{row}_2(w) = \mathrm{row}_3(w)$$
 — which is exactly membership in $B^R$.
 
 Finally: the machine has finitely many states, so $B^R$ is regular, so $B$ is regular by closure under reversal. $\blacksquare$
+We can bridge the gap by introducing 
 
+$$ x + y = z$$
 
 [^1]: Instead of using the `LE/BE` convention to distinguish between interpretations of lists of bits, we could introduce separate types for little- and big-endian lists of bits to prevent mixing them up. However this would require re-deriving many of the theorems that are already available for native lists, so it's not worth it for a project of this scope.
 
 [^2]: Set as a collection is available as `Std.HashSet` and `Std.TreeSet`.
 
+[^3]: The actual Mathlib [definition](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L123-L124) is a bit more verbose, so I'm not quoting it here.
+
+[^4]: The informal argument about the equivalence of the little-endian interpretation of a word and the big-endian interpretation of its reversal (`valueLE w = valueBE w.reverse`) is formalized in the proof, but it's basically just bookkeeping, so I didn't include it in the post.
