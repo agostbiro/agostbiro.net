@@ -407,62 +407,61 @@ The membership test for `B.reverse` is therefore equivalent to:[^4]
 ```
 
 The way we're going to prove the `adderDFA_accepts_B_reverse` theorem is by showing that running the adder DFA on `wLE` is equivalent to the membership test for `B.reverse`.
-The challenge is that the definition language is descriptive while the adder DFA is an algorithm which is prescriptive.
+The challenge is that the definition language is descriptive while the adder DFA is prescriptive and describes intermediate steps.
 
-Working towards the proof, recall that at each step, the DFA checks 
+#### Run Invariant
 
-$$ x_i \oplus y_i \oplus c_i = z_i$$
+The DFA has finitely many states, but it can process arbitrarily long strings.
+The natural way to prove properties of such a process is by induction.
 
-where $x, y, z$ are the rows of the input respectively from the top, $i$ denotes the ordinal of the current column, and $c_{in}$ is the input carry. 
+In order to prove a proposition by induction we need an induction hypothesis that holds for all steps.
+One idea to for the induction hypothesis could be to propose the following equivalence
 
-If the equation for $z_i$ holds, the DFA moves to the state determined by the output carry denoted by $c_{out}$ which is defined as follows:
+```lean
+adderDFA.evalFrom (.carry 0) wLE = .carry 0 ↔
+  valueLE (row1 wLE) + valueLE (row2 wLE) = valueLE (row3 wLE)
+```
 
-$$c_{out} = (x_i \wedge y_i) \vee \left( c_{in} \wedge (x_i \oplus y_i) \right)$$
+which reads as
 
-This means that that there is a carry either if both terms are $\mathtt{1}$ or there was an input carry and least one of the terms is $\mathtt{1}$. Note that a simpler way to compute $c_{out}$ is to check if at least two of $x_i$, $y_i$ and $c_{in}$ are $\mathtt{1}$ (we'll make use of this in the Lean proof).
+> Running the adder DFA over a (little-endian) word $w$ starting with carry $0$ ends in state carry $0$ if and only if
+>
+> $$\mathrm{row}_1(w) + \mathrm{row}_2(w) = \mathrm{row}_3(w)$$
+>
+> where the rows are read as little-endian binary numbers.
 
-Next, recall that we need to check the equation
+This covers the basics: we always start from carry 0 and the only accepting state is also carry 0 and the right-hand side of the equivalence matches the membership test for `B.reverse`.
+But as we saw earlier, carry 1 can be a valid intermediate state as well, so we'll not be able to prove this proposition inductively.
 
-$$ x + y = z $$
+This means that we cannot restrict our induction hypothesis to a certain carry value, but we still need to establish a connection between carry in and carry out.
+We can accomplish this by extending the right-hand side of the equivalence to include $c_{in}$ and $c_{out}$ terms: 
 
-to determine whether whether an input string is in the language $B$. Let's expand this to include information about the length of the string (denoted as $n$), and the steps ($i$ as before, zero indexed): 
+```lean
+  valueLE (row1 wLE) + valueLE (row2 wLE) + carryIn = 
+    valueLE (row3 wLE) + carryOut * 2 ^ wLE.length
+```
 
-$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i = \sum_{i=0}^{n-1} z_i 2^i$$
-
-This lets us verify that the first $n$ bits of the sum of the two top rows matches the bottom row.
-But we also need to check that the the sum didn't overflow, so we need to add the final carry to the equation ($c_{out}$ is the carry after $n-1$ steps):
-
-$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i = \sum_{i=0}^{n-1} z_i 2^i + c_{out} \cdot 2^n$$
-
-As we've seen, the value of $c_{out}$ not only depends on $x_i$ and $y_i$, but also on $c_{in}$, so we need to add this term to create a link between the DFA and the mathematical formulation ($c_{in}$ is the carry before the first step):
-
+Or with mathematical notation to make it easy to see that it's just the definition of binary addition:
 
 $$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i + c_{in} = \sum_{i=0}^{n-1} z_i 2^i + c_{out} \cdot 2^n$$
 
-This may seem superfluous, since $c_{in}$ will be always zero at the start of the DFA, but formulated this way, we can talk about intermediate steps where $c_{in}$ may be non-zero.
+The full equivalence now becomes
 
-Everything hinges on one **run invariant**, proved by induction on the word:
-> **Invariant.** Running the machine over a (little-endian) word $w$ starting with carry $c_{\mathrm{in}}$ ends in state $c_{\mathrm{out}}$ if and only if
+```lean
+adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
+  valueLE (row1 wLE) + valueLE (row2 wLE) + carryIn = 
+    valueLE (row3 wLE) + carryOut * 2 ^ wLE.length
+```
+
+which reads as
+> Running the adder DFA over a (little-endian) word $w$ starting with carry $c_{\mathrm{in}}$ ends in state $c_{\mathrm{out}}$ if and only if
 >
 > $$\mathrm{row}_1(w) + \mathrm{row}_2(w) + c_{\mathrm{in}} = \mathrm{row}_3(w) + c_{\mathrm{out}} \cdot 2^{|w|}$$
 >
 > where the rows are read as little-endian binary numbers.
 
-This is just the grade-school addition invariant: after processing the low $|w|$ columns, the columns seen so far add up correctly, and the pending carry is worth $2^{|w|}$ — it's waiting to be added at the next position.
+For members of `B.reverse` where the starting and ending carry are both 0, this is equivalent to our first attempt, but it holds for intermediate steps as well where both carry in and out may be non-zero.
 
-- **Base case** (empty word): the machine doesn't move, and the equation degenerates to $c_{\mathrm{in}} = c_{\mathrm{out}}$ (both sides are just the carries, since all rows are 0 and $2^0 = 1$).
-- **Inductive step**: peel off the first (lowest) column. The single-column transition is correct precisely when $x + y + c_{\mathrm{in}} = z + 2 c_{\mathrm{mid}}$ — the defining equation of a full adder — and the rest of the run is handled by the induction hypothesis with $c_{\mathrm{mid}}$ as the new carry-in. Algebraically, this corresponds to splitting an addition equation into its low bit plus the remaining high bits.
-
-Instantiate the invariant with $c_{\mathrm{in}} = c_{\mathrm{out}} = \mathtt{false}$ (no carry into the lowest column; no carry out of the highest, or the sum overflowed) and the carry terms vanish:
-
-$$\mathrm{row}_1(w) + \mathrm{row}_2(w) = \mathrm{row}_3(w)$$
-
-— which is exactly membership in $B^R$.
-
-Finally: the machine has finitely many states, so $B^R$ is regular, so $B$ is regular by closure under reversal. $\blacksquare$
-We can bridge the gap by introducing 
-
-$$ x + y = z$$
 
 [^1]: Instead of using the `LE/BE` convention to distinguish between interpretations of lists of bits, we could introduce separate types for little- and big-endian lists of bits to prevent mixing them up. However this would require re-deriving many of the theorems that are already available for native lists, so it's not worth it for a project of this scope.
 
