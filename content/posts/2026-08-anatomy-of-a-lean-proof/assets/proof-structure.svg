@@ -86,13 +86,11 @@
   <text class="d" x="530" y="330">dead is a sink</text>
 
   <!-- proof: invariant and payoff -->
-  <rect x="225" y="382" width="250" height="44" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-  <text class="n" x="350" y="400" fill="#04342C">evalFrom_carry_iff</text>
-  <text class="d" x="350" y="416">the run invariant, by induction</text>
+  <rect x="225" y="382" width="250" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="n" x="350" y="405" fill="#04342C">adderDFA_run_invariant</text>
 
-  <rect x="205" y="468" width="290" height="44" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-  <text class="n" x="350" y="486" fill="#04342C">adderDFA_accepts</text>
-  <text class="d" x="350" y="502">adderDFA.accepts = B.reverse</text>
+  <rect x="205" y="468" width="290" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="n" x="350" y="491" fill="#04342C">adderDFA_accepts_B_reverse</text>
 
   <rect x="260" y="547" width="180" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
   <text class="n" x="350" y="570" fill="#04342C">B_isRegular</text>
@@ -103,10 +101,10 @@
   <path d="M530 343 V364 H405 V380" class="arr" marker-end="url(#arrow-proof-structure)"/>
 
   <!-- invariant to the main theorem to regularity -->
-  <path d="M350 426 V466" class="arr" marker-end="url(#arrow-proof-structure)"/>
-  <path d="M350 512 V545" class="arr" marker-end="url(#arrow-proof-structure)"/>
+  <path d="M350 420 V466" class="arr" marker-end="url(#arrow-proof-structure)"/>
+  <path d="M350 506 V545" class="arr" marker-end="url(#arrow-proof-structure)"/>
 
   <!-- specification and machine meet the invariant at the main theorem -->
-  <path d="M180 186 V214 H45 V490 H203" class="arr" marker-end="url(#arrow-proof-structure)"/>
-  <path d="M520 186 V214 H655 V490 H497" class="arr" marker-end="url(#arrow-proof-structure)"/>
+  <path d="M180 186 V214 H45 V487 H203" class="arr" marker-end="url(#arrow-proof-structure)"/>
+  <path d="M520 186 V214 H655 V487 H497" class="arr" marker-end="url(#arrow-proof-structure)"/>
 </svg>

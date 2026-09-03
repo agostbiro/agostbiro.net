@@ -9,13 +9,12 @@ draft: true
 I recently worked through a problem from a theory of computation textbook that asked me to prove a property of a language using finite automata.
 The informal proof is a simple constructive proof where you build an automaton and show that it recognizes the language.
 This is kind of similar to program verification, so I thought it'd be interesting to see what it takes to formalize the proof.
-Lean is a good choice for this, because its [Mathlib](https://lean-lang.org/use-cases/mathlib/) has all the theorems needed for the problem.
+Lean is a good choice for this, because its [Mathlib](https://lean-lang.org/use-cases/mathlib/) has all the theorems for the problem.
 
 After finishing the formal proof, I decided to write it up, because I think it provides good insight into what it takes to formally prove properties of a system.
-The construction that we're going prove is itself a program, so we don't just end up with a mathematical proof, but also a verified implementation.
 
 I tried to make the subject accessible.
-If you're comfortable with a modern statically typed programming language (such as TypeScript or Rust), binary arithmetic, and inductive proofs, you should have no difficulties following along.
+If you're comfortable with a modern statically typed programming language (such as TypeScript or Rust), binary arithmetic, and inductive proofs, you should be able to follow along.
 
 ## Background: DFAs & Regular Languages
 
@@ -115,7 +114,7 @@ While a language like this may look weird at first, it's actually a lot easier t
 $$ x + y = z$$
 
 to determine whether a string is in the language. 
-The challenge in this problem is that we need to do this with a fixed amount of memory for arbitrarty long strings.
+The challenge is that we need to do this with a fixed amount of memory for arbitrarty long strings.
 
 ## The Solution
 
@@ -126,7 +125,7 @@ So we don't recognize $B$ directly.
 Instead we build a DFA to recognize its reversal $B^R$ which is the same strings that are in $B$ written backwards, so the machine sees the least significant column first.
 
 If we can build a DFA to recognize $B^R$, then we can conclude that $B^R$ is a regular language.
-Since $B^R$ reversed is $B$, we can use of the closure property of the reversal of natural languages to conlcude that $B$ is regular as well which concludes the solution.
+Since $B^R$ reversed is $B$, we can use of the closure property of the reversal of natural languages to conlcude that $B$ is regular as well which completes the solution.
 
 ### Adder Arithmetic
 
@@ -207,7 +206,6 @@ The Lean proof will consist of three parts:
 2. An executable **implementation** of the [adder DFA](#the-adder-DFA).
 3. A **proof** connecting the specification and the implementation.
 
-In addition to being a proof assistant, Lean is also a functional programming language, so the specification and the implementation will look like a regular program in a statically typed functional language.
 Lean's [Mathlib](https://lean-lang.org/use-cases/mathlib/) has first class support for formal languages and DFAs, so we will just need to instantiate structures from the library to specify the language $B$ and implement the adder DFA.
 
 For the proof, we'll have to do more work, but Mathlib will be helpful here as well, as it contains the theorem that regular languages are closed under reversal, which will save a lot of work.
@@ -241,7 +239,11 @@ We instantiate it using our alphabet `Sigma3` and the predicate for membership i
 `wBE` is a big-endian word in the language, which is a list of `Sigma3` values, i.e. a 2D list of binary values with three rows.
 `rowN` is a function that selects the nth row of the 2D list from the top.
 `valueBE`  is a function that turns a binary list into a natural number using a big-endian interpretation.[^1]
-So the predicate is just $z = x + y$ from our earlier examples.
+So the predicate is just 
+
+$$z = x + y$$
+
+from our earlier examples.
 
 If you've used programming languages with set comprehensions, the set builder syntax might look familiar, but we're not constructing a collection here.
 `Language` is just a `Set` under the hood and `Set` in Lean is a function that tests whether an element is in the set.[^2]
@@ -320,8 +322,14 @@ example :
   decide
 ```
 
-The `example : ... := by decide` structure in Lean is kind of like a unit test, except it's a proof that's checked at compile time by executing the code.
-This works, because Lean rejects functions that are not total (where it cannot be prove that they terminate), unless the definition opts out explicitly, and because we derived `DecidableEq` for `DfaState`, so the equality can be checked.
+The `example : ... := by decide` structure in Lean is kind of like a unit test, except it's a proof that's checked at compile time by executing the code. 
+
+The `by` keyword switches Lean into tactic mode which is an imperative way of generating proofs. 
+
+`decide` is a tactic that proves a proposition by evaluating it, which requires an algorithm that returns `true` or `false` for the proposition.
+`decide` works here, because we derived `DecidableEq` for `DfaState`, which gives it the algorithm to check the equality.
+Evaluating `dfaStep` at compile time is safe, because Lean rejects functions unless it can prove that they terminate or the definition opts out explicitly.
+
 
 Finally, we use the generic [`Mathlib.Computability.DFA`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/DFA.html#DFA) structure from Mathlib to complete the implementation.
 We give it the transition function and define the start and accept states:
@@ -430,10 +438,11 @@ which reads as
 >
 > where the rows are read as little-endian binary numbers.
 
-This covers the basics: we always start from carry 0 and the only accepting state is also carry 0 and the right-hand side of the equivalence matches the membership test for `B.reverse`.
-But as we saw earlier, carry 1 can be a valid intermediate state as well, so we'll not be able to prove this proposition inductively.
+This what we need ultimately. 
+We always start from carry $0$ and the only accepting state is also carry $0$, and the right-hand side of the equivalence matches the membership test for `B.reverse`.
+But as we saw earlier, carry $1$ can be a valid intermediate state as well, so this statement is too weak to serve as an induction hypothesis. 
 
-This means that we cannot restrict our induction hypothesis to a certain carry value, but we still need to establish a connection between carry in and carry out.
+We cannot restrict our induction hypothesis to a certain carry value, but we still need to establish a connection between carry in and carry out.
 We can accomplish this by extending the right-hand side of the equivalence to include $c_{in}$ and $c_{out}$ terms: 
 
 ```lean
@@ -461,6 +470,12 @@ which reads as
 > where the rows are read as little-endian binary numbers.
 
 For members of `B.reverse` where the starting and ending carry are both 0, this is equivalent to our first attempt, but it holds for intermediate steps as well where both carry in and out may be non-zero.
+
+## Conclusion
+
+
+In addition to being a proof assistant, Lean is also a functional programming language, and the implementation will be just a regular program that you could write in any language.
+
 
 
 [^1]: Instead of using the `LE/BE` convention to distinguish between interpretations of lists of bits, we could introduce separate types for little- and big-endian lists of bits to prevent mixing them up. However this would require re-deriving many of the theorems that are already available for native lists, so it's not worth it for a project of this scope.
