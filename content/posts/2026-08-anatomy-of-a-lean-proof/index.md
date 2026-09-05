@@ -471,19 +471,21 @@ For members of `B.reverse` where the starting and ending carry are both 0, this 
 
 #### Run Invariant Proof
 
-Here is the run invariant as a Lean lemma, with the proof left out for now:
+Here is the run invariant as a theorem, with the proof left out for now:
 
 ```lean
-lemma adderDFA_run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
+theorem adderDFA_run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
     adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
       row1LE wLE + row2LE wLE + carryIn.toNat
         = row3LE wLE + carryOut.toNat * 2 ^ wLE.length := by
   ...
 ```
 
-A `lemma` is the same thing as a `theorem`, the different keyword just signals that it's a stepping stone towards the main result.
-The arguments before the colon are the variables the statement talks about, and the proposition after the colon is what we have to prove for all values of them.
 The only difference from the statement in the previous section is `.toNat`, which converts a boolean into `0` or `1` so that the carries can take part in the arithmetic.
+
+Notice that that the theorem has arguments like a function.
+In fact a theorem is essiciantly a function: its arguments are the variables the statement talks about, its type is the proposition, and its body is the proof.
+So what we have is a parameterized theorem that we'll have to prove for all possible values of its arguments.
 
 The proof is by induction on the word `wLE` which is a little-endian list 3-bit columns:
 
@@ -505,27 +507,74 @@ The ending carry is the same for the whole run, so `carryOut` can stay fixed.
 
 ##### Base Case
 
-In order to prove the base case we need to show that running the adder DFA starting with carry $c_{in}$ over an empty word ends in state $c_{out}$ if and only if TODO.
+First let's review the proof of the base case (when the DFA is running over an empty word).
 
-Let's recall the run invariant:
+Recall the run invariant:
 
 ```lean
 adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
-  row1LE wLE + row2LE wLE + carryIn.toNat
-    = row3LE wLE + carryOut.toNat * 2 ^ wLE.length
+  row1LE wLE + row2LE wLE + carryIn = 
+    row3LE wLE + carryOut * 2 ^ wLE.length
 ```
 
-In the base case `wLE` is the empty list.
-Let's have a 
+Let's focus on what happens on the left-hand side of the equivalence first:
+
+```lean
+adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut
+```
+
+`DFA.evalFrom` is defined as follows in Mathlib:
+
+```lean
+def evalFrom (s : σ) : List α → σ :=
+  List.foldl M.step s
+```
+
+`List.foldl` just returns the initial value if the input list is empty, and the initial value we provide to `DFA.evalFrom` is `.carry carryIn`, so in the base case we have 
+
+```lean
+.carry carryIn = .carry carryOut
+```
+
+on the left-hand side of the equivalence.
+
+Next, let's see what happens on the right hand-side in the base case:
+
+```lean
+row1LE wLE + row2LE wLE + carryIn = 
+  row3LE wLE + carryOut * 2 ^ wLE.length
+```
+
+`rowNLE` returns 0 for the empty list, so we have 
+
+```lean
+0 + 0 + carryIn = 0 + carryOut * 2 ^ 0
+```
+
+or simply 
+
+```lean
+carryIn = carryOut
+```
+
+So in the base case we need to prove that
 
 ```lean
 .carry carryIn = .carry carryOut ↔
   carryIn.toNat = carryOut.toNat
 ```
 
+Since there are only four cases, we can prove this by exhaustion.
+The equivalence holds if both sides have the same truth value in every row of the table:
 
-For the empty word, the DFA takes no steps, so the left-hand side of the invariant says that `carryIn` equals `carryOut`.
-On the right-hand side, all three rows are empty and have value `0`, the length is `0` and $2^0 = 1$, so the equation reduces to `carryIn.toNat = carryOut.toNat`, which says the same thing.
+| `carryIn` | `carryOut` | `.carry carryIn = .carry carryOut` | `carryIn.toNat = carryOut.toNat` | `↔` |
+|-----------|------------|------------------------------------|----------------------------------|-----|
+| `false`   | `false`    | true                               | `0 = 0`, true                    | true |
+| `false`   | `true`     | false                              | `0 = 1`, false                   | true |
+| `true`    | `false`    | false                              | `1 = 0`, false                   | true |
+| `true`    | `true`     | true                               | `1 = 1`, true                    | true |
+
+The same argument in Lean:
 
 ```lean
   | nil =>
