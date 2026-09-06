@@ -474,20 +474,26 @@ For members of `B.reverse` where the starting and ending carry are both 0, this 
 Here is the run invariant as a theorem, with the proof left out for now:
 
 ```lean
-theorem adderDFA_run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
+lemma adderDFA_run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
     adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
       row1LE wLE + row2LE wLE + carryIn.toNat
         = row3LE wLE + carryOut.toNat * 2 ^ wLE.length := by
   ...
 ```
 
-The only difference from the statement in the previous section is `.toNat`, which converts a boolean into `0` or `1` so that the carries can take part in the arithmetic.
+The only difference from the statement in the previous section is `.toNat`, which converts a boolean into `0` or `1` so that the carries can take part in the arithmetic (`.toNat` will be omitted in the following code blocks).
 
 Notice that that the theorem has arguments like a function.
 In fact a theorem is essiciantly a function: its arguments are the variables the statement talks about, its type is the proposition, and its body is the proof.
-So what we have is a parameterized theorem that we'll have to prove for all possible values of its arguments.
+So what we have is a parameterized theorem that we'll have to prove for all possible values of its arguments, but we will actually only use it later on in the proof of `adderDFA_accepts_B_reverse` with both carries set to `false` which corresponds to the definition of the language `B`:
 
-The proof is by induction on the word `wLE` which is a little-endian list 3-bit columns:
+```lean
+  have invariant := adderDFA_run_invariant wLE false false
+```
+
+The proof is by induction on the word `wLE` which is of type `List Sigma3`.
+Induction on a list involves proving the statement for the empty list, and then proving that if it holds for some list, it also holds for that list with one more element added to the front.
+Since every list can be built from the empty list by adding elements to the front one at a time, these two steps cover all lists.
 
 ```lean
   induction wLE generalizing carryIn with
@@ -508,7 +514,6 @@ The ending carry is the same for the whole run, so `carryOut` can stay fixed.
 ##### Base Case
 
 First let's review the proof of the base case (when the DFA is running over an empty word).
-
 Recall the run invariant:
 
 ```lean
@@ -561,18 +566,18 @@ So in the base case we need to prove that
 
 ```lean
 .carry carryIn = .carry carryOut ↔
-  carryIn.toNat = carryOut.toNat
+  carryIn = carryOut
 ```
 
 Since there are only four cases, we can prove this by exhaustion.
 The equivalence holds if both sides have the same truth value in every row of the table:
 
-| `carryIn` | `carryOut` | `.carry carryIn = .carry carryOut` | `carryIn.toNat = carryOut.toNat` | `↔` |
-|-----------|------------|------------------------------------|----------------------------------|-----|
-| `false`   | `false`    | true                               | `0 = 0`, true                    | true |
-| `false`   | `true`     | false                              | `0 = 1`, false                   | true |
-| `true`    | `false`    | false                              | `1 = 0`, false                   | true |
-| `true`    | `true`     | true                               | `1 = 1`, true                    | true |
+| `carryIn` | `carryOut` | `.carry carryIn =`<br>`.carry carryOut` | `carryIn = carryOut` | `↔` |
+|:---------:|:----------:|:----------------------------------:|:--------------------:|:---:|
+| F   | F    | T                               | T                    | T |
+| F   | T     | F                              | F                   | T |
+| T    | F    | F                              | F                   | T |
+| T    | T     | T                               | T                    | T |
 
 The same argument in Lean:
 
@@ -592,39 +597,20 @@ Here it unfolds the row values and `evalFrom`, evaluates the arithmetic, and is 
 
 ##### Inductive Step
 
-In the inductive step, the word is `column :: columnsLE` (`::` is the list constructor) and we have the induction hypothesis for `columnsLE`.
-We need to prove the invariant for the whole word, and the plan is to work from both ends towards the middle:
+Recall that in the inductive step we need to prove that if the induction hypothesis holds for some list, it also holds for that list with one more element added to the front.
 
-1. On the DFA side, split the run into its first step and the run over the remaining columns.
+In the inductive step, the word is `column :: columnsLE` (`::` means prepend) and we have assumed the induction hypothesis for `columnsLE`, but we need to prove the invariant for the whole word.
+We'll do this by joining the first column and the rest of the list by introducing an intermediate carry after the first step (in addition to carry in/out).
+
+These are the high level steps:
+
+1. On the DFA side, split the run into its first step and the run over the remaining columns and join them with an intermediate carry.
 2. Turn the first step into arithmetic. This is the adder equation for a single column.
 3. Turn the run over the remaining columns into arithmetic using the induction hypothesis.
 4. On the arithmetic side, show that the equation for the whole word splits into the equation for the low bit and the equation for the remaining bits.
 
 After these steps the two sides of the equivalence say the same thing, which closes the goal.
 Steps 1, 2 and 4 each get their own helper lemma, so let's look at those first.
-
-##### One Step
-
-```lean
-lemma dfaStep_carry_iff (x y z carryIn carryOut : Bool) :
-    dfaStep (.carry carryIn) (x, y, z) = .carry carryOut ↔
-      x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryOut.toNat := by
-  cases x <;> cases y <;> cases z <;> cases carryIn <;> cases carryOut <;>
-    simp [dfaStep]
-```
-
-This is the run invariant for a single column: one step of the DFA from `carryIn` lands in `carryOut` if and only if
-
-$$x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{out}}$$
-
-which is just the [adder arithmetic](#adder-arithmetic) from earlier in a single equation.
-
-The proof uses the same `cases <;>` pattern as the base case.
-Five booleans give 32 goals, one per row of the full adder's truth table, and `simp` evaluates each of them.
-Take the goal where `x`, `y` and `carryOut` are `true` and `z` and `carryIn` are `false`.
-`simp` unfolds `dfaStep`, evaluates the `if` and reduces the left-hand side to `.carry true = .carry true`.
-The right-hand side becomes `1 + 1 + 0 = 0 + 2 * 1`.
-Both are true, so the equivalence holds.
 
 ##### Splitting the Run
 
@@ -662,6 +648,30 @@ Then we split on the result of the first step.
 If it's `dead`, then the rest of the run stays dead by `evalFrom_dead`, so the left-hand side is `.dead = .carry carryOut`, which is false, and the right-hand side asks for a `carryMid` with `.dead = .carry carryMid`, which is also false.
 `simp` knows that different constructors of an inductive type are never equal (this is part of the scaffolding that `inductive` generates), so it closes the goal.
 If the first step leads to `carry carryMid`, then both sides say the same thing, and `simp` can supply the witness for the existential.
+
+##### One Step
+
+```lean
+lemma dfaStep_carry_iff (x y z carryIn carryOut : Bool) :
+    dfaStep (.carry carryIn) (x, y, z) = .carry carryOut ↔
+      x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryOut.toNat := by
+  cases x <;> cases y <;> cases z <;> cases carryIn <;> cases carryOut <;>
+    simp [dfaStep]
+```
+
+This is step 2 of the plan.
+It is the run invariant for a single column: one step of the DFA from `carryIn` lands in `carryOut` if and only if
+
+$$x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{out}}$$
+
+which is just the [adder arithmetic](#adder-arithmetic) from earlier in a single equation.
+
+The proof uses the same `cases <;>` pattern as the base case.
+Five booleans give 32 goals, one per row of the full adder's truth table, and `simp` evaluates each of them.
+Take the goal where `x`, `y` and `carryOut` are `true` and `z` and `carryIn` are `false`.
+`simp` unfolds `dfaStep`, evaluates the `if` and reduces the left-hand side to `.carry true = .carry true`.
+The right-hand side becomes `1 + 1 + 0 = 0 + 2 * 1`.
+Both are true, so the equivalence holds.
 
 ##### Splitting the Equation
 
