@@ -20,6 +20,17 @@
 
 
   <link rel="shortcut icon" type="image/x-icon" href="{{ $.Site.Params.favicon | relURL }}" />
+  {{- /* Feed autodiscovery. Points every page at the single home feed rather
+         than using .AlternativeOutputFormats, which resolves per page and so
+         would emit nothing on a post, where a reader most wants to subscribe.
+         Read off site.Home rather than hardcoding /index.xml so the path and
+         media type stay tied to the output format, and the tag disappears by
+         itself if the RSS output is ever dropped from hugo.toml. Absolute,
+         unlike the relURL used for local assets: a feed URL gets fetched away
+         from the page it was found on. */ -}}
+  {{- with site.Home.OutputFormats.Get "rss" }}
+  <link rel="{{ .Rel }}" type="{{ .MediaType.Type }}" href="{{ .Permalink }}" title="{{ site.Title }}" />
+  {{- end }}
   {{ $options := (dict "outputStyle" "compressed" "enableSourceMap" (not hugo.IsProduction)) }}
   {{ $sass := resources.Get "css/custom.scss" }}
   {{ $style := $sass | css.Sass $options | resources.Fingerprint "sha512" }}

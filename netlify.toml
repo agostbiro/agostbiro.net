@@ -1,6 +1,7 @@
 [build]
   publish = "public"
-  command = "hugo --gc --minify"
+  # check-links.sh fails the build on a broken internal link.
+  command = "hugo --gc --minify && ./scripts/check-links.sh"
 
 [build.environment]
   HUGO_VERSION = "0.164.0"
@@ -11,10 +12,10 @@
   HUGO_ENV = "production"
 
 [context.deploy-preview]
-  command = "hugo --gc --minify --buildFuture -b $DEPLOY_PRIME_URL"
+  command = "hugo --gc --minify --buildFuture -b $DEPLOY_PRIME_URL && ./scripts/check-links.sh"
 
 [context.branch-deploy]
-  command = "hugo --gc --minify -b $DEPLOY_PRIME_URL"
+  command = "hugo --gc --minify -b $DEPLOY_PRIME_URL && ./scripts/check-links.sh"
 
 [[redirects]]
   from = "https://blog.agostbiro.net/*"
