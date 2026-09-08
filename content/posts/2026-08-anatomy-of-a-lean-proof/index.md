@@ -503,8 +503,8 @@ Since every list can be built from the empty list by adding elements to the fron
 ```
 
 Lean in tactic mode works by creating goals that need to be proved.
-Running the `induction` tactic on a list gives us two goals to prove, one for each constructor of the list.
-`nil` is the empty list, and `cons` is a first element followed by the rest of the list.
+The initial goal is the theorem that we're trying to prove, but we cannot do that directly, so we use the `induction` tactic which gives us a goal to prove for for each constructor of the list.
+`nil` is constructor for the empty list, and `cons` is the constructor that prepends an element to an existing list.
 In the `cons` case we get to name the first column, the remaining columns, and the induction hypothesis, which is the lemma itself, already proven for the remaining columns.
 
 The `generalizing carryIn` part is important.
@@ -515,7 +515,7 @@ The ending carry is the same for the whole run, so `carryOut` can stay fixed.
 
 ##### Base Case
 
-First let's review the proof of the base case (when the DFA is running over an empty word).
+First, let's review the proof of the base case (when the DFA is running over an empty word).
 Recall the run invariant:
 
 ```lean
@@ -601,8 +601,11 @@ Here it unfolds the row values and `evalFrom`, evaluates the arithmetic, and is 
 
 Recall that in the inductive step we need to prove that if the induction hypothesis holds for some list, it also holds for that list with one more element added to the front.
 
-In the inductive step, the word is `column :: columnsLE` (`::` means prepend) and we have assumed the induction hypothesis for `columnsLE`, but we need to prove the invariant for the whole word.
-We'll do this by joining the first column and the rest of the list by introducing an intermediate carry after the first step (in addition to carry in/out).
+In the inductive step, the word is `cons column columnsLE` which is the list created by prepending `column` to `columnsLE` (Lean displays this list as `column :: columnsLE`).
+
+We have assumed the induction hypothesis for `columnsLE`, but we need to prove the invariant for the whole word.
+We'll do this by introducing an intermediate carry after the first step of the DFA that runs on the first column (which is the least significant bit of the word).
+Then we rearrange the equation from the right-hand side of the run invariant to show that the arithmetic checks out.
 
 These are the high level steps:
 
