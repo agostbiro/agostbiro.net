@@ -1,0 +1,19 @@
+{{/* Email signup form for new-post notifications, backed by Buttondown.
+
+     Rendered after every post (via posts/baseof.html). The home page links to
+     Buttondown's hosted signup page instead (see layouts/footer.md). Nothing is
+     emitted until params.buttondown_username is set in hugo.toml, so a local
+     build or fork without an account stays clean.
+
+     A plain form POST rather than Buttondown's stock snippet, which opens the
+     confirmation page in a popup from an inline onsubmit handler. The site
+     works without JavaScript and this keeps it that way. After submit,
+     Buttondown shows its own "check your inbox" page and sends the double
+     opt-in mail. */ -}}
+{{- with site.Params.buttondown_username }}
+<form class="subscribe" action="https://buttondown.com/api/emails/embed-subscribe/{{ . }}" method="post">
+  <label for="subscribe-email">New posts by email</label>
+  <input type="email" name="email" id="subscribe-email" placeholder="you@example.com" required autocomplete="email" />
+  <button type="submit">Subscribe</button>
+</form>
+{{- end }}

@@ -55,6 +55,9 @@ title = "Agost's Site"
 [params]
   author = "Agost Biro"
   description = ""
+  # Buttondown newsletter username, the last path segment of the embed URL under
+  # Settings > Embedding. The subscribe form is not rendered while this is empty.
+  buttondown_username = "agostbiro"
 
   [params.theme_config]
     appearance        = "auto"

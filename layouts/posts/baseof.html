@@ -1,6 +1,8 @@
 {{/* Overrides the theme's posts/baseof.html. Identical to it, except for the
-     appearance_toggle partial right after <body>. Re-check against the theme's
-     copy if the submodule is updated. */ -}}
+     appearance_toggle partial right after <body> and the subscribe partial
+     after the main block. Posts carry no footer in the theme, so the signup
+     form is the only thing following the article. Re-check against the
+     theme's copy if the submodule is updated. */ -}}
 <!DOCTYPE html>
 <html lang="{{ $.Site.LanguageCode }}">
     {{- partial "head.html" . -}}
@@ -17,6 +19,7 @@
                     </p>
                 </div>
                 {{- block "main" . }}{{- end }}
+                {{- partial "subscribe.html" . -}}
             </div>
         </main>
     </body>

@@ -42,3 +42,41 @@ pre { font-size: 0.9em; }
 li > span:first-child { margin-right: 0.75em; }
 
 .w { max-width: 720px; }
+
+// ---------------------- SUBSCRIBE FORM ---------------------- //
+// Rendered by layouts/partials/subscribe.html.
+
+.subscribe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em 0.75em;
+  // Room between the form and the article above it.
+  margin: 2em 0 1em;
+}
+
+// The theme styles nothing here, so the browser's defaults would apply: its
+// own font, and white boxes in dark mode. Inherit the page's font and colors
+// instead and draw the controls with the text color, like the links.
+.subscribe input,
+.subscribe button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 1px solid currentColor;
+  border-radius: 0;
+  padding: 0.2em 0.5em;
+}
+
+.subscribe input {
+  flex: 1 1 12em;
+  min-width: 0;
+}
+
+.subscribe button {
+  cursor: pointer;
+}
+
+.subscribe button:hover {
+  text-decoration: underline;
+}
