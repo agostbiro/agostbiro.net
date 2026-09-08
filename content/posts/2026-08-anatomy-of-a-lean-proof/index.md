@@ -481,19 +481,20 @@ lemma adderDFA_run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
   ...
 ```
 
-The only difference from the statement in the previous section is `.toNat`, which converts a boolean into `0` or `1` so that the carries can take part in the arithmetic (`.toNat` will be omitted in the following code blocks).
+The only difference from the statement in the previous section is `.toNat`, which converts a boolean into `0` or `1` so that the carries can take part in the arithmetic (`.toNat` will be omitted in the following code blocks for brevity).
 
 Notice that that the theorem has arguments like a function.
 In fact a theorem is essiciantly a function: its arguments are the variables the statement talks about, its type is the proposition, and its body is the proof.
-So what we have is a parameterized theorem that we'll have to prove for all possible values of its arguments, but we will actually only use it later on in the proof of `adderDFA_accepts_B_reverse` with both carries set to `false` which corresponds to the definition of the language `B`:
+So we have a parameterized theorem that we'll have to prove for all possible values of its arguments. 
+But we will only use it later on in the proof of `adderDFA_accepts_B_reverse` with both carries set to `false` which form corresponds to the definition of the language `B`:
 
 ```lean
   have invariant := adderDFA_run_invariant wLE false false
 ```
 
-The proof is by induction on the word `wLE` which is of type `List Sigma3`.
-Induction on a list involves proving the statement for the empty list, and then proving that if it holds for some list, it also holds for that list with one more element added to the front.
-Since every list can be built from the empty list by adding elements to the front one at a time, these two steps cover all lists.
+The proof is by induction on the word `wLE` which has type `List Sigma3`.
+Induction on a list requires proving the statement for the empty list, and then proving that if it holds for some list, it also holds for that list with one more element added to the front.
+Since every list can be built from the empty list by adding elements to the front, these two steps cover all lists.
 
 ```lean
   induction wLE generalizing carryIn with
@@ -501,7 +502,8 @@ Since every list can be built from the empty list by adding elements to the fron
   | cons column columnsLE induction_hypothesis => ...
 ```
 
-Running the `induction` tactic on a list gives us two goals (a goal is the proposition that remains to be proven), one for each constructor of the list.
+Lean in tactic mode works by creating goals that need to be proved.
+Running the `induction` tactic on a list gives us two goals to prove, one for each constructor of the list.
 `nil` is the empty list, and `cons` is a first element followed by the rest of the list.
 In the `cons` case we get to name the first column, the remaining columns, and the induction hypothesis, which is the lemma itself, already proven for the remaining columns.
 
