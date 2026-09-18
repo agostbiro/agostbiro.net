@@ -63,27 +63,27 @@
   <!-- implementation -->
   <rect x="390" y="70" width="260" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
   <text class="n" x="520" y="88" fill="#2C2C2A">dfaStep</text>
-  <text class="d" x="520" y="104">full adder + sink</text>
+  <text class="d" x="520" y="104">one step of binary addition</text>
 
   <rect x="390" y="142" width="260" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
   <text class="n" x="520" y="160" fill="#2C2C2A">adderDFA : DFA Sigma3 DfaState</text>
-  <text class="d" x="520" y="176">the machine</text>
+  <text class="d" x="520" y="176">the DFA for the solution</text>
 
   <path d="M520 114 V140" class="arr" marker-end="url(#arrow-proof-structure)"/>
 
   <!-- proof: supporting lemmas -->
-  <rect x="87.5" y="289" width="165" height="54" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-  <text class="n" x="170" y="309" fill="#2C2C2A">dfaStep_carry_iff</text>
-  <text class="d" x="170" y="324">one step =</text>
-  <text class="d" x="170" y="337">one adder equation</text>
+  <rect x="82.5" y="289" width="145" height="54" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="155" y="309" fill="#2C2C2A">dfaStep_carry_iff</text>
+  <text class="d" x="155" y="324">one step =</text>
+  <text class="d" x="155" y="337">one adder equation</text>
 
-  <rect x="267.5" y="289" width="165" height="54" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-  <text class="n" x="350" y="312" fill="#2C2C2A">low_bit_split</text>
+  <rect x="242.5" y="289" width="215" height="54" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="350" y="312" fill="#2C2C2A">least_significant_bit_split</text>
   <text class="d" x="350" y="330">pure arithmetic</text>
 
-  <rect x="447.5" y="289" width="165" height="54" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-  <text class="n" x="530" y="312" fill="#2C2C2A">evalFrom_dead</text>
-  <text class="d" x="530" y="330">dead is a sink</text>
+  <rect x="472.5" y="289" width="145" height="54" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="545" y="312" fill="#2C2C2A">evalFrom_dead</text>
+  <text class="d" x="545" y="330">dead is a sink</text>
 
   <!-- proof: invariant and payoff -->
   <rect x="225" y="382" width="250" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
@@ -96,9 +96,9 @@
   <text class="n" x="350" y="570" fill="#04342C">B_isRegular</text>
 
   <!-- edges into the invariant -->
-  <path d="M170 343 V364 H295 V380" class="arr" marker-end="url(#arrow-proof-structure)"/>
+  <path d="M155 343 V364 H295 V380" class="arr" marker-end="url(#arrow-proof-structure)"/>
   <path d="M350 343 V380" class="arr" marker-end="url(#arrow-proof-structure)"/>
-  <path d="M530 343 V364 H405 V380" class="arr" marker-end="url(#arrow-proof-structure)"/>
+  <path d="M545 343 V364 H405 V380" class="arr" marker-end="url(#arrow-proof-structure)"/>
 
   <!-- invariant to the main theorem to regularity -->
   <path d="M350 420 V466" class="arr" marker-end="url(#arrow-proof-structure)"/>

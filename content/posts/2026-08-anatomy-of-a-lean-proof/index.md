@@ -11,18 +11,18 @@ The informal proof is a simple constructive proof where you build an automaton a
 This is kind of similar to program verification, so I thought it'd be interesting to see what it takes to formalize the proof.
 Lean is a good choice for this, because its [Mathlib](https://lean-lang.org/use-cases/mathlib/) has all the theorems for the problem.
 
-After finishing the formal proof, I decided to write it up, because I think it provides good insight into what it takes to formally prove properties of a system.
+After finishing the formal proof, I decided to write it up, because I think it provides software engineers with good insight into what it takes to formally prove properties of a system.
 
-I tried to make the subject accessible.
+I tried to make this post accessible.
 If you're comfortable with a modern statically typed programming language (such as TypeScript or Rust), binary arithmetic, and inductive proofs, you should be able to follow along.
 
 ## Background: DFAs & Regular Languages
 
 *Feel free to skip this section if you're comfortable with DFAs and regular languages.*
 
-Finite automata provide a model of computation with fixed memory.
-Finite automata are not only important for theory, they also have important practical applications. 
-For example, finite automata are relevant for regular expressions, where a [bug](https://blog.cloudflare.com/details-of-the-cloudflare-outage-on-july-2-2019/) once took a significant portion of the internet down.
+Finite automata provide a theoretical model of computation with fixed memory.
+Besides theory, finite automata also have important practical applications. 
+For example, finite automata are relevant for parsers and regular expressions, where a [bug](https://blog.cloudflare.com/details-of-the-cloudflare-outage-on-july-2-2019/) once took a significant portion of the internet down.
 
 ### Deterministic Finite Automaton (DFA)
 
@@ -40,7 +40,7 @@ This DFA has four states:
 - **Digits:** we move from start or sign to digits when we encounter a digit character (`[0-9]`). If we're in the digits state and encounter a digit character again, then we stay in the digit state. The digit state is the only accepting state of the DFA. If we're in this state after we've processed the input string, then the DFA accepts the string.
 - **Dead:** we get into this state if we encounter any other character than a digit (unless it's a negative sign at the start). If we're in the dead state at the end of the string, then the DFA rejects the string. Once we're in the dead state, we stay in it, so the dead state in this DFA is a *sink*.
 
-The set of input symbols to the machine is defined by the set $\Sigma$. 
+The set of input **symbols** to the machine is defined by the set $\Sigma$. 
 In our regex example, $\Sigma = \left\{-, 0, 1, 2, \ldots, 9\right\}$.
 
 ### Regular Languages
@@ -165,8 +165,8 @@ Let's trace the first example from the problem through the DFA:
 100 # z row: 4 in decimal
 ```
 
-Unrolling the run turns it into a straight line with one copy of the state per step.
 The DFA recognizes $B^R$, so it reads the columns backwards.
+Unrolling the run turns it into a straight line with one copy of the state per step.
 
 ![The run of the carry automaton on the accepted word, unrolled into a chain of states](./assets/carry-dfa-run-accept.svg)
 
@@ -204,15 +204,17 @@ The Lean proof will consist of three parts:
 
 1. A **specification** of the language $B$.
 2. An executable **implementation** of the [adder DFA](#the-adder-DFA).
-3. A **proof** connecting the specification and the implementation.
+3. A **proof** showing that the implementation matches the specification.
 
-Lean's [Mathlib](https://lean-lang.org/use-cases/mathlib/) has first class support for formal languages and DFAs, so we will just need to instantiate structures from the library to specify the language $B$ and implement the adder DFA.
+Lean's [Mathlib](https://lean-lang.org/use-cases/mathlib/) has first class support for formal languages and DFAs, so we will just need to instantiate structures from the library for the specification and the implementation.
 
 For the proof, we'll have to do more work, but Mathlib will be helpful here as well, as it contains the theorem that regular languages are closed under reversal, which will save a lot of work.
 The proof will contain some unfamiliar syntax, but under the hood it's just a program.
 In fact, the proof is accepted if the program compiles.
 
 Below is a figure laying out the components of the program. The full code can be found on [Github.](https://github.com/agostbiro/my-lean/tree/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32)
+
+TODO update proof structure to match text
 
 ![Diagram of the three layers of the Lean file and the dependencies between their definitions and theorems](./assets/proof-structure.svg "The specification and the implementation meet in the proof layer")
 
@@ -245,13 +247,13 @@ $$z = x + y$$
 from our earlier examples.
 
 If you've used programming languages with set comprehensions, the set builder syntax might look familiar, but we're not constructing a collection here.
-`Language` is just a `Set` under the hood and `Set` in Lean is a function that tests whether an element is in the set.[^2]
-So our definition of $B$ gets unrolled to a function definition under the hood:
+anguage` is just a `Set` under the hood and `Set` in Lean is a function that tests whether an element is in the set.[^2]
+ our definition of $B$ gets unrolled to a function definition under the hood:
 
 ```lean
-  def B : List Sigma3 → Prop :=
-    fun wBE => 
-        row3BE wBE = row1BE wBE + row2BE wBE
+def B : List Sigma3 → Prop :=
+  fun wBE => 
+      row3BE wBE = row1BE wBE + row2BE wBE
 ```
 
 The function has one argument of type `List Sigma3` which is a generic list that holds `Sigma3` objects. 
@@ -259,16 +261,16 @@ This is pretty standard so far, but the return type is more interesting.
 In a typical programming language, you'd expect a membership test to return a boolean.
 But the return value here is `Prop` which is the type of all propositions in Lean (a proposition is something that may or may not have a proof).
 
-So how does a membership test work then?
+So how do membership tests work then?
 The expression `wBE ∈ B` applies the function to `wBE`, which gives back a proposition.
 In Lean a proposition is itself a type, and its values are proofs of the proposition.
 So instead of evaluating `wBE ∈ B` to a boolean, we prove it: to show that a word is in the language, we construct a value of the proposition's type. 
 And to show that a word isn't in the language, we construct a value of the negated proposition.
-A membership test is a type check, not a computation at runtime.
+This way, a set membership test ends up being a type check, not a computation at runtime.
 
 ### The Implementation
 
-We first define the states of the DFA (carry 0, carry 1, dead) as a sum type:
+We first define the [states of the DFA](#adder-dfa) (carry 0, carry 1, dead) as a sum type:
 
 ```lean
 inductive DfaState where
@@ -360,31 +362,28 @@ The run starts from `.carry false`  and ends in `.dead` as expected.
 
 As discussed earlier, in order to prove that the language $B$ is regular, we need to first show that the adder DFA accepts the reverse of the language. 
 We can then use the closure property of the reversal of regular languages to prove that $B$ is regular.
-For the second step we can just use the [Language.isRegular_reverse_iff](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff) theorem from Mathlib, but for the first step we'll have to do some work. 
+For the second step we can just use the [Language.isRegular_reverse_iff](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff) theorem from Mathlib, but we'll have to do some work to show that the adder DFA recognizes the language $B$. 
 
-Mathlib [defines](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L353-L355) the predicate `IsRegular` for a language as follows:
+Before we dig into the proof, let's review how Mathlib defines regular languages.
+It [defines](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L353-L355) a predicate `IsRegular` which boils down to this:[^3]
 
 ```lean
-/-- 
-A regular language is a language that is defined by a DFA with 
-  finite states. 
--/
-def IsRegular {T : Type u} (L : Language T) : Prop :=
-  ∃ σ : Type, ∃ _ : Fintype σ, ∃ M : DFA T σ, M.accepts = L
+def IsRegular (L : Language T) : Prop :=
+  ∃ σ [Fintype σ], ∃ M : DFA T σ, M.accepts = L
 ```
 
-The `{T : Type u} (L : Language T)` argument is a mouthful, but for our purposes it just means that the language can have any type of symbols.
+The `(L : Language T)` argument means that the language can have any type of symbols.
 The return type is again `Prop`.
 
-`∃ σ : Type, ∃ _ : Fintype σ` is just a tedious way of saying that the state of the DFA must have a constant number of values.
-The interesting part is `∃ M : DFA T σ, M.accepts = L` which says that a language is regular if the language accepted by some DFA equals the language. 
+`∃ σ [Fintype σ]` says that there is a finite type of states.
+The interesting part is `∃ M : DFA T σ, M.accepts = L` which says that a language is regular if the language accepted by some DFA over those states equals the language. 
 So when does a DFA accept a language?
 
-The language the DFA accepts can be defined as follows:[^3]
+The language a `Mathlib.Computability.DFA` accepts is [defined](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L123-L124) similar to this:[^4]
 
 ```lean
 def accepts : Language α := 
-  {word | M.evalFrom M.start x ∈ M.accept}
+  { word | M.evalFrom M.start x ∈ M.accept }
 ```
 
 This means that the language that the DFA accepts is the set of words for which evaluating the DFA from the starting state leads to an accepting state.
@@ -406,10 +405,10 @@ B.reverse = { w | w.reverse ∈ B }
 `B` reads its rows most significant bit first with the `rowNBE` functions. 
 Reading the reversed string big-endian is the same as reading the original string least signifcant bit first.
 In other words, while we interpret bit strings big-endian for `B`, we interpret them as little-endian for `B.reverse`. 
-The membership test for `B.reverse` is therefore equivalent to:[^4]
+The membership test for `B.reverse` is therefore equivalent to:[^5]
 
 ```lean
-{ wLE | row1LE wLE + row2LE wLE = row3LE wLE}
+{ wLE | row1LE wLE + row2LE wLE = row3LE wLE }
 ```
 
 The way we're going to prove the `adderDFA_accepts_B_reverse` theorem is by showing that running the adder DFA on `wLE` is equivalent to the membership test for `B.reverse`.
@@ -612,7 +611,7 @@ These are the high level steps:
 1. On the DFA side, split the run into its first step and the run over the remaining columns and join them with an intermediate carry.
 2. Turn the first step into arithmetic. This is the adder equation for a single column.
 3. Turn the run over the remaining columns into arithmetic using the induction hypothesis.
-4. On the arithmetic side, show that the equation for the whole word splits into the equation for the low bit and the equation for the remaining bits.
+4. On the arithmetic side, show that the equation for the whole word splits into the equation for the least significant bit and the equation for the remaining bits.
 
 After these steps the two sides of the equivalence say the same thing, which closes the goal.
 Steps 1, 2 and 4 each get their own helper lemma, so let's look at those first.
@@ -633,7 +632,7 @@ This lemma extends that to whole runs, again by induction on the word.
 `simpa [...] using h` simplifies both the goal and the hypothesis `h`, and closes the goal if they match.
 
 ```lean
-lemma evalFrom_cons_carry_iff (x y z carryIn carryOut : Bool) (w : List Sigma3) :
+lemma adderDFA_split_run (x y z carryIn carryOut : Bool) (w : List Sigma3) :
     adderDFA.evalFrom (.carry carryIn) ((x, y, z) :: w) = .carry carryOut ↔
       ∃ carryMid, dfaStep (.carry carryIn) (x, y, z) = .carry carryMid ∧
         adderDFA.evalFrom (.carry carryMid) w = .carry carryOut := by
@@ -644,7 +643,7 @@ lemma evalFrom_cons_carry_iff (x y z carryIn carryOut : Bool) (w : List Sigma3) 
 ```
 
 This is step 1 of the plan.
-The `∃` symbol reads as "there exists", so the lemma says that a run over a non-empty word ends in `carryOut` if and only if there is an intermediate carry `carryMid` such that the first column takes the DFA to `carryMid` and the rest of the run from `carryMid` ends in `carryOut`.
+The lemma says that a run over a non-empty word ends in `carryOut` if and only if there is an intermediate carry `carryMid` such that the first column takes the DFA to `carryMid` and the rest of the run from `carryMid` ends in `carryOut`.
 
 The existential is needed because the first step can also lead to the dead state, in which case there is no `carryMid`.
 This is what the proof handles.
@@ -681,7 +680,7 @@ Both are true, so the equivalence holds.
 ##### Splitting the Equation
 
 ```lean
-lemma low_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
+lemma least_significant_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
     (x.toNat + 2 * a) + (y.toNat + 2 * b) + carryIn.toNat
         = (z.toNat + 2 * d) + 2 * k ↔
       ∃ carryMid : Bool,
@@ -691,19 +690,19 @@ lemma low_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
 ```
 
 This is step 4 of the plan and it's pure arithmetic, the DFA doesn't appear in it.
-`x`, `y` and `z` are the low bits of the three rows, `a`, `b` and `d` are the values of the remaining bits, and `k` is the carry out term.
+`x`, `y` and `z` are the least significant bits of the three rows, `a`, `b` and `d` are the values of the remaining bits, and `k` is the carry out term.
 `x.toNat + 2 * a` is exactly the little-endian value of a row whose first bit is `x` and whose remaining bits have value `a`.
-So the lemma says that the addition equation for the whole word holds if and only if there is an intermediate carry such that the adder equation holds for the low bits and the addition equation holds for the remaining bits.
-Note how the shape mirrors `evalFrom_cons_carry_iff`.
+So the lemma says that the addition equation for the whole word holds if and only if there is an intermediate carry such that the adder equation holds for the least significant bits and the addition equation holds for the remaining bits.
+Note how the shape mirrors `adderDFA_split_run`.
 That's not an accident, this is what lets the two sides meet in the middle.
 
 The proof splits on the four bits, which gives 16 goals.
-`simp` gets rid of the existential, either by splitting it into "it holds for `false` or it holds for `true`", or by reading `carryMid` off the low bit equation when the other bits pin it down.
+`simp` gets rid of the existential, either by splitting it into "it holds for `false` or it holds for `true`", or by reading `carryMid` off the least significant bit equation when the other bits pin it down.
 `omega` is a decision procedure for linear arithmetic over natural numbers and integers, and it proves the remaining statements about `a`, `b`, `d` and `k` automatically.
 
 This lemma also takes care of the dead state on the arithmetic side.
-If the bottom bit has the wrong parity for the given `x`, `y` and `carryIn`, then no `carryMid` satisfies the low bit equation, so the right-hand side is false.
-Every term on the left-hand side other than the low bits is even, so the equation for the whole word can't hold either.
+If the bottom bit has the wrong parity for the given `x`, `y` and `carryIn`, then no `carryMid` satisfies the least significant bit equation, so the right-hand side is false.
+Every term on the left-hand side other than the least significant bits is even, so the equation for the whole word can't hold either.
 This matches the DFA side, where the run enters the dead state and never ends in a carry state.
 
 ##### Putting It Together
@@ -713,12 +712,12 @@ With the helper lemmas in place, the inductive step is a sequence of rewrites:
 ```lean
   | cons column columnsLE induction_hypothesis =>
     obtain ⟨x, y, z⟩ := column
-    rw [evalFrom_cons_carry_iff]
+    rw [adderDFA_split_run]
     simp_rw [dfaStep_carry_iff, induction_hypothesis]
     simp only [row1LE_cons, row2LE_cons, row3LE_cons, List.length_cons, pow_succ]
     simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm,
       Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using
-        (low_bit_split x y z carryIn
+        (least_significant_bit_split x y z carryIn
           (row1LE columnsLE)
           (row2LE columnsLE)
           (row3LE columnsLE)
@@ -736,7 +735,7 @@ adderDFA.evalFrom (.carry carryIn) (column :: columnsLE) = .carry carryOut ↔
 
 `obtain ⟨x, y, z⟩ := column` destructures the column into its three bits, like `let (x, y, z) = column` would in a regular program.
 
-`rw [evalFrom_cons_carry_iff]` is step 1 of the plan.
+`rw [adderDFA_split_run]` is step 1 of the plan.
 `rw` looks for the left-hand side of a lemma in the goal and replaces it with the right-hand side.
 The left-hand side of the goal becomes:
 
@@ -771,14 +770,14 @@ x.toNat + 2 * row1LE columnsLE + (y.toNat + 2 * row2LE columnsLE) + carryIn.toNa
   = z.toNat + 2 * row3LE columnsLE + carryOut.toNat * (2 ^ columnsLE.length * 2)
 ```
 
-Now the goal is `low_bit_split` with `a`, `b` and `d` set to the values of the remaining rows and `k` set to `carryOut.toNat * 2 ^ columnsLE.length`, which is step 4 of the plan.
+Now the goal is `least_significant_bit_split` with `a`, `b` and `d` set to the values of the remaining rows and `k` set to `carryOut.toNat * 2 ^ columnsLE.length`, which is step 4 of the plan.
 There are two small mismatches though.
 The two sides of the equivalence are the other way around, which `.symm` fixes by flipping the lemma.
 And the carry out term is grouped differently: the goal has `carryOut.toNat * (2 ^ n * 2)` while the lemma has `2 * (carryOut.toNat * 2 ^ n)`.
 `simpa` with the commutativity and associativity lemmas for `+` and `*` normalizes both the goal and the lemma to the same form, and closes the goal.
 That completes the inductive step, and with it the proof of the run invariant.
 
-All that remains for `adderDFA_accepts_B_reverse` is to instantiate the invariant with `false` for both carries, which cancels the carry terms, and to unfold the definitions of `accepts` and `B.reverse` on the two sides until they match.[^4]
+All that remains for `adderDFA_accepts_B_reverse` is to instantiate the invariant with `false` for both carries, which cancels the carry terms, and to unfold the definitions of `accepts` and `B.reverse` on the two sides until they match.[^5]
 `B_isRegular` then follows from the Mathlib theorem that regular languages are closed under reversal.
 
 ## Conclusion
@@ -792,6 +791,8 @@ In addition to being a proof assistant, Lean is also a functional programming la
 
 [^2]: Set as a collection is available as `Std.HashSet` and `Std.TreeSet`.
 
-[^3]: The actual Mathlib [definition](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L123-L124) is a bit more verbose, so I'm not quoting it here.
+[^3]: Simplified version of Mathlib's definition. The actual definition spells out the universe of `T` and writes the finiteness as `∃ σ : Type, ∃ _ : Fintype σ`.
 
-[^4]: The informal argument about the equivalence of the little-endian interpretation of a word and the big-endian interpretation of its reversal (`rowNLE w = rowNBE w.reverse`) is formalized in the proof, but it's basically just bookkeeping, so I didn't include it in the post.
+[^4]: The actual Mathlib is a bit more verbose, so I'm not quoting it here.
+
+[^5]: The informal argument about the equivalence of the little-endian interpretation of a word and the big-endian interpretation of its reversal (`rowNLE w = rowNBE w.reverse`) is formalized in the proof, but it's basically just bookkeeping, so I didn't include it in the post.
