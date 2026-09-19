@@ -362,10 +362,9 @@ The run starts from `.carry false`  and ends in `.dead` as expected.
 
 As discussed earlier, in order to prove that the language $B$ is regular, we need to first show that the adder DFA accepts the reverse of the language. 
 We can then use the closure property of the reversal of regular languages to prove that $B$ is regular.
-For the second step we can just use the [Language.isRegular_reverse_iff](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff) theorem from Mathlib, but we'll have to do some work to show that the adder DFA recognizes the language $B$. 
+This is readily available as a theorem [from Mathlib,](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff) but we'll have to do some work to show that the adder DFA recognizes the language $B$. 
 
-Before we dig into the proof, let's review how Mathlib defines regular languages.
-It [defines](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L353-L355) a predicate `IsRegular` which boils down to this:[^3]
+Mathlib's [definition](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L353-L355) of regular languages boils down to this:[^3]
 
 ```lean
 def IsRegular (L : Language T) : Prop :=
@@ -375,11 +374,11 @@ def IsRegular (L : Language T) : Prop :=
 The `(L : Language T)` argument means that the language can have any type of symbols.
 The return type is again `Prop`.
 
-`∃ σ [Fintype σ]` says that there is a finite type of states.
-The interesting part is `∃ M : DFA T σ, M.accepts = L` which says that a language is regular if the language accepted by some DFA over those states equals the language. 
+`∃ σ [Fintype σ]` says that there is a finite number of states.
+The interesting part is `∃ M : DFA T σ, M.accepts = L` which says that a language is regular if the language accepted by some DFA over those states equals the language.
 So when does a DFA accept a language?
 
-The language a `Mathlib.Computability.DFA` accepts is [defined](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L123-L124) similar to this:[^4]
+The language a DFA accepts in Mathlib is [defined](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L123-L124) similar to this:[^4]
 
 ```lean
 def accepts : Language α := 
@@ -396,7 +395,7 @@ theorem adderDFA_accepts_B_reverse : adderDFA.accepts = B.reverse := by
   ...
 ```
 
-The way we're going to do this is by showing that the adder DFA computes the same equation that is the membership check for `B.reverse` which is defined as follows:
+The way we're going to prove this is by showing that the adder DFA computes the same equation that is the membership check for `B.reverse` which is defined as follows:
 
 ```lean
 B.reverse = { w | w.reverse ∈ B }
@@ -411,8 +410,7 @@ The membership test for `B.reverse` is therefore equivalent to:[^5]
 { wLE | row1LE wLE + row2LE wLE = row3LE wLE }
 ```
 
-The way we're going to prove the `adderDFA_accepts_B_reverse` theorem is by showing that running the adder DFA on `wLE` is equivalent to the membership test for `B.reverse`.
-The challenge is that the definition of the language is descriptive while the adder DFA is prescriptive and describes intermediate steps.
+The challenge in the proof is going to be that the definition of the language is descriptive while the adder DFA is prescriptive and describes intermediate steps.
 
 #### Run Invariant
 
@@ -473,14 +471,19 @@ For members of `B.reverse` where the starting and ending carry are both 0, this 
 Here is the run invariant as a theorem, with the proof left out for now:
 
 ```lean
-lemma adderDFA_run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
+def AddsWithCarry (wLE : List Sigma3) (carryIn carryOut : Bool) : Prop :=
+  row1LE wLE + row2LE wLE + carryIn.toNat
+    = row3LE wLE + carryOut.toNat * 2 ^ wLE.length
+
+lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
     adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
-      row1LE wLE + row2LE wLE + carryIn.toNat
-        = row3LE wLE + carryOut.toNat * 2 ^ wLE.length := by
+      AddsWithCarry wLE carryIn carryOut := by
   ...
 ```
 
-The only difference from the statement in the previous section is `.toNat`, which converts a boolean into `0` or `1` so that the carries can take part in the arithmetic (`.toNat` will be omitted in the following code blocks for brevity).
+The arithmetic side of the equivalence gets its own name, `AddsWithCarry`, so that the lemma reads as "the run ends in `carryOut` if and only if the word adds up with these carries".
+`AddsWithCarry` is a definition whose type is `Prop`, so it's a statement rather than a value, and it's defined as the equation from the previous section.
+The only difference from that equation is `.toNat`, which converts a boolean into `0` or `1` so that the carries can take part in the arithmetic (`.toNat` will be omitted in the following code blocks for brevity).
 
 Notice that that the theorem has arguments like a function.
 In fact a theorem is essiciantly a function: its arguments are the variables the statement talks about, its type is the proposition, and its body is the proof.
@@ -488,7 +491,7 @@ So we have a parameterized theorem that we'll have to prove for all possible val
 But we will only use it later on in the proof of `adderDFA_accepts_B_reverse` with both carries set to `false` which form corresponds to the definition of the language `B`:
 
 ```lean
-  have invariant := adderDFA_run_invariant wLE false false
+  have invariant := run_invariant wLE false false
 ```
 
 The proof is by induction on the word `wLE` which has type `List Sigma3`.
@@ -519,8 +522,7 @@ Recall the run invariant:
 
 ```lean
 adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
-  row1LE wLE + row2LE wLE + carryIn = 
-    row3LE wLE + carryOut * 2 ^ wLE.length
+  AddsWithCarry wLE carryIn carryOut
 ```
 
 Let's focus on what happens on the left-hand side of the equivalence first:
@@ -544,7 +546,8 @@ def evalFrom (s : σ) : List α → σ :=
 
 on the left-hand side of the equivalence.
 
-Next, let's see what happens on the right hand-side in the base case:
+Next, let's see what happens on the right hand-side in the base case.
+Unfolding `AddsWithCarry` gives the equation:
 
 ```lean
 row1LE wLE + row2LE wLE + carryIn = 
@@ -583,9 +586,15 @@ The equivalence holds if both sides have the same truth value in every row of th
 The same argument in Lean:
 
 ```lean
-  | nil =>
-    cases carryIn <;> cases carryOut <;>
-      simp [row1LE, row2LE, row3LE, valueLE, row1, row2, row3, DFA.evalFrom]
+| nil =>  -- base case
+  cases carryIn <;> cases carryOut <;>
+    simp [
+        AddsWithCarry, 
+        row1LE, row2LE, row3LE, 
+        valueLE, 
+        row1, row2, row3, 
+        DFA.evalFrom
+    ]
 ```
 
 The `cases` tactic splits a goal into one goal per constructor of a type, so `cases carryIn` gives us two goals, one with `carryIn` replaced by `false` and one with `true`.
@@ -594,7 +603,7 @@ The `<;>` combinator runs the tactic on its right on every goal produced by the 
 `simp` then closes each of them.
 `simp` is the workhorse tactic of Lean.
 It rewrites the goal using a database of simplification rules plus the definitions and lemmas that we pass to it in the square brackets, and it closes the goal if the goal ends up as something trivially true.
-Here it unfolds the row values and `evalFrom`, evaluates the arithmetic, and is left with goals like `false = false`, which it knows how to close.
+Here it unfolds `AddsWithCarry`, the row values and `evalFrom`, evaluates the arithmetic, and is left with goals like `false = false`, which it knows how to close.
 
 ##### Inductive Step
 
@@ -604,12 +613,12 @@ In the inductive step, the word is `cons column columnsLE` which is the list cre
 
 We have assumed the induction hypothesis for `columnsLE`, but we need to prove the invariant for the whole word.
 We'll do this by introducing an intermediate carry after the first step of the DFA that runs on the first column (which is the least significant bit of the word).
-Then we rearrange the equation from the right-hand side of the run invariant to show that the arithmetic checks out.
+Then we rearrange the equation from the `AddsWithCarry` to show that the arithmetic checks out.
 
 These are the high level steps:
 
 1. On the DFA side, split the run into its first step and the run over the remaining columns and join them with an intermediate carry.
-2. Turn the first step into arithmetic. This is the adder equation for a single column.
+2. Turn the first step of the DFA into arithmetic. This is the adder equation for a single column.
 3. Turn the run over the remaining columns into arithmetic using the induction hypothesis.
 4. On the arithmetic side, show that the equation for the whole word splits into the equation for the least significant bit and the equation for the remaining bits.
 
@@ -632,7 +641,7 @@ This lemma extends that to whole runs, again by induction on the word.
 `simpa [...] using h` simplifies both the goal and the hypothesis `h`, and closes the goal if they match.
 
 ```lean
-lemma adderDFA_split_run (x y z carryIn carryOut : Bool) (w : List Sigma3) :
+lemma split_run (x y z carryIn carryOut : Bool) (w : List Sigma3) :
     adderDFA.evalFrom (.carry carryIn) ((x, y, z) :: w) = .carry carryOut ↔
       ∃ carryMid, dfaStep (.carry carryIn) (x, y, z) = .carry carryMid ∧
         adderDFA.evalFrom (.carry carryMid) w = .carry carryOut := by
@@ -693,7 +702,7 @@ This is step 4 of the plan and it's pure arithmetic, the DFA doesn't appear in i
 `x`, `y` and `z` are the least significant bits of the three rows, `a`, `b` and `d` are the values of the remaining bits, and `k` is the carry out term.
 `x.toNat + 2 * a` is exactly the little-endian value of a row whose first bit is `x` and whose remaining bits have value `a`.
 So the lemma says that the addition equation for the whole word holds if and only if there is an intermediate carry such that the adder equation holds for the least significant bits and the addition equation holds for the remaining bits.
-Note how the shape mirrors `adderDFA_split_run`.
+Note how the shape mirrors `split_run`.
 That's not an accident, this is what lets the two sides meet in the middle.
 
 The proof splits on the four bits, which gives 16 goals.
@@ -712,9 +721,9 @@ With the helper lemmas in place, the inductive step is a sequence of rewrites:
 ```lean
   | cons column columnsLE induction_hypothesis =>
     obtain ⟨x, y, z⟩ := column
-    rw [adderDFA_split_run]
+    rw [split_run]
     simp_rw [dfaStep_carry_iff, induction_hypothesis]
-    simp only [row1LE_cons, row2LE_cons, row3LE_cons, List.length_cons, pow_succ]
+    simp only [AddsWithCarry, row1LE_cons, row2LE_cons, row3LE_cons, List.length_cons, pow_succ]
     simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm,
       Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using
         (least_significant_bit_split x y z carryIn
@@ -729,13 +738,12 @@ The goal at the start of the inductive step is the invariant with `column :: col
 
 ```lean
 adderDFA.evalFrom (.carry carryIn) (column :: columnsLE) = .carry carryOut ↔
-  row1LE (column :: columnsLE) + row2LE (column :: columnsLE) + carryIn.toNat
-    = row3LE (column :: columnsLE) + carryOut.toNat * 2 ^ (column :: columnsLE).length
+  AddsWithCarry (column :: columnsLE) carryIn carryOut
 ```
 
 `obtain ⟨x, y, z⟩ := column` destructures the column into its three bits, like `let (x, y, z) = column` would in a regular program.
 
-`rw [adderDFA_split_run]` is step 1 of the plan.
+`rw [split_run]` is step 1 of the plan.
 `rw` looks for the left-hand side of a lemma in the goal and replaces it with the right-hand side.
 The left-hand side of the goal becomes:
 
@@ -746,23 +754,29 @@ The left-hand side of the goal becomes:
 
 `simp_rw [dfaStep_carry_iff, induction_hypothesis]` is steps 2 and 3.
 `simp_rw` is like `rw` but it can rewrite underneath the `∃` binder.
-It turns the first step into the adder equation and the rest of the run into the addition equation for `columnsLE`.
+It turns the first step into the adder equation and the rest of the run into `AddsWithCarry` for `columnsLE`.
 This is where `generalizing carryIn` pays off: the induction hypothesis is applied with `carryMid` as the starting carry.
 The left-hand side of the goal becomes:
 
 ```lean
 ∃ carryMid,
   x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryMid.toNat ∧
-  row1LE columnsLE + row2LE columnsLE + carryMid.toNat
-    = row3LE columnsLE + carryOut.toNat * 2 ^ columnsLE.length
+  AddsWithCarry columnsLE carryMid carryOut
 ```
 
 The DFA is now gone from the goal.
 What remains is arithmetic on both sides.
 
-The `simp only` line unfolds the right-hand side of the goal one level.
+The `simp only` line unfolds `AddsWithCarry` on both sides of the goal into its equation, and then unfolds the right-hand side one level further.
 `simp only` differs from `simp` in that it uses only the rules that we list and not the default database, which keeps the goal in a predictable shape.
 The `rowLE_cons` lemmas say that the value of a row of `column :: columnsLE` is the column's bit plus twice the value of the same row of `columnsLE`, `List.length_cons` unfolds one step of the length, and `pow_succ` rewrites $2^{n+1}$ as $2^n \cdot 2$.
+On the left-hand side, `AddsWithCarry columnsLE carryMid carryOut` becomes:
+
+```lean
+row1LE columnsLE + row2LE columnsLE + carryMid.toNat
+  = row3LE columnsLE + carryOut.toNat * 2 ^ columnsLE.length
+```
+
 The right-hand side becomes:
 
 ```lean
@@ -777,7 +791,7 @@ And the carry out term is grouped differently: the goal has `carryOut.toNat * (2
 `simpa` with the commutativity and associativity lemmas for `+` and `*` normalizes both the goal and the lemma to the same form, and closes the goal.
 That completes the inductive step, and with it the proof of the run invariant.
 
-All that remains for `adderDFA_accepts_B_reverse` is to instantiate the invariant with `false` for both carries, which cancels the carry terms, and to unfold the definitions of `accepts` and `B.reverse` on the two sides until they match.[^5]
+All that remains for `adderDFA_accepts_B_reverse` is to instantiate the invariant with `false` for both carries, unfold `AddsWithCarry`, which cancels the carry terms, and to unfold the definitions of `accepts` and `B.reverse` on the two sides until they match.[^5]
 `B_isRegular` then follows from the Mathlib theorem that regular languages are closed under reversal.
 
 ## Conclusion

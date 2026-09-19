@@ -86,8 +86,8 @@
   <text class="d" x="545" y="330">dead is a sink</text>
 
   <!-- proof: invariant and payoff -->
-  <rect x="225" y="382" width="250" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-  <text class="n" x="350" y="405" fill="#04342C">adderDFA_run_invariant</text>
+  <rect x="260" y="382" width="180" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="n" x="350" y="405" fill="#04342C">run_invariant</text>
 
   <rect x="205" y="468" width="290" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
   <text class="n" x="350" y="491" fill="#04342C">adderDFA_accepts_B_reverse</text>
