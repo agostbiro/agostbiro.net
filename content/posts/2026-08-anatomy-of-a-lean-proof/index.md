@@ -214,8 +214,6 @@ In fact, the proof is accepted if the program compiles.
 
 Below is a figure laying out the components of the program. The full code can be found on [Github.](https://github.com/agostbiro/my-lean/tree/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32)
 
-TODO update proof structure to match text
-
 ![Diagram of the three layers of the Lean file and the dependencies between their definitions and theorems](./assets/proof-structure.svg "The specification and the implementation meet in the proof layer")
 
 
@@ -471,18 +469,21 @@ For members of `B.reverse` where the starting and ending carry are both 0, this 
 Here is the run invariant as a theorem, with the proof left out for now:
 
 ```lean
+def RunCarries (carryIn : Bool) (wLE : List Sigma3) (carryOut : Bool) : Prop :=
+  adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut
+
 def AddsWithCarry (wLE : List Sigma3) (carryIn carryOut : Bool) : Prop :=
   row1LE wLE + row2LE wLE + carryIn.toNat
     = row3LE wLE + carryOut.toNat * 2 ^ wLE.length
 
 lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
-    adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
-      AddsWithCarry wLE carryIn carryOut := by
+    RunCarries carryIn wLE carryOut ↔ AddsWithCarry wLE carryIn carryOut := by
   ...
 ```
 
-The arithmetic side of the equivalence gets its own name, `AddsWithCarry`, so that the lemma reads as "the run ends in `carryOut` if and only if the word adds up with these carries".
-`AddsWithCarry` is a definition whose type is `Prop`, so it's a statement rather than a value, and it's defined as the equation from the previous section.
+Both sides of the equivalence get their own name, so that the lemma reads as "the run from `carryIn` ends in `carryOut` if and only if the word adds up with these carries".
+`RunCarries` and `AddsWithCarry` are definitions whose type is `Prop`, so they're statements rather than values.
+`RunCarries` is the left-hand side of the equivalence from the previous section, and `AddsWithCarry` is the right-hand side.
 The only difference from that equation is `.toNat`, which converts a boolean into `0` or `1` so that the carries can take part in the arithmetic (`.toNat` will be omitted in the following code blocks for brevity).
 
 Notice that that the theorem has arguments like a function.
@@ -521,11 +522,11 @@ First, let's review the proof of the base case (when the DFA is running over an 
 Recall the run invariant:
 
 ```lean
-adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
-  AddsWithCarry wLE carryIn carryOut
+RunCarries carryIn wLE carryOut ↔ AddsWithCarry wLE carryIn carryOut
 ```
 
-Let's focus on what happens on the left-hand side of the equivalence first:
+Let's focus on what happens on the left-hand side of the equivalence first.
+Unfolding `RunCarries` gives:
 
 ```lean
 adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut
@@ -589,7 +590,7 @@ The same argument in Lean:
 | nil =>  -- base case
   cases carryIn <;> cases carryOut <;>
     simp [
-        AddsWithCarry, 
+        RunCarries, AddsWithCarry, 
         row1LE, row2LE, row3LE, 
         valueLE, 
         row1, row2, row3, 
@@ -603,7 +604,7 @@ The `<;>` combinator runs the tactic on its right on every goal produced by the 
 `simp` then closes each of them.
 `simp` is the workhorse tactic of Lean.
 It rewrites the goal using a database of simplification rules plus the definitions and lemmas that we pass to it in the square brackets, and it closes the goal if the goal ends up as something trivially true.
-Here it unfolds `AddsWithCarry`, the row values and `evalFrom`, evaluates the arithmetic, and is left with goals like `false = false`, which it knows how to close.
+Here it unfolds `RunCarries`, `AddsWithCarry`, the row values and `evalFrom`, evaluates the arithmetic, and is left with goals like `false = false`, which it knows how to close.
 
 ##### Inductive Step
 
@@ -621,6 +622,8 @@ These are the high level steps:
 2. Turn the first step of the DFA into arithmetic. This is the adder equation for a single column.
 3. Turn the run over the remaining columns into arithmetic using the induction hypothesis.
 4. On the arithmetic side, show that the equation for the whole word splits into the equation for the least significant bit and the equation for the remaining bits.
+
+![The lemmas used in the inductive step of the run invariant and how they feed into it](./assets/run-invariant-inductive-step.svg "The DFA side and the arithmetic side meet in the inductive step")
 
 After these steps the two sides of the equivalence say the same thing, which closes the goal.
 Steps 1, 2 and 4 each get their own helper lemma, so let's look at those first.
@@ -641,14 +644,15 @@ This lemma extends that to whole runs, again by induction on the word.
 `simpa [...] using h` simplifies both the goal and the hypothesis `h`, and closes the goal if they match.
 
 ```lean
-lemma split_run (x y z carryIn carryOut : Bool) (w : List Sigma3) :
-    adderDFA.evalFrom (.carry carryIn) ((x, y, z) :: w) = .carry carryOut ↔
-      ∃ carryMid, dfaStep (.carry carryIn) (x, y, z) = .carry carryMid ∧
-        adderDFA.evalFrom (.carry carryMid) w = .carry carryOut := by
-  change adderDFA.evalFrom (dfaStep (.carry carryIn) (x, y, z)) w = .carry carryOut ↔ _
-  cases dfaStep (.carry carryIn) (x, y, z) with
-  | dead => rw [evalFrom_dead]; simp
-  | carry carryMid => simp
+lemma split_run (column : Sigma3) (columns : List Sigma3) (carryIn carryOut : Bool) :
+    RunCarries carryIn (column :: columns) carryOut ↔
+      ∃ carryMid,
+        dfaStep (.carry carryIn) column = .carry carryMid ∧
+        RunCarries carryMid columns carryOut := by
+  change adderDFA.evalFrom (dfaStep (.carry carryIn) column) columns = .carry carryOut ↔ _
+  cases dfaStep (.carry carryIn) column with
+  | dead => rw [evalFrom_dead]; simp [RunCarries]
+  | carry carryMid => simp [RunCarries]
 ```
 
 This is step 1 of the plan.
@@ -656,16 +660,16 @@ The lemma says that a run over a non-empty word ends in `carryOut` if and only i
 
 The existential is needed because the first step can also lead to the dead state, in which case there is no `carryMid`.
 This is what the proof handles.
-`change` restates the goal in a form that is equal to it by definition: `evalFrom` over a non-empty word is `evalFrom` over the tail, starting from the state that the first step leads to.
+`change` restates the goal in a form that is equal to it by definition: `RunCarries` unfolds to `evalFrom`, and `evalFrom` over a non-empty word is `evalFrom` over the tail, starting from the state that the first step leads to.
 Then we split on the result of the first step.
 If it's `dead`, then the rest of the run stays dead by `evalFrom_dead`, so the left-hand side is `.dead = .carry carryOut`, which is false, and the right-hand side asks for a `carryMid` with `.dead = .carry carryMid`, which is also false.
 `simp` knows that different constructors of an inductive type are never equal (this is part of the scaffolding that `inductive` generates), so it closes the goal.
-If the first step leads to `carry carryMid`, then both sides say the same thing, and `simp` can supply the witness for the existential.
+If the first step leads to `carry carryMid`, then both sides say the same thing once `RunCarries` is unfolded on the right-hand side, and `simp` can supply the witness for the existential.
 
 ##### One Step
 
 ```lean
-lemma dfaStep_carry_iff (x y z carryIn carryOut : Bool) :
+lemma carry_step_correct (x y z carryIn carryOut : Bool) :
     dfaStep (.carry carryIn) (x, y, z) = .carry carryOut ↔
       x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryOut.toNat := by
   cases x <;> cases y <;> cases z <;> cases carryIn <;> cases carryOut <;>
@@ -722,7 +726,7 @@ With the helper lemmas in place, the inductive step is a sequence of rewrites:
   | cons column columnsLE induction_hypothesis =>
     obtain ⟨x, y, z⟩ := column
     rw [split_run]
-    simp_rw [dfaStep_carry_iff, induction_hypothesis]
+    simp_rw [carry_step_correct, induction_hypothesis]
     simp only [AddsWithCarry, row1LE_cons, row2LE_cons, row3LE_cons, List.length_cons, pow_succ]
     simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm,
       Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using
@@ -737,7 +741,7 @@ When writing a proof like this in an editor, Lean shows the goal after each tact
 The goal at the start of the inductive step is the invariant with `column :: columnsLE` substituted for `wLE`:
 
 ```lean
-adderDFA.evalFrom (.carry carryIn) (column :: columnsLE) = .carry carryOut ↔
+RunCarries carryIn (column :: columnsLE) carryOut ↔
   AddsWithCarry (column :: columnsLE) carryIn carryOut
 ```
 
@@ -749,10 +753,10 @@ The left-hand side of the goal becomes:
 
 ```lean
 ∃ carryMid, dfaStep (.carry carryIn) (x, y, z) = .carry carryMid ∧
-  adderDFA.evalFrom (.carry carryMid) columnsLE = .carry carryOut
+  RunCarries carryMid columnsLE carryOut
 ```
 
-`simp_rw [dfaStep_carry_iff, induction_hypothesis]` is steps 2 and 3.
+`simp_rw [carry_step_correct, induction_hypothesis]` is steps 2 and 3.
 `simp_rw` is like `rw` but it can rewrite underneath the `∃` binder.
 It turns the first step into the adder equation and the rest of the run into `AddsWithCarry` for `columnsLE`.
 This is where `generalizing carryIn` pays off: the induction hypothesis is applied with `carryMid` as the starting carry.

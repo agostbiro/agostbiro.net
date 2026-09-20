@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="fig-induction-step" width="700" height="346" viewBox="0 0 700 346" role="img">
+  <title>The lemmas used in the inductive step of run_invariant: split_run, carry_step_correct and the induction hypothesis on the DFA side, least_significant_bit_split on the arithmetic side, all feeding into run_invariant.</title>
+  <style>
+    /* Headers and arrows sit on the page background, so they have to follow
+       the page's colour scheme. The boxes keep their own light fills, so the
+       text inside them stays dark in both.
+
+       Every selector is scoped to the figure's own class: this file is inlined
+       into the page (layouts/_markup/render-image.html), so bare class names
+       would leak into the document and collide with the other figures. */
+    .fig-induction-step {
+      --ink: #2C2C2A;   /* headers on the page background */
+      --line: #5F5E5A;  /* arrows and arrowheads */
+    }
+    /* The appearance toggle flips body[a], which the inlined figure can read.
+       Opened on its own the SVG is the root element and has no body above it,
+       so svg:root falls back to the OS preference. */
+    body[a="dark"] .fig-induction-step {
+      --ink: #D6D4CC; --line: #A8A69E;
+    }
+    @media (prefers-color-scheme: dark) {
+      body[a="auto"] .fig-induction-step,
+      svg.fig-induction-step:root {
+        --ink: #D6D4CC; --line: #A8A69E;
+      }
+    }
+    .fig-induction-step text { font-family: system-ui, sans-serif; }
+    .fig-induction-step .n  { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; font-weight: 500; text-anchor: middle; }
+    .fig-induction-step .d  { font-size: 10.5px; fill: #2C2C2A; text-anchor: middle; }
+    .fig-induction-step .hdr { font-size: 12px; fill: var(--ink); text-anchor: middle; }
+    .fig-induction-step .arr { stroke: var(--line); stroke-width: 1.5; fill: none; }
+    .fig-induction-step marker path { stroke: var(--line); }
+  </style>
+  <defs>
+    <marker id="arrow-induction-step" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <text class="hdr" x="180" y="22">DFA side</text>
+  <text class="hdr" x="520" y="22">arithmetic side</text>
+
+  <!-- DFA side -->
+  <rect x="60" y="34" width="240" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="180" y="52" fill="#2C2C2A">split_run</text>
+  <text class="d" x="180" y="68">step 1</text>
+
+  <path d="M180 78 V108" class="arr" marker-end="url(#arrow-induction-step)"/>
+
+  <rect x="60" y="110" width="240" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="180" y="128" fill="#2C2C2A">carry_step_correct</text>
+  <text class="d" x="180" y="144">step 2</text>
+
+  <path d="M180 154 V184" class="arr" marker-end="url(#arrow-induction-step)"/>
+
+  <rect x="60" y="186" width="240" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="180" y="204" fill="#2C2C2A">induction_hypothesis</text>
+  <text class="d" x="180" y="220">step 3</text>
+
+  <!-- arithmetic side -->
+  <rect x="400" y="34" width="240" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="520" y="52" fill="#2C2C2A">least_significant_bit_split</text>
+  <text class="d" x="520" y="68">step 4</text>
+
+  <!-- both sides meet at the goal -->
+  <path d="M180 230 V260 H350" class="arr"/>
+  <path d="M520 78 V260 H350" class="arr"/>
+  <path d="M350 260 V288" class="arr" marker-end="url(#arrow-induction-step)"/>
+
+  <rect x="230" y="290" width="240" height="44" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="n" x="350" y="308" fill="#04342C">run_invariant</text>
+  <text class="d" x="350" y="324" fill="#04342C">inductive step</text>
+</svg>

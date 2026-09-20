@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="fig-proof-structure" width="700" height="640" viewBox="0 0 700 640" role="img">
-  <title>The three layers of the Lean file. The specification defines the alphabet Sigma3 and the language B over it; the implementation defines the transition function and the DFA built on it; the proof layer derives the run invariant from a step lemma, an arithmetic lemma and a sink lemma, and combines the invariant with the specification and the machine to prove that the DFA accepts B reversed, hence that B is regular.</title>
+<svg xmlns="http://www.w3.org/2000/svg" class="fig-proof-structure" width="700" height="547" viewBox="0 0 700 547" role="img">
+  <title>The three layers of the Lean file. The specification defines the alphabet Sigma3 and the language B over it; the implementation defines the transition function and the DFA built on it; the proof layer states the run invariant about the machine and combines it with the specification to prove that the DFA accepts B reversed, hence that B is regular.</title>
   <style>
     /* Group titles, dashed group borders and arrows sit on the page
        background, so they have to follow the page's colour scheme. The node
@@ -46,7 +46,7 @@
   <rect class="grp" x="360" y="36" width="320" height="170" rx="8"/>
   <text class="gt" x="520" y="58">Implementation</text>
 
-  <rect class="grp" x="20" y="246" width="660" height="360" rx="8"/>
+  <rect class="grp" x="20" y="246" width="660" height="267" rx="8"/>
   <text class="gt" x="350" y="270">Proof</text>
 
   <!-- specification -->
@@ -71,40 +71,23 @@
 
   <path d="M520 114 V140" class="arr" marker-end="url(#arrow-proof-structure)"/>
 
-  <!-- proof: supporting lemmas -->
-  <rect x="82.5" y="289" width="145" height="54" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-  <text class="n" x="155" y="309" fill="#2C2C2A">dfaStep_carry_iff</text>
-  <text class="d" x="155" y="324">one step =</text>
-  <text class="d" x="155" y="337">one adder equation</text>
-
-  <rect x="242.5" y="289" width="215" height="54" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-  <text class="n" x="350" y="312" fill="#2C2C2A">least_significant_bit_split</text>
-  <text class="d" x="350" y="330">pure arithmetic</text>
-
-  <rect x="472.5" y="289" width="145" height="54" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-  <text class="n" x="545" y="312" fill="#2C2C2A">evalFrom_dead</text>
-  <text class="d" x="545" y="330">dead is a sink</text>
-
   <!-- proof: invariant and payoff -->
-  <rect x="260" y="382" width="180" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-  <text class="n" x="350" y="405" fill="#04342C">run_invariant</text>
+  <rect x="430" y="289" width="180" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="n" x="520" y="312" fill="#04342C">run_invariant</text>
 
-  <rect x="205" y="468" width="290" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-  <text class="n" x="350" y="491" fill="#04342C">adderDFA_accepts_B_reverse</text>
+  <rect x="205" y="375" width="290" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="n" x="350" y="398" fill="#04342C">adderDFA_accepts_B_reverse</text>
 
-  <rect x="260" y="547" width="180" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-  <text class="n" x="350" y="570" fill="#04342C">B_isRegular</text>
+  <rect x="260" y="454" width="180" height="38" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="n" x="350" y="477" fill="#04342C">B_isRegular</text>
 
-  <!-- edges into the invariant -->
-  <path d="M155 343 V364 H295 V380" class="arr" marker-end="url(#arrow-proof-structure)"/>
-  <path d="M350 343 V380" class="arr" marker-end="url(#arrow-proof-structure)"/>
-  <path d="M545 343 V364 H405 V380" class="arr" marker-end="url(#arrow-proof-structure)"/>
+  <!-- the machine drops straight into the invariant -->
+  <path d="M520 186 V287" class="arr" marker-end="url(#arrow-proof-structure)"/>
 
-  <!-- invariant to the main theorem to regularity -->
-  <path d="M350 420 V466" class="arr" marker-end="url(#arrow-proof-structure)"/>
-  <path d="M350 506 V545" class="arr" marker-end="url(#arrow-proof-structure)"/>
+  <!-- the specification and the invariant converge on the main theorem -->
+  <path d="M180 186 V350 H280 V373" class="arr" marker-end="url(#arrow-proof-structure)"/>
+  <path d="M520 327 V350 H420 V373" class="arr" marker-end="url(#arrow-proof-structure)"/>
 
-  <!-- specification and machine meet the invariant at the main theorem -->
-  <path d="M180 186 V214 H45 V487 H203" class="arr" marker-end="url(#arrow-proof-structure)"/>
-  <path d="M520 186 V214 H655 V487 H497" class="arr" marker-end="url(#arrow-proof-structure)"/>
+  <!-- main theorem to regularity -->
+  <path d="M350 413 V452" class="arr" marker-end="url(#arrow-proof-structure)"/>
 </svg>
