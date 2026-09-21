@@ -665,8 +665,8 @@ so unfolding `RunEndsWithCarry` leaves us with the following goal:
 ```
 
 
-We're going to prove this is by rewriting both sides to be the same statement. 
-First, we rewrite the left-hand side of the equivalence to contain a `dfaStep` invocation in place of `(.carry carryIn)`:
+We're going to prove this by rewriting both sides to be the same statement. 
+First, we rewrite the left-hand side of the equivalence to split the word and inject a `dfaStep` invocation in place of `(.carry carryIn)`:
 
 ```lean
 adderDFA.evalFrom ⟦(dfaStep (.carry carryIn) column)⟧ columns = .carry carryOut ↔
@@ -676,7 +676,7 @@ adderDFA.evalFrom ⟦(dfaStep (.carry carryIn) column)⟧ columns = .carry carry
 ```
 
 We now have `dfaStep (DfaState.carry carryIn) column` on both sides of the equivalence.
-Next, lets assume that the first step on `column` ends in a carry state `c`.
+Next, let's assume that the first step on `column` ends in a carry state `c`.
 Then we have
 
 ```lean
@@ -700,7 +700,7 @@ The right-hand side is explicitly only true if the first step ends in a carry st
 Except we know that the dead state is a sink (a run starting in a dead state ends in a dead state) which makes the left-hand side false too.
 Both sides are false, so the equivalence holds, which concludes the proof.
 
-Now let's review how the proof looks like in Lean:
+Now let's review what the proof looks like in Lean:
 
 ```lean
 lemma split_run (column : Sigma3) (columns : List Sigma3) (carryIn carryOut : Bool) :
@@ -711,7 +711,7 @@ lemma split_run (column : Sigma3) (columns : List Sigma3) (carryIn carryOut : Bo
   simp only [RunEndsWithCarry, DFA.evalFrom_cons, adderDFA_step]
   cases dfaStep (.carry carryIn) column with
   | dead => 
-    rw [dead_state_is_sink]; 
+    rw [dead_state_is_sink]
     simp
   | carry c => 
     simp only [DfaState.carry.injEq, exists_eq_left']
@@ -730,7 +730,7 @@ adderDFA.evalFrom (dfaStep (.carry carryIn) column) columns = .carry carryOut �
 
 The `cases dfaStep (.carry carryIn) column` line introduces two new goals: one where the first step on the column ends up in dead state and one where it ends up in a carry state.
 
-The dead state case is proved with a helper lemma that we're going to skip over here as it's follows directly from our definition of `dfaStep`.
+The dead state case is proved with a helper lemma that we're going to skip over here as it follows directly from our definition of `dfaStep`.
 
 In the carry case the carry `c` is introduced as carry value from the first step on the column:
 
@@ -751,14 +751,14 @@ adderDFA.evalFrom (.carry c) columns = .carry carryOut ↔
 ```
 
 Then we use the theorem `exists_eq_left'` from the standard library to close the goal.
-The theorem states `(∃ a, a' = a ∧ p a) ↔ p a'` which lets us substitute `carryMid` with `c` and drop the existential and the first conjuct:
+The theorem states `(∃ a, a' = a ∧ p a) ↔ p a'` which lets us substitute `carryMid` with `c` and drop the existential and the first conjunct:
 
 ```lean
 adderDFA.evalFrom (.carry c) columns = .carry carryOut ↔
     adderDFA.evalFrom (.carry ⟦c⟧) columns = .carry carryOut
 ```
 
-This concludes the proof since both sides of the equivalance are the same now.
+This concludes the proof since both sides of the equivalence are the same now.
 
 ##### One Step
 
