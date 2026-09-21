@@ -32,6 +32,17 @@
   position: static;
 }
 
+// Chroma renders each line as `.line { display: flex }`, a block as wide as
+// the `code` element, which is as wide as the `pre`'s visible box. When a
+// block scrolls sideways the lines, and the `.hl` background with them, stop
+// at the visible edge. Let `code` grow to its widest line so every line spans
+// the full scrolled width.
+.chroma code {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+}
+
 // Background shared by every code surface: both kinds of block, and inline
 // code. The page background is pure white / pure black in this theme, so code
 // needs its own shade to read as a distinct surface.
@@ -40,8 +51,21 @@
 // color tables. The bare `pre` rule and the inline code rule tie with the
 // theme's own rules and win on source order, since this stylesheet is linked
 // after main.scss.
-@mixin code-surface($bg) {
+@mixin code-surface($bg, $hl) {
   pre, pre.chroma { background: $bg; }
+
+  // The generated tables highlight `hl_lines` with a gray a shade off the
+  // block background, which barely reads. Use a yellow tint instead so a
+  // highlighted line looks marked rather than merely shaded.
+  .chroma .hl { background-color: $hl; }
+
+  // Partial-line highlight, emitted by layouts/_markup/render-codeblock.html.
+  // The UA sheet gives <mark> its own yellow and black text; use the line
+  // highlight color instead and keep the token's syntax color.
+  .chroma mark {
+    background-color: $hl;
+    color: inherit;
+  }
 
   // The theme inverts inline code (background: text color, color: page
   // background), which reads as a black chip in light mode and matches
@@ -55,12 +79,12 @@
 
 @mixin code-light-appearance {
   @include chroma-light;
-  @include code-surface(#f2f2f2);
+  @include code-surface(#f2f2f2, #fff2a8);
 }
 
 @mixin code-dark-appearance {
   @include chroma-dark;
-  @include code-surface(#161616);
+  @include code-surface(#161616, #4d4212);
 }
 
 // Mirrors the appearance switching in the theme's main.scss.

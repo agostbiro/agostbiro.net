@@ -1,0 +1,21 @@
+{{- /*
+Fenced code block render hook. Same output as Hugo's default, plus one
+addition: a run of code wrapped in ⟦ and ⟧ renders inside <mark>, so a post
+can highlight part of a line where `hl_lines` would take the whole line.
+
+A marker usually gets a Chroma span of its own, but a lexer may glue it to a
+neighboring operator, as Lean's does with `↔⟧`. So the span holding a marker
+is split at the marker, and the mark tag goes between the halves. That nests
+cleanly as long as both markers sit on the same line. Empty halves are
+removed afterwards. The markers themselves never reach the page. The tags are
+styled in assets/css/code.scss.
+
+`.Inner` drops the trailing newline that the default renderer keeps, so it is
+put back to leave every block without markers byte-identical to before.
+`.Options` carries the fence attributes such as `hl_lines`.
+*/ -}}
+{{- $html := highlight (printf "%s\n" .Inner) .Type .Options -}}
+{{- $html = replaceRE `<span class="([^"]*)">([^<]*)⟦([^<]*)</span>` `<span class="$1">$2</span><mark><span class="$1">$3</span>` $html -}}
+{{- $html = replaceRE `<span class="([^"]*)">([^<]*)⟧([^<]*)</span>` `<span class="$1">$2</span></mark><span class="$1">$3</span>` $html -}}
+{{- $html = replaceRE `<span class="[^"]*"></span>` `` $html -}}
+{{- $html | safeHTML -}}
