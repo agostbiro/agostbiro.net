@@ -14,7 +14,7 @@ Lean is a good choice for this, because its [Mathlib](https://lean-lang.org/use-
 After finishing the formal proof, I decided to write it up, because I think it provides software engineers with good insight into what it takes to formally prove properties of a system.
 
 I tried to make this post accessible.
-If you're comfortable with a modern statically typed programming language (such as TypeScript or Rust), binary arithmetic, and inductive proofs, you should be able to follow along.
+If you're comfortable with a modern statically typed programming language (such as TypeScript or Rust), binary arithmetic, basic propositional logic, and inductive proofs, you should be able to follow along.
 
 ## Background: DFAs & Regular Languages
 
@@ -321,13 +321,7 @@ example :
   decide
 ```
 
-The `example : ... := by decide` structure in Lean is kind of like a unit test, except it's a proof that's checked at compile time by executing the code. 
-
-The `by` keyword switches Lean into tactic mode which is an imperative way of generating proofs. 
-`decide` is a tactic that proves a proposition by evaluating it, which requires an algorithm that returns `true` or `false` for the proposition.
-`decide` works here, because we derived `DecidableEq` for `DfaState`, which gives it the algorithm to check the equality.
-Evaluating `dfaStep` at compile time is safe, because Lean rejects functions unless it can prove that they terminate or the definition opts out explicitly.
-
+The `example : ... := by decide` structure in Lean is kind of like a unit test, except it's a proof that's checked at compile time.
 
 Finally, we use the generic [`Mathlib.Computability.DFA`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/DFA.html#DFA) structure from Mathlib to complete the implementation.
 We give it the transition function and define the start and accept states:
@@ -355,6 +349,65 @@ example :
 
 The run starts from `.carry false`  and ends in `.dead` as expected.
 
+### How Proofs Work
+
+We'll review how proofs work in Lean using the `dfaStep` example before digging into the proof of the regularity of the language $B$ in the [following section:](#the-proof)
+
+```lean
+example :
+    dfaStep (.carry false) (true, true, false) = .carry true := by
+  decide
+```
+
+The `by` keyword switches Lean into tactic mode which is an imperative way of generating proofs. 
+`decide` is a tactic that proves a proposition by reducing it in the type checker, so it doesn't actually run the code.[^3]
+
+The proof generated under the hood by `decide` is the equivalent to the following for our purposes:[^4]
+
+```lean
+abbrev P : Prop := 
+  dfaStep (.carry false) (true, true, false) = .carry true
+
+example : P :=
+  (of_decide_eq_true (Eq.refl true))
+```
+
+Notice that there is no `by` after the `:=` this time.
+This means that it's a term mode proof where we have to construct a term whose type is the proposition to close the proof.
+
+A term is a value of a type, just like `3` is a value of `Nat` which is the type of natural numbers. 
+A proof of a proposition is a term whose type is that proposition, so writing the proof is like constructing a value of that type.
+In this view, a proposition is true when its type has at least one value, and false when it has none. 
+A false proposition is like Rust's empty `enum` or TypeScript's `never`: since the type has no values, there is nothing you could write as a proof.
+
+In the example above the proposition is `P` and the term which serves as the proof is:
+
+```lean
+(of_decide_eq_true (Eq.refl true))
+```
+
+To understand the proof, we have to figure out why the type of this term is the proposition.
+`of_decide_eq_true` is a theorem [from](https://leanprover-community.github.io/mathlib4_docs/Init/Prelude.html#of_decide_eq_true) the standard library whose type is:
+
+```lean
+decide p = true → p
+```
+
+It states that if evaluating the proposition `p` returns `true`, then `p` holds.
+It's a pretty nifty theorem that lets us prove a proposition by simply evaluating it (the proof of the theorem is beyond the scope of this post).
+
+The arrow indicates that `decide p = true → p` is a function type with one argument whose type is `decide p = true` and the return type is `p`.
+So we're using `of_decide_eq_true` as a function to get ourselves a value of `P`, which is a proof of the proposition `P`.
+
+But how can we construct an argument of type `decide P = true`?
+The answer is a bit convoluted.
+The argument we're passing to `of_decide_eq_true` is `Eq.refl true` which seemingly has nothing to do with our proposition.
+`Eq.refl true` on its own has type `true = true`. 
+
+The magic happens when Lean checks `true = true` against `decide P = true`.
+The type checker unfolds `decide P`, which evaluates `dfaStep` and compares the result to `.carry true`, and this reduces to true. Lean considers two types equal if they reduce to the same term, so `decide P = true` and `true = true` are the same type, and `Eq.refl true` is accepted as a proof of both.
+
+And now back to our *regular* programming.
 
 ### The Proof
 
@@ -362,7 +415,7 @@ As discussed earlier, in order to prove that the language $B$ is regular, we nee
 We can then use the closure property of the reversal of regular languages to prove that $B$ is regular.
 This is readily available as a theorem [from Mathlib,](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff) but we'll have to do some work to show that the adder DFA recognizes the language $B$. 
 
-Mathlib's [definition](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L353-L355) of regular languages boils down to this:[^3]
+Mathlib's [definition](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L353-L355) of regular languages boils down to this:[^5]
 
 ```lean
 def IsRegular (L : Language T) : Prop :=
@@ -376,7 +429,7 @@ The return type is again `Prop`.
 The interesting part is `∃ M : DFA T σ, M.accepts = L` which says that a language is regular if the language accepted by some DFA over those states equals the language.
 So when does a DFA accept a language?
 
-The language a DFA accepts in Mathlib is [defined](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L123-L124) similar to this:[^4]
+The language a DFA accepts in Mathlib is [defined](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L123-L124) similar to this:[^6]
 
 ```lean
 def accepts : Language α := 
@@ -402,7 +455,7 @@ B.reverse = { w | w.reverse ∈ B }
 `B` reads its rows most significant bit first with the `rowNBE` functions. 
 Reading the reversed string big-endian is the same as reading the original string least signifcant bit first.
 In other words, while we interpret bit strings big-endian for `B`, we interpret them as little-endian for `B.reverse`. 
-The membership test for `B.reverse` is therefore equivalent to:[^5]
+The membership test for `B.reverse` is therefore equivalent to:[^7]
 
 ```lean
 { wLE | row1LE wLE + row2LE wLE = row3LE wLE }
@@ -889,7 +942,7 @@ And the carry out term is grouped differently: the goal has `carryOut.toNat * (2
 `simpa` with the commutativity and associativity lemmas for `+` and `*` normalizes both the goal and the lemma to the same form, and closes the goal.
 That completes the inductive step, and with it the proof of the run invariant.
 
-All that remains for `adderDFA_accepts_B_reverse` is to instantiate the invariant with `false` for both carries, unfold `WordAddsWithCarry`, which cancels the carry terms, and to unfold the definitions of `accepts` and `B.reverse` on the two sides until they match.[^5]
+All that remains for `adderDFA_accepts_B_reverse` is to instantiate the invariant with `false` for both carries, unfold `WordAddsWithCarry`, which cancels the carry terms, and to unfold the definitions of `accepts` and `B.reverse` on the two sides until they match.[^7]
 `B_isRegular` then follows from the Mathlib theorem that regular languages are closed under reversal.
 
 ## Conclusion
@@ -903,8 +956,12 @@ In addition to being a proof assistant, Lean is also a functional programming la
 
 [^2]: Set as a collection is available as `Std.HashSet` and `Std.TreeSet`.
 
-[^3]: Simplified version of Mathlib's definition. The actual definition spells out the universe of `T` and writes the finiteness as `∃ σ : Type, ∃ _ : Fintype σ`.
+[^3]: The reduction in the type checker is guaranteed to terminate, because Lean rejects functions unless it can prove that they terminate. A definition can opt out explicitly, but then the type checker cannot unfold it, so it cannot be evaluated in a proof.
 
-[^4]: The actual Mathlib is a bit more verbose, so I'm not quoting it here.
+[^4]: The actual term is `of_decide_eq_true (id (Eq.refl true))`. The `id` is a type ascription that `decide` needs because it builds the argument before it applies `of_decide_eq_true`, so it has to record that `Eq.refl true` is meant as a proof of `decide p = true` rather than `true = true`. When the proof is written by hand, the expected type is known from the `example` signature, so the `id` can be omitted.
 
-[^5]: The informal argument about the equivalence of the little-endian interpretation of a word and the big-endian interpretation of its reversal (`rowNLE w = rowNBE w.reverse`) is formalized in the proof, but it's basically just bookkeeping, so I didn't include it in the post.
+[^5]: Simplified version of Mathlib's definition. The actual definition spells out the universe of `T` and writes the finiteness as `∃ σ : Type, ∃ _ : Fintype σ`.
+
+[^6]: The actual Mathlib is a bit more verbose, so I'm not quoting it here.
+
+[^7]: The informal argument about the equivalence of the little-endian interpretation of a word and the big-endian interpretation of its reversal (`rowNLE w = rowNBE w.reverse`) is formalized in the proof, but it's basically just bookkeeping, so I didn't include it in the post.
