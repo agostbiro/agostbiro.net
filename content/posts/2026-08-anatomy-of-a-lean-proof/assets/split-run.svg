@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="fig-split-run" width="760" height="168" viewBox="0 0 760 168" role="img">
+  <title>Splitting a run: the run from carry in over column :: columns is the same as a single step on column, landing in an intermediate carry, followed by a run over columns from that carry.</title>
+  <style>
+    /* Labels, brackets and arrows sit on the page background, so they have to
+       follow the page's colour scheme. The state circles keep their own light
+       fills, so the text inside them stays dark.
+
+       Every selector is scoped to the figure's own class: this file is inlined
+       into the page (layouts/_markup/render-image.html), so bare class names
+       would leak into the document and collide with the other figures. */
+    .fig-split-run {
+      --ink: #2C2C2A;   /* labels on the page background */
+      --line: #5F5E5A;  /* arrows and arrowheads */
+      --rule: #6B6963;  /* span brackets */
+    }
+    /* The appearance toggle flips body[a], which the inlined figure can read.
+       Opened on its own the SVG is the root element and has no body above it,
+       so svg:root falls back to the OS preference. */
+    body[a="dark"] .fig-split-run {
+      --ink: #D6D4CC; --line: #A8A69E; --rule: #B4B1A8;
+    }
+    @media (prefers-color-scheme: dark) {
+      body[a="auto"] .fig-split-run,
+      svg.fig-split-run:root {
+        --ink: #D6D4CC; --line: #A8A69E; --rule: #B4B1A8;
+      }
+    }
+    .fig-split-run text { font-family: system-ui, sans-serif; }
+    .fig-split-run .t  { font-size: 14px; font-weight: 500; }
+    .fig-split-run .n  { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10.5px; fill: var(--ink); text-anchor: middle; }
+    .fig-split-run .brk { stroke: var(--rule); stroke-width: 1; fill: none; }
+    .fig-split-run .arr { stroke: var(--line); stroke-width: 1.5; fill: none; }
+    .fig-split-run marker path { stroke: var(--line); }
+  </style>
+  <defs>
+    <marker id="arrow-split-run" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- the whole run, spanning all three states -->
+  <text class="n" x="380" y="14">adderDFA.evalFrom (.carry carryIn) (column :: columns)</text>
+  <path class="brk" d="M52 30 V24 H708 V30"/>
+
+  <!-- states -->
+  <circle cx="90" cy="92" r="38" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="t" x="90" y="92" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">carry in</text>
+
+  <circle cx="380" cy="92" r="38" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="t" x="380" y="92" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">carry mid</text>
+
+  <circle cx="670" cy="92" r="38" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="t" x="670" y="92" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">carry out</text>
+
+  <!-- the first step, on column -->
+  <line x1="132" y1="92" x2="340" y2="92" class="arr" marker-end="url(#arrow-split-run)"/>
+  <text class="n" x="236" y="65">column</text>
+
+  <!-- the rest of the run, on columns -->
+  <line x1="422" y1="92" x2="628" y2="92" class="arr" marker-end="url(#arrow-split-run)"/>
+  <text class="n" x="525" y="65">columns</text>
+
+  <!-- the two pieces -->
+  <path class="brk" d="M132 136 V142 H340 V136"/>
+  <text class="n" x="236" y="160">dfaStep (.carry carryIn) column</text>
+
+  <path class="brk" d="M422 136 V142 H628 V136"/>
+  <text class="n" x="525" y="160">adderDFA.evalFrom (.carry carryMid) columns</text>
+</svg>

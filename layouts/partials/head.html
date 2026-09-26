@@ -73,6 +73,9 @@
        its body[a="…"] specificity and coming later in the cascade, this wins.
        The theme's own `opacity: 0.5` still sets the caption apart. */
     body[a] figcaption { color: inherit; }
+    /* The theme leaves figcaption at body size, so a caption reads like a
+       paragraph. Smaller text marks it as a label for the figure above. */
+    figcaption { font-size: 0.875rem; }
 
     /* Injected by partials/appearance_toggle.html. Anchored to the content
        column rather than the viewport: a fixed element is placed against the
