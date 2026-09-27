@@ -832,12 +832,12 @@ adderDFA.evalFrom (.carry c) columns = .carry carryOut ↔
 
 This concludes the proof since both sides of the equivalence are the same now.
 
-##### One Step
+##### First Step Is Correct
 
 ```lean
-lemma carry_step_correct (x y z carryIn carryOut : Bool) :
+lemma first_step_correct (x y z carryIn carryOut : Bool) :
     dfaStep (.carry carryIn) (x, y, z) = .carry carryOut ↔
-      x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryOut.toNat := by
+      x + y + carryIn = z + 2 * carryOut := by
   ...
 ```
 
@@ -846,7 +846,10 @@ The lemma says that a single step of the DFA on the column `(x, y, z)` takes the
 
 $$x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{out}}$$
 
-which is just the [adder arithmetic](#adder-arithmetic) from earlier in a single equation.
+which is just the [adder arithmetic](#adder-arithmetic) from earlier in a single equation.[^9]
+
+We need this lemma to turn the first step of the run, which `split_run` separated from the rest, from a statement about the DFA into arithmetic.
+We're going to prove it by unfolding the definition of `dfaStep` and then checking every combination of values for the five booleans.
 
 As a reminder, the definition of `dfaStep` is:
 
@@ -854,7 +857,7 @@ As a reminder, the definition of `dfaStep` is:
 def dfaStep : DfaState → Sigma3 → DfaState
   | .dead, _ => .dead
   | .carry c, (x, y, z) =>
-      if z = (x ^^ y ^^ c) then
+      if z = (x ^^ y ^^ c) then  -- ^^ is XOR
         .carry (Bool.atLeastTwo x y c)
       else
         .dead
@@ -863,22 +866,32 @@ def dfaStep : DfaState → Sigma3 → DfaState
 The state we step from is a carry state, so the second branch applies and unfolding `dfaStep` leaves us with the following goal:
 
 ```lean
-⟦(if z = (x ^^ y ^^ carryIn) then .carry (Bool.atLeastTwo x y carryIn) else .dead)⟧ = .carry carryOut ↔
-  x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryOut.toNat
+⟦(if z = (x ^^ y ^^ carryIn) then⟧
+    ⟦.carry (Bool.atLeastTwo x y carryIn)⟧
+ ⟦else⟧
+    ⟦.dead)⟧ = .carry carryOut ↔
+  x + y + carryIn = z + 2 * carryOut
 ```
 
 The left-hand side of the equivalence says that the sum bit checks out and that the carry out is `true` exactly when at least two of `x`, `y` and `carryIn` are `true`.
 The right-hand side says the same thing with arithmetic on natural numbers.
-There is nothing left to unfold and there is no list to do induction on: both sides are fixed formulas over five booleans.
-That's only 32 combinations, so we can check all of them by exhaustion like we did in the base case.
+
+Both sides are fixed formulas over five booleans which yields only 32 combinations, so we can check all of them by exhaustion like we did in the base case.
 The equivalence holds if both sides have the same truth value in every row of the truth table.
 
+Let's review two of the 32 cases before we look at the Lean proof.
 Take the row where `x`, `y` and `carryOut` are `true` and `z` and `carryIn` are `false`.
-This is the column from the [sanity check](#the-implementation) earlier: one plus one is zero carry one.
+This is the same as our `dfaStep` example from [earlier:](#the-implementation)
+
+![A step of the carry automaton: the column (1,1,0) takes the machine from carry 0 to carry 1](./assets/carry-dfa-carry-step.svg)
+
 Substituting the values gives:
 
 ```lean
-(if false = (true ^^ true ^^ false) then .carry (Bool.atLeastTwo true true false) else .dead) = .carry true ↔
+(if ⟦false⟧ = (⟦true⟧ ^^ ⟦true⟧ ^^ ⟦false⟧) then
+    .carry (Bool.atLeastTwo ⟦true⟧ ⟦true⟧ ⟦false⟧)
+ else
+    .dead) = .carry ⟦true⟧ ↔
   1 + 1 + 0 = 0 + 2 * 1
 ```
 
@@ -893,6 +906,9 @@ Two of `x`, `y` and `carryIn` are `true`, so the step lands in `.carry true`:
 Both sides are true, so this row holds.
 
 Now take a row where the column doesn't add up: `x`, `y`, `z` and `carryOut` are `true` and `carryIn` is `false`.
+
+![A step of the carry automaton: the column (1,1,1) takes the machine from carry 0 to the dead state](./assets/carry-dfa-dead-step.svg)
+
 This time the condition is `true = (true ^^ true ^^ false)`, which is `true = false`, so the step takes the second branch and lands in the dead state:
 
 ```lean
@@ -910,52 +926,19 @@ This concludes the proof.
 Now let's review what the proof looks like in Lean:
 
 ```lean
-lemma carry_step_correct (x y z carryIn carryOut : Bool) :
+lemma first_step_correct (x y z carryIn carryOut : Bool) :
     dfaStep (.carry carryIn) (x, y, z) = .carry carryOut ↔
-      x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryOut.toNat := by
+      x + y + carryIn = z + 2 * carryOut := by
   cases x <;> cases y <;> cases z <;> cases carryIn <;> cases carryOut <;>
     simp [dfaStep]
 ```
 
 The `cases <;>` chain is the same pattern as in the base case, with five booleans instead of two.
-Each `cases` doubles the number of goals, so after the chain we have 32 goals, one per row of the truth table, and `simp [dfaStep]` runs on every one of them.
+Each `cases` doubles the number of goals, so after the chain we have 32 goals (one for each row of the truth table) with the 5 boolean variables replaced by true or false values.
 
-Let's follow `simp` on the first row from above.
-After `cases`, the goal for that row is:
+Our old friend `simp` then closes each of these goals automatically by following the same procedure we did manually in the two examples.
+It unfolds `dfaStep` and evaluates both sides of the equivalence until each is either true or false, and closes the goal because the two sides always agree.
 
-```lean
-dfaStep (.carry false) (true, true, false) = .carry true ↔
-  true.toNat + true.toNat + false.toNat = false.toNat + 2 * true.toNat
-```
-
-`simp` first unfolds `dfaStep` since we passed it in the square brackets:
-
-```lean
-⟦(if false = (true ^^ true ^^ false) then .carry (Bool.atLeastTwo true true false) else .dead)⟧ = .carry true ↔
-  true.toNat + true.toNat + false.toNat = false.toNat + 2 * true.toNat
-```
-
-Then it evaluates the booleans using its default rules.
-`true ^^ true ^^ false` becomes `false`, so the condition becomes `false = false` which is `True`, and `simp` replaces the whole `if` with its first branch.
-`Bool.atLeastTwo true true false` unfolds to `true && true || true && false || true && false` which evaluates to `true`:
-
-```lean
-⟦.carry true = .carry true⟧ ↔
-  true.toNat + true.toNat + false.toNat = false.toNat + 2 * true.toNat
-```
-
-The left-hand side is now an equality between identical terms, which `simp` rewrites to `True`.
-On the right-hand side, `simp` replaces `true.toNat` with `1` and `false.toNat` with `0` and evaluates the arithmetic:
-
-```lean
-True ↔ ⟦2 = 2⟧
-```
-
-The right-hand side is `True` as well, so the goal is `True ↔ True`, which `simp` closes.
-
-In the second row from above, the condition evaluates to `true = false` instead, which `simp` rewrites to `False`, so the `if` is replaced with the second branch `.dead`.
-`simp` knows that different constructors of an inductive type are never equal, so `.dead = .carry true` becomes `False`.
-The right-hand side evaluates to `2 = 3`, which `simp` also rewrites to `False`, and it closes `False ↔ False` too.
 
 ##### Splitting the Equation
 
@@ -1120,7 +1103,7 @@ With the helper lemmas in place, the inductive step is a sequence of rewrites:
   | cons column columnsLE induction_hypothesis =>
     obtain ⟨x, y, z⟩ := column
     rw [split_run]
-    simp_rw [carry_step_correct, induction_hypothesis]
+    simp_rw [first_step_correct, induction_hypothesis]
     simp only [WordAddsWithCarry, row1LE_cons, row2LE_cons, row3LE_cons, List.length_cons, pow_succ]
     simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm,
       Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using
@@ -1150,7 +1133,7 @@ The left-hand side of the goal becomes:
   RunEndsWithCarry carryMid columnsLE carryOut
 ```
 
-`simp_rw [carry_step_correct, induction_hypothesis]` is steps 2 and 3.
+`simp_rw [first_step_correct, induction_hypothesis]` is steps 2 and 3.
 `simp_rw` is like `rw` but it can rewrite underneath the `∃` binder.
 It turns the first step into the adder equation and the rest of the run into `WordAddsWithCarry` for `columnsLE`.
 This is where `generalizing carryIn` pays off: the induction hypothesis is applied with `carryMid` as the starting carry.
@@ -1217,3 +1200,5 @@ I'm not sure how things will shake out in the future, but that's where things st
 [^7]: The actual Mathlib is a bit more verbose, so I'm not quoting it here.
 
 [^8]: The informal argument about the equivalence of the little-endian interpretation of a word and the big-endian interpretation of its reversal (`rowNLE w = rowNBE w.reverse`) is formalized in the proof, but it's basically just bookkeeping, so I didn't include it in the post.
+
+[^9]: As before, we've dropped `.toNat` from the booleans in the lemma statement for brevity.
