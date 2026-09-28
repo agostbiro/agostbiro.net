@@ -832,10 +832,10 @@ adderDFA.evalFrom (.carry c) columns = .carry carryOut ↔
 
 This concludes the proof since both sides of the equivalence are the same now.
 
-##### First Step Is Correct
+##### First Step Adds
 
 ```lean
-lemma first_step_correct (x y z carryIn carryOut : Bool) :
+lemma first_step_adds (x y z carryIn carryOut : Bool) :
     dfaStep (.carry carryIn) (x, y, z) = .carry carryOut ↔
       x + y + carryIn = z + 2 * carryOut := by
   ...
@@ -926,7 +926,7 @@ This concludes the proof.
 Now let's review what the proof looks like in Lean:
 
 ```lean
-lemma first_step_correct (x y z carryIn carryOut : Bool) :
+lemma first_step_adds (x y z carryIn carryOut : Bool) :
     dfaStep (.carry carryIn) (x, y, z) = .carry carryOut ↔
       x + y + carryIn = z + 2 * carryOut := by
   cases x <;> cases y <;> cases z <;> cases carryIn <;> cases carryOut <;>
@@ -940,51 +940,84 @@ Our old friend `simp` then closes each of these goals automatically by following
 It unfolds `dfaStep` and evaluates both sides of the equivalence until each is either true or false, and closes the goal because the two sides always agree.
 
 
-##### Splitting the Equation
+##### Least Significant Bit Split
 
 ```lean
+def WholeRunAddition (x y z carryIn : Bool) (a b d k : Nat) : Prop :=
+  (x + 2 * a) + (y + 2 * b) + carryIn
+    = (z + 2 * d) + 2 * k
+
+def SplitRunAddition (x y z carryIn : Bool) (a b d k : Nat) : Prop :=
+  ∃ carryMid : Bool,
+    x + y + carryIn = z + 2 * carryMid ∧
+    a + b + carryMid = d + k
+
 lemma least_significant_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
-    (x.toNat + 2 * a) + (y.toNat + 2 * b) + carryIn.toNat
-        = (z.toNat + 2 * d) + 2 * k ↔
-      ∃ carryMid : Bool,
-        x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryMid.toNat ∧
-        a + b + carryMid.toNat = d + k := by
+    WholeRunAddition x y z carryIn a b d k ↔
+      SplitRunAddition x y z carryIn a b d k := by
   ...
 ```
 
-This is step 4 of the plan and it's pure arithmetic, the DFA doesn't appear in it.
-The lemma says that the addition equation for the whole word holds if and only if there is an intermediate carry `carryMid` such that the adder equation holds for the least significant bits and the addition equation holds for the remaining bits.
-Note how the shape mirrors `split_run`.
-That's not an accident, this is what lets the two sides meet in the middle.
+This is step 4 of the plan.
+As with the run invariant, both sides of the equivalence get their own name to make it easier to read: `WholeRunAddition` is the addition equation for the whole word, and `SplitRunAddition` is the same equation split in two.
+
+The lemma says that the addition equation for the whole word holds if and only if there is an intermediate carry `carryMid` such that the adder equation holds for the least significant bits and the addition equation holds for the remaining bits.[^9]
+The shape of this lemma mirrors `split_run`, but it's just arithmetic, the DFA doesn't appear in it.
+
+We need this lemma to connect the two sides of the run invariant: `split_run`, `first_step_adds` and the induction hypothesis turn the DFA into an equation for the first column and an equation for the remaining columns. 
+This lemma shows that together they say the same thing as the equation for the whole word.
+
+We'll prove this lemma by unfolding the two definitions, exhaustively checking the four booleans, and showing with arithmetic that the two sides agree in each case.
 
 As a reminder, the little-endian value of a row is defined as:
 
 ```lean
 def valueLE : List Bool → Nat
   | [] => 0
-  | b :: bs => b.toNat + 2 * valueLE bs
+  | b :: bs => b + 2 * valueLE bs
 ```
 
-so `x.toNat + 2 * a` is exactly the value of a row whose first bit is `x` and whose remaining bits have value `a`.
+so `x + 2 * a` is the value of a row whose first bit is `x` and whose remaining bits have value `a`.
 In the lemma, `x`, `y` and `z` are the least significant bits of the three rows, `a`, `b` and `d` are the values of the remaining bits, and `k` stands for the carry out term.
 The lemma doesn't care that `k` is really `carryOut * 2 ^ n`, any natural number will do, so we keep it abstract.
 
-Unlike the previous two lemmas, there is nothing to unfold here.
+![The equations of the lemma laid out as a run: the equation for the whole word spans the run, the equation for the least significant bits x, y and z spans the first step, and the equation for the values of the remaining bits a, b and d spans the rest](./assets/least-significant-bit-split-variables.svg "The equations of the lemma laid out as a run, least significant bits first")
+
+Unfolding `WholeRunAddition` and `SplitRunAddition` leaves us with the following goal:
+
+```lean
+(x + 2 * a) + (y + 2 * b) + carryIn = (z + 2 * d) + 2 * k ↔
+  ∃ carryMid,
+    x + y + carryIn = z + 2 * carryMid ∧
+    a + b + carryMid = d + k
+```
+
+Or with mathematical notation:
+
+$$\begin{aligned}
+&(x + 2 \cdot a) + (y + 2 \cdot b) + c_{\mathrm{in}} = (z + 2 \cdot d) + 2 \cdot k \iff \\
+&\qquad \exists\, c_{\mathrm{mid}} :\; x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{mid}} \;\land \\
+&\qquad \phantom{\exists\, c_{\mathrm{mid}} :\;} a + b + c_{\mathrm{mid}} = d + k
+\end{aligned}$$
+
 Both sides are equations over natural numbers with four booleans mixed in, and once we fix the four booleans, only the arithmetic remains.
 So we're going to split on the four bits like we did in the base case, which gives 16 rows, and show that the equivalence holds in each of them.
 
 Take the row where `x` and `y` are `true` and `z` and `carryIn` are `false`.
-This is again the column where one plus one is zero carry one.
+This is again the column where one plus one is zero with carry one.
+
+![The addition in this row split into an equation for the least significant bits that lands in carry mid, followed by an equation for the remaining bits from carry mid](./assets/least-significant-bit-split-row.svg "The equation for the whole word is an equation for the least significant bits followed by an equation for the rest")
+
 Substituting the values gives:
 
 ```lean
 (⟦1⟧ + 2 * a) + (⟦1⟧ + 2 * b) + ⟦0⟧ = (⟦0⟧ + 2 * d) + 2 * k ↔
   ∃ carryMid,
-    ⟦1 + 1 + 0⟧ = ⟦0⟧ + 2 * carryMid.toNat ∧
-    a + b + carryMid.toNat = d + k
+    ⟦1 + 1 + 0⟧ = ⟦0⟧ + 2 * carryMid ∧
+    a + b + carryMid = d + k
 ```
 
-On the right-hand side, the least significant bit equation is now `2 = 2 * carryMid.toNat`.
+On the right-hand side, the least significant bit equation is now `2 = 2 * carryMid`.
 The only boolean that satisfies it is `carryMid = true`, so we can drop the existential and substitute `true` for `carryMid`:
 
 ```lean
@@ -1003,16 +1036,19 @@ Collecting the constants gives `2 + 2 * a + 2 * b = 2 * d + 2 * k`, and dividing
 Both sides say the same thing, so the row holds.
 
 Now take a row where the column doesn't add up: `x` is `true` and `y`, `z` and `carryIn` are `false`.
+
+![The addition in this row split into an equation for the least significant bits 1, 0 and 0, followed by an equation for the remaining bits from carry mid](./assets/least-significant-bit-split-row-mismatch.svg "The same split in a row where the column doesn't add up")
+
 Substituting the values gives:
 
 ```lean
 (⟦1⟧ + 2 * a) + (⟦0⟧ + 2 * b) + ⟦0⟧ = (⟦0⟧ + 2 * d) + 2 * k ↔
   ∃ carryMid,
-    ⟦1 + 0 + 0⟧ = ⟦0⟧ + 2 * carryMid.toNat ∧
-    a + b + carryMid.toNat = d + k
+    ⟦1 + 0 + 0⟧ = ⟦0⟧ + 2 * carryMid ∧
+    a + b + carryMid = d + k
 ```
 
-This time the least significant bit equation is `1 = 2 * carryMid.toNat`.
+This time the least significant bit equation is `1 = 2 * carryMid`.
 No boolean satisfies it since the left-hand side is odd and the right-hand side is even, so the right-hand side of the equivalence is false.
 The left-hand side of the equivalence is `1 + 2 * a + 2 * b = 2 * d + 2 * k`, which is also odd on one side and even on the other, so it's false as well.
 Both sides are false, so the row holds.
@@ -1031,40 +1067,37 @@ Now let's review what the proof looks like in Lean:
 
 ```lean
 lemma least_significant_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
-    (x.toNat + 2 * a) + (y.toNat + 2 * b) + carryIn.toNat
-        = (z.toNat + 2 * d) + 2 * k ↔
-      ∃ carryMid : Bool,
-        x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryMid.toNat ∧
-        a + b + carryMid.toNat = d + k := by
-  cases x <;> cases y <;> cases z <;> cases carryIn <;> simp <;> omega
+    WholeRunAddition x y z carryIn a b d k ↔
+      SplitRunAddition x y z carryIn a b d k := by
+  cases x <;> cases y <;> cases z <;> cases carryIn <;> simp [WholeRunAddition, SplitRunAddition] <;> omega
 ```
 
 The `cases <;>` chain splits on the four bits, which gives 16 goals, one per row.
 `simp` then runs on each of them, and `omega` runs on whatever `simp` leaves behind.
 
-This time `simp` gets no arguments, so it only uses its default rule set.
-That's enough, because the work is evaluating `.toNat` on the fixed bits, folding the constants and getting rid of the existential.
+This time `simp` only gets the two definitions to unfold.
+Its default rule set does the rest of the work, which is turning the fixed bits into numbers, folding the constants and getting rid of the existential.
 Let's follow it on the first row from above.
-After `cases`, the goal is:
+After `cases` and unfolding the definitions, the goal is:
 
 ```lean
-true.toNat + 2 * a + (true.toNat + 2 * b) + false.toNat = false.toNat + 2 * d + 2 * k ↔
+true + 2 * a + (true + 2 * b) + false = false + 2 * d + 2 * k ↔
   ∃ carryMid,
-    true.toNat + true.toNat + false.toNat = false.toNat + 2 * carryMid.toNat ∧
-    a + b + carryMid.toNat = d + k
+    true + true + false = false + 2 * carryMid ∧
+    a + b + carryMid = d + k
 ```
 
-`simp` replaces `true.toNat` with `1` and `false.toNat` with `0`, drops the zeros and adds up the constants:
+`simp` replaces `true` with `1` and `false` with `0`, drops the zeros and adds up the constants:
 
 ```lean
 1 + 2 * a + (1 + 2 * b) = 2 * d + 2 * k ↔
   ∃ carryMid,
-    ⟦2 = 2 * carryMid.toNat⟧ ∧
-    a + b + carryMid.toNat = d + k
+    ⟦2 = 2 * carryMid⟧ ∧
+    a + b + carryMid = d + k
 ```
 
 Then it works on the existential.
-It knows that `2 = 2 * n` holds exactly when `n = 1`, and that `carryMid.toNat = 1` holds exactly when `carryMid = true`, so the first conjunct becomes `carryMid = true`.
+It knows that `2 = 2 * n` holds exactly when `n = 1`, and that `carryMid` is `1` as a number exactly when it is `true` as a boolean, so the first conjunct becomes `carryMid = true`.
 That's the same situation as in `split_run`, and `simp` uses the same trick to substitute `true` for `carryMid` and drop the existential and the first conjunct:
 
 ```lean
@@ -1077,13 +1110,13 @@ It rewrites terms, it doesn't reason about equations, so it can't see that divid
 `omega` is a decision procedure for linear arithmetic over natural numbers and integers.
 Linear means that variables are only added together and multiplied by constants, which is all we have here, so `omega` closes the goal automatically.
 
-In the second row from above, the least significant bit equation is `1 = 2 * carryMid.toNat` after the constants are folded, and there is no value to read `carryMid` off from.
+In the second row from above, the least significant bit equation is `1 = 2 * carryMid` after the constants are folded, and there is no value to read `carryMid` off from.
 `simp` handles this by splitting the existential over the two booleans:
 
 ```lean
 1 + 2 * a + 2 * b = 2 * d + 2 * k ↔
-  ⟦1 = 2 * false.toNat⟧ ∧ a + b + false.toNat = d + k ∨
-  ⟦1 = 2 * true.toNat⟧ ∧ a + b + true.toNat = d + k
+  ⟦1 = 2 * false⟧ ∧ a + b + false = d + k ∨
+  ⟦1 = 2 * true⟧ ∧ a + b + true = d + k
 ```
 
 The two highlighted equations evaluate to `1 = 0` and `1 = 2`, which are both `False`, and `False ∧ p` is `False`, so the whole right-hand side collapses to `False`.
@@ -1103,9 +1136,9 @@ With the helper lemmas in place, the inductive step is a sequence of rewrites:
   | cons column columnsLE induction_hypothesis =>
     obtain ⟨x, y, z⟩ := column
     rw [split_run]
-    simp_rw [first_step_correct, induction_hypothesis]
+    simp_rw [first_step_adds, induction_hypothesis]
     simp only [WordAddsWithCarry, row1LE_cons, row2LE_cons, row3LE_cons, List.length_cons, pow_succ]
-    simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm,
+    simpa [WholeRunAddition, SplitRunAddition, Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm,
       Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using
         (least_significant_bit_split x y z carryIn
           (row1LE columnsLE)
@@ -1133,7 +1166,7 @@ The left-hand side of the goal becomes:
   RunEndsWithCarry carryMid columnsLE carryOut
 ```
 
-`simp_rw [first_step_correct, induction_hypothesis]` is steps 2 and 3.
+`simp_rw [first_step_adds, induction_hypothesis]` is steps 2 and 3.
 `simp_rw` is like `rw` but it can rewrite underneath the `∃` binder.
 It turns the first step into the adder equation and the rest of the run into `WordAddsWithCarry` for `columnsLE`.
 This is where `generalizing carryIn` pays off: the induction hypothesis is applied with `carryMid` as the starting carry.
@@ -1169,7 +1202,7 @@ Now the goal is `least_significant_bit_split` with `a`, `b` and `d` set to the v
 There are two small mismatches though.
 The two sides of the equivalence are the other way around, which `.symm` fixes by flipping the lemma.
 And the carry out term is grouped differently: the goal has `carryOut.toNat * (2 ^ n * 2)` while the lemma has `2 * (carryOut.toNat * 2 ^ n)`.
-`simpa` with the commutativity and associativity lemmas for `+` and `*` normalizes both the goal and the lemma to the same form, and closes the goal.
+`simpa` unfolds `WholeRunAddition` and `SplitRunAddition` in the lemma, and with the commutativity and associativity lemmas for `+` and `*` it normalizes both the goal and the lemma to the same form, and closes the goal.
 That completes the inductive step, and with it the proof of the run invariant.
 
 All that remains for `adderDFA_accepts_B_reverse` is to instantiate the invariant with `false` for both carries, unfold `WordAddsWithCarry`, which cancels the carry terms, and to unfold the definitions of `accepts` and `B.reverse` on the two sides until they match.[^8]
@@ -1177,7 +1210,7 @@ All that remains for `adderDFA_accepts_B_reverse` is to instantiate the invarian
 
 ## Working on Lean Proofs with LLMs
 
-State-of-the-art LLMs won't break a sweat on producing a proof like this, but it took me several iterations to get the originally LLM produced into a shape that I find easy to understand.
+State-of-the-art LLMs won't break a sweat producing a proof like this, but it took me several iterations to get the originally LLM produced into a shape that I find easy to understand.
 
 In theory it should be enough for humans to verify the specs, but in practice, in order to understand the specs, one often has to look into the proofs.
 + If there is is something weird in the proofs, that's a good indication that the spec is off.

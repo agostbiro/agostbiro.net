@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="fig-lsb-split" width="700" height="262" viewBox="0 0 700 262" role="img">
+  <title>The variables of least_significant_bit_split laid out as a long addition, least significant bits first: x, y and z are the least significant bits of the three rows, a, b and d are the values of their remaining bits, carryIn enters the first column, carryMid is the carry between the first column and the rest, and k is the carry out term. The first column counts once and everything after it counts twice, so the value of row 1 is x + 2 * a.</title>
+  <style>
+    /* Labels, brackets and the rule sit on the page background, so they have
+       to follow the page's colour scheme. The cells keep their own light
+       fills, so the text inside them stays dark in both.
+
+       Every selector is scoped to the figure's own class: this file is inlined
+       into the page (layouts/_markup/render-image.html), so bare class names
+       would leak into the document and collide with the other figures. */
+    .fig-lsb-split {
+      --ink: #2C2C2A;   /* labels on the page background */
+      --rule: #6B6963;  /* brackets and the addition rule */
+    }
+    /* The appearance toggle flips body[a], which the inlined figure can read.
+       Opened on its own the SVG is the root element and has no body above it,
+       so svg:root falls back to the OS preference. */
+    body[a="dark"] .fig-lsb-split {
+      --ink: #D6D4CC; --rule: #B4B1A8;
+    }
+    @media (prefers-color-scheme: dark) {
+      body[a="auto"] .fig-lsb-split,
+      svg.fig-lsb-split:root {
+        --ink: #D6D4CC; --rule: #B4B1A8;
+      }
+    }
+    .fig-lsb-split text { font-family: system-ui, sans-serif; }
+    .fig-lsb-split .n  { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; font-weight: 500; text-anchor: middle; dominant-baseline: central; }
+    .fig-lsb-split .v  { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+    .fig-lsb-split .hdr { font-size: 11px; fill: var(--ink); text-anchor: middle; }
+    .fig-lsb-split .row { font-size: 12px; fill: var(--ink); text-anchor: end; dominant-baseline: central; }
+    .fig-lsb-split .key { font-size: 11px; fill: var(--ink); dominant-baseline: central; }
+    .fig-lsb-split .brk { stroke: var(--rule); stroke-width: 1; fill: none; }
+  </style>
+
+  <!-- column headers -->
+  <text class="hdr" x="120" y="14">least significant bits</text>
+  <text class="hdr" x="320" y="14">remaining bits</text>
+  <text class="hdr" x="520" y="14">carry out term</text>
+  <text class="hdr" x="630" y="14">value of the row</text>
+
+  <!-- carries -->
+  <text class="row" x="72" y="43">carries</text>
+  <rect x="90" y="26" width="60" height="34" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="120" y="43" fill="#2C2C2A">carryIn</text>
+  <rect x="170" y="26" width="70" height="34" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="205" y="43" fill="#2C2C2A">carryMid</text>
+  <rect x="490" y="26" width="60" height="34" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+  <text class="n" x="520" y="43" fill="#0C447C">k</text>
+
+  <!-- row 1 -->
+  <text class="row" x="72" y="85">row 1</text>
+  <rect x="90" y="68" width="60" height="34" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="120" y="85" fill="#2C2C2A">x</text>
+  <rect x="170" y="68" width="300" height="34" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+  <text class="n" x="320" y="85" fill="#0C447C">a</text>
+  <text class="v" x="630" y="85">x + 2 * a</text>
+
+  <!-- row 2 -->
+  <text class="row" x="72" y="127">+ row 2</text>
+  <rect x="90" y="110" width="60" height="34" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="120" y="127" fill="#2C2C2A">y</text>
+  <rect x="170" y="110" width="300" height="34" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+  <text class="n" x="320" y="127" fill="#0C447C">b</text>
+  <text class="v" x="630" y="127">y + 2 * b</text>
+
+  <!-- the addition rule -->
+  <path class="brk" d="M90 154 H470"/>
+
+  <!-- row 3 -->
+  <text class="row" x="72" y="181">= row 3</text>
+  <rect x="90" y="164" width="60" height="34" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="n" x="120" y="181" fill="#2C2C2A">z</text>
+  <rect x="170" y="164" width="300" height="34" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+  <text class="n" x="320" y="181" fill="#0C447C">d</text>
+  <text class="v" x="630" y="181">z + 2 * d</text>
+
+  <!-- how much each part counts -->
+  <path class="brk" d="M90 208 V214 H150 V208"/>
+  <text class="hdr" x="120" y="230">counts once</text>
+  <path class="brk" d="M170 208 V214 H550 V208"/>
+  <text class="hdr" x="360" y="230">counts twice</text>
+
+  <!-- key -->
+  <rect x="90" y="244" width="12" height="12" rx="3" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="key" x="108" y="250">a single bit</text>
+  <rect x="190" y="244" width="12" height="12" rx="3" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+  <text class="key" x="208" y="250">a natural number</text>
+</svg>

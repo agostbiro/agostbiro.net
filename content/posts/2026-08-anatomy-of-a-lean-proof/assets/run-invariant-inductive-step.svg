@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" class="fig-induction-step" width="700" height="346" viewBox="0 0 700 346" role="img">
-  <title>The lemmas used in the inductive step of run_invariant: split_run, first_step_correct and the induction hypothesis on the DFA side, least_significant_bit_split on the arithmetic side, all feeding into run_invariant.</title>
+  <title>The lemmas used in the inductive step of run_invariant: split_run, first_step_adds and the induction hypothesis on the DFA side, least_significant_bit_split on the arithmetic side, all feeding into run_invariant.</title>
   <style>
     /* Headers and arrows sit on the page background, so they have to follow
        the page's colour scheme. The boxes keep their own light fills, so the
@@ -48,7 +48,7 @@
   <path d="M180 78 V108" class="arr" marker-end="url(#arrow-induction-step)"/>
 
   <rect x="60" y="110" width="240" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-  <text class="n" x="180" y="128" fill="#2C2C2A">first_step_correct</text>
+  <text class="n" x="180" y="128" fill="#2C2C2A">first_step_adds</text>
   <text class="d" x="180" y="144">step 2</text>
 
   <path d="M180 154 V184" class="arr" marker-end="url(#arrow-induction-step)"/>
