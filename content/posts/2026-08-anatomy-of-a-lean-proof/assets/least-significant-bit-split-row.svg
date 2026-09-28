@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" class="fig-lsb-split-row" width="760" height="174" viewBox="0 0 760 174" role="img">
-  <title>Splitting the addition in the row where x and y are 1 and z and carryIn are 0: the equation for the whole word is the same as an equation for the least significant bits, landing in an intermediate carry c mid (carryMid in the lemma), followed by an equation for the remaining bits from that carry.</title>
+  <title>Splitting the addition in the case where x and y are 1 and z and carryIn are 0: the equation for the whole word is the same as an equation for the least significant bits, landing in an intermediate carry c mid (carryMid in the lemma), followed by an equation for the remaining bits from that carry.</title>
   <style>
     /* Labels, brackets and arrows sit on the page background, so they have to
        follow the page's colour scheme. The state circles keep their own light
@@ -77,7 +77,7 @@
   <path class="brk" d="M520 50 H517 V84 H520"/>
   <path class="brk" d="M530 50 H533 V84 H530"/>
   <text class="b"><tspan x="525" y="55">a</tspan><tspan x="525" y="67">b</tspan><tspan x="525" y="79">d</tspan></text>
-  <text class="lbl" x="525" y="118">sum of remaining bits</text>
+  <text class="lbl" x="525" y="118">sums of the remaining bits</text>
 
   <!-- the two pieces -->
   <path class="brk" d="M132 142 V148 H340 V142"/>

@@ -67,6 +67,11 @@
     color: inherit;
   }
 
+  // The same highlight in math, emitted by
+  // layouts/_markup/render-passthrough.html as a KaTeX \colorbox with its
+  // inline colour stripped.
+  .katex .colorbox { background-color: $hl; }
+
   // The theme inverts inline code (background: text color, color: page
   // background), which reads as a black chip in light mode and matches
   // neither kind of block. Use the block background instead and let the text

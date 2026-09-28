@@ -132,6 +132,15 @@
     /* A display formula wider than the column scrolls on its own rather than
        widening the page. */
     .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.2em 0; }
+
+    /* Highlighted math (layouts/_markup/render-passthrough.html) is a KaTeX
+       \colorbox, which pads its content by 0.3em on every side. That is a lot
+       more than the highlight in a code block has, and it pushes the math
+       around it apart. The side padding can simply be set. The top and bottom
+       padding is baked into inline heights, so the box is clipped there
+       instead. The colour itself is set in assets/css/code.scss. */
+    .katex .boxpad { padding: 0 0.1em; }
+    .katex .colorbox { clip-path: inset(0.2em 0); }
   </style>
   {{- end }}
 </head>

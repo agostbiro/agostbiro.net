@@ -1,2 +1,22 @@
-{{- $opts := dict "output" "htmlAndMathml" "displayMode" (eq .Type "block") -}}
-{{- transform.ToMath .Inner $opts -}}
+{{- /*
+Math render hook. Hands the math to KaTeX, plus one addition: a run of math
+wrapped in ⟦ and ⟧ renders with a highlight behind it, the way
+layouts/_markup/render-codeblock.html does for code.
+
+KaTeX has no command that emits a class of our own (\htmlClass needs the
+`trust` option, which transform.ToMath does not expose), so the markers become
+a \colorbox. KaTeX writes the colour of a \colorbox as an inline style, which
+cannot follow the light/dark appearance. It is stripped again here, and the
+`colorbox` class KaTeX puts on the same element is styled in
+assets/css/code.scss instead. The markers themselves never reach the page.
+
+The argument of \colorbox is set in text mode, so it has to go back into math
+mode, and into display style in a block to keep the size of the math around
+it. A highlighted run must not contain an alignment `&`.
+*/ -}}
+{{- $block := eq .Type "block" -}}
+{{- $opts := dict "output" "htmlAndMathml" "displayMode" $block -}}
+{{- $box := cond $block `\colorbox{#fff2a8}{$$\displaystyle $1$$}` `\colorbox{#fff2a8}{$$$1$$}` -}}
+{{- $tex := replaceRE `⟦([^⟧]*)⟧` $box .Inner -}}
+{{- $html := transform.ToMath $tex $opts -}}
+{{- replaceRE `background-color:#fff2a8;` `` $html | safeHTML -}}

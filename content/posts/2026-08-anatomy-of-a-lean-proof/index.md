@@ -863,7 +863,7 @@ def dfaStep : DfaState → Sigma3 → DfaState
         .dead
 ```
 
-The state we step from is a carry state, so the second branch applies and unfolding `dfaStep` leaves us with the following goal:
+The state that we start from is a carry state, so the second branch applies and unfolding `dfaStep` leaves us with the following goal:
 
 ```lean
 ⟦(if z = (x ^^ y ^^ carryIn) then⟧
@@ -949,7 +949,7 @@ def WholeRunAddition (x y z carryIn : Bool) (a b d k : Nat) : Prop :=
 
 def SplitRunAddition (x y z carryIn : Bool) (a b d k : Nat) : Prop :=
   ∃ carryMid : Bool,
-    x + y + carryIn = z + 2 * carryMid ∧
+    x + y + carryIn = z + 2 * carryMid ∧  -- ∧ means conjunction
     a + b + carryMid = d + k
 
 lemma least_significant_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
@@ -967,32 +967,8 @@ The shape of this lemma mirrors `split_run`, but it's just arithmetic, the DFA d
 We need this lemma to connect the two sides of the run invariant: `split_run`, `first_step_adds` and the induction hypothesis turn the DFA into an equation for the first column and an equation for the remaining columns. 
 This lemma shows that together they say the same thing as the equation for the whole word.
 
-We'll prove this lemma by unfolding the two definitions, exhaustively checking the four booleans, and showing with arithmetic that the two sides agree in each case.
-
-As a reminder, the little-endian value of a row is defined as:
-
-```lean
-def valueLE : List Bool → Nat
-  | [] => 0
-  | b :: bs => b + 2 * valueLE bs
-```
-
-so `x + 2 * a` is the value of a row whose first bit is `x` and whose remaining bits have value `a`.
-In the lemma, `x`, `y` and `z` are the least significant bits of the three rows, `a`, `b` and `d` are the values of the remaining bits, and `k` stands for the carry out term.
-The lemma doesn't care that `k` is really `carryOut * 2 ^ n`, any natural number will do, so we keep it abstract.
-
-![The equations of the lemma laid out as a run: the equation for the whole word spans the run, the equation for the least significant bits x, y and z spans the first step, and the equation for the values of the remaining bits a, b and d spans the rest](./assets/least-significant-bit-split-variables.svg "The equations of the lemma laid out as a run, least significant bits first")
-
+We're going to use mathematical notation as we break down this lemma, because the arithmetic is easier to follow this way.
 Unfolding `WholeRunAddition` and `SplitRunAddition` leaves us with the following goal:
-
-```lean
-(x + 2 * a) + (y + 2 * b) + carryIn = (z + 2 * d) + 2 * k ↔
-  ∃ carryMid,
-    x + y + carryIn = z + 2 * carryMid ∧
-    a + b + carryMid = d + k
-```
-
-Or with mathematical notation:
 
 $$\begin{aligned}
 &(x + 2 \cdot a) + (y + 2 \cdot b) + c_{\mathrm{in}} = (z + 2 \cdot d) + 2 \cdot k \iff \\
@@ -1000,65 +976,100 @@ $$\begin{aligned}
 &\qquad \phantom{\exists\, c_{\mathrm{mid}} :\;} a + b + c_{\mathrm{mid}} = d + k
 \end{aligned}$$
 
-Both sides are equations over natural numbers with four booleans mixed in, and once we fix the four booleans, only the arithmetic remains.
-So we're going to split on the four bits like we did in the base case, which gives 16 rows, and show that the equivalence holds in each of them.
+$x$, $y$ and $z$ are the least significant bits of the three rows, $a$, $b$ and $d$ are the values of the remaining bits, and $k$ stands for the carry out term.
 
-Take the row where `x` and `y` are `true` and `z` and `carryIn` are `false`.
-This is again the column where one plus one is zero with carry one.
+![The equations of the lemma laid out as a run: the equation for the whole word spans the run, the equation for the least significant bits x, y and z spans the first step, and the equation for the values of the remaining bits a, b and d spans the rest](./assets/least-significant-bit-split-variables.svg "The equations of the lemma laid out as a run, least significant bits first")
 
-![The addition in this row split into an equation for the least significant bits that lands in carry mid, followed by an equation for the remaining bits from carry mid](./assets/least-significant-bit-split-row.svg "The equation for the whole word is an equation for the least significant bits followed by an equation for the rest")
+As a reminder, binary addition is defined as follows:
+
+$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i + c_{in} = \sum_{i=0}^{n-1} z_i 2^i + c_{out} \cdot 2^n$$
+
+The $x + 2 \cdot a$ term comes from splitting
+
+$$\sum_{i=0}^{n-1} x_i 2^i = x_0 + 2 \cdot \sum_{i=1}^{n-1} x_i 2^{i-1}$$
+
+so $x + 2 \cdot a$ is the value of a row whose first bit is $x$ and whose remaining bits have value $a$ (same applies to terms with $y$ and $z$).
+
+The term $k$ stands for the term $c_{out} \cdot 2^n$ in the binary addition equation.
+Notice how `WholeRunAddition` has a $2 * k$ term in it while `SplitRunAddition` has just $k$ in the equation for the remaining bits.
+This is because `WholeRunAddition` is one bit longer than the remaining bits in `SplitRunAddition`.
+
+Circling back to our goal, we need to show that `WholeRunAddition` and `SplitRunAddition` are saying the same thing.
+`WholeRunAddition` is a simple linear equation, but `SplitRunAddition` has an existential and a conjunction.
+If we can turn `SplitRunAddition` into linear equation, then we can close the goal by showing that the two linear equations are equivalent which is easy.
+
+We're going to use the same trick that we used when [splitting the run:](#splitting-the-run) if the first part of the conjunction is only true for a single value of $c_{\mathrm{mid}}$, then we can substitute that value in the second part and drop the existential and the first part.
+As a reminder, this is the first part of the conjunction:
+
+$$\exists\, c_{\mathrm{mid}} :\; x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{mid}}$$
+
+The equation involves the four boolean arguments of the lemma and $c_{\mathrm{mid}}$ which means that once we fix the four booleans, $c_{\mathrm{mid}}$ is the only unknown left in it.
+So we're going to check every combination of the four booleans like we did in the base case, which gives 16 cases, and solve the equation for $c_{\mathrm{mid}}$ in each of them.
+
+If there is a solution, `SplitRunAddition` turns into a linear equation, and we'll rearrange it to show that it's the same equation as `WholeRunAddition`.
+If there is no solution, `SplitRunAddition` is false, and we'll show that `WholeRunAddition` is false too.
+
+
+Let's work through an example of each kind before we look at the Lean proof.
+
+First, consider the case where $x$ and $y$ are $1$ and $z$ and $c_{\mathrm{in}}$ are $0$.
+This is again the column where $1 + 1 = 0$ with $c_{out} = 1$.
+
+![The addition in this case split into an equation for the least significant bits that lands in carry mid, followed by an equation for the remaining bits from carry mid](./assets/least-significant-bit-split-row.svg "The equation for the whole word is an equation for the least significant bits followed by an equation for the rest")
 
 Substituting the values gives:
 
-```lean
-(⟦1⟧ + 2 * a) + (⟦1⟧ + 2 * b) + ⟦0⟧ = (⟦0⟧ + 2 * d) + 2 * k ↔
-  ∃ carryMid,
-    ⟦1 + 1 + 0⟧ = ⟦0⟧ + 2 * carryMid ∧
-    a + b + carryMid = d + k
-```
+$$\begin{aligned}
+&(⟦1⟧ + 2 \cdot a) + (⟦1⟧ + 2 \cdot b) + ⟦0⟧ = (⟦0⟧ + 2 \cdot d) + 2 \cdot k \iff \\
+&\qquad \exists\, c_{\mathrm{mid}} :\; ⟦1 + 1 + 0⟧ = ⟦0⟧ + 2 \cdot c_{\mathrm{mid}} \;\land \\
+&\qquad \phantom{\exists\, c_{\mathrm{mid}} :\;} a + b + c_{\mathrm{mid}} = d + k
+\end{aligned}$$
 
-On the right-hand side, the least significant bit equation is now `2 = 2 * carryMid`.
-The only boolean that satisfies it is `carryMid = true`, so we can drop the existential and substitute `true` for `carryMid`:
+On the right-hand side, the least significant bit equation is now $2 = 2 \cdot c_{\mathrm{mid}}$.
+The only value that satisfies it is $c_{\mathrm{mid}} = 1$, so we can drop the existential and substitute $1$ for $c_{\mathrm{mid}}$:
 
-```lean
-(1 + 2 * a) + (1 + 2 * b) + 0 = (0 + 2 * d) + 2 * k ↔
-    a + b + ⟦1⟧ = d + k
-```
+$$\begin{aligned}
+&(1 + 2 \cdot a) + (1 + 2 \cdot b) + 0 = (0 + 2 \cdot d) + 2 \cdot k \iff \\
+&\qquad a + b + ⟦1⟧ = d + k
+\end{aligned}$$
 
 On the left-hand side, every term is now even.
-Collecting the constants gives `2 + 2 * a + 2 * b = 2 * d + 2 * k`, and dividing both sides by two gives:
+Collecting the constants gives $2 + 2 \cdot a + 2 \cdot b = 2 \cdot d + 2 \cdot k$, and dividing both sides by two gives:
 
-```lean
-⟦1 + a + b = d + k⟧ ↔
-    a + b + 1 = d + k
-```
+$$\begin{aligned}
+&⟦1 + a + b = d + k⟧ \iff \\
+&\qquad a + b + 1 = d + k
+\end{aligned}$$
 
-Both sides say the same thing, so the row holds.
+Both sides say the same thing, so the case holds.
 
-Now take a row where the column doesn't add up: `x` is `true` and `y`, `z` and `carryIn` are `false`.
+Now take a case where the column doesn't add up: $x$ is $1$ and $y$, $z$ and $c_{\mathrm{in}}$ are $0$.
 
-![The addition in this row split into an equation for the least significant bits 1, 0 and 0, followed by an equation for the remaining bits from carry mid](./assets/least-significant-bit-split-row-mismatch.svg "The same split in a row where the column doesn't add up")
+![The addition in this case split into an equation for the least significant bits 1, 0 and 0, followed by an equation for the remaining bits from carry mid](./assets/least-significant-bit-split-row-mismatch.svg "The same split in a case where the column doesn't add up")
 
 Substituting the values gives:
 
-```lean
-(⟦1⟧ + 2 * a) + (⟦0⟧ + 2 * b) + ⟦0⟧ = (⟦0⟧ + 2 * d) + 2 * k ↔
-  ∃ carryMid,
-    ⟦1 + 0 + 0⟧ = ⟦0⟧ + 2 * carryMid ∧
-    a + b + carryMid = d + k
-```
+$$\begin{aligned}
+&(⟦1⟧ + 2 \cdot a) + (⟦0⟧ + 2 \cdot b) + ⟦0⟧ = (⟦0⟧ + 2 \cdot d) + 2 \cdot k \iff \\
+&\qquad \exists\, c_{\mathrm{mid}} :\; ⟦1 + 0 + 0⟧ = ⟦0⟧ + 2 \cdot c_{\mathrm{mid}} \;\land \\
+&\qquad \phantom{\exists\, c_{\mathrm{mid}} :\;} a + b + c_{\mathrm{mid}} = d + k
+\end{aligned}$$
 
-This time the least significant bit equation is `1 = 2 * carryMid`.
-No boolean satisfies it since the left-hand side is odd and the right-hand side is even, so the right-hand side of the equivalence is false.
-The left-hand side of the equivalence is `1 + 2 * a + 2 * b = 2 * d + 2 * k`, which is also odd on one side and even on the other, so it's false as well.
-Both sides are false, so the row holds.
+This time the least significant bit equation is $1 = 2 \cdot c_{\mathrm{mid}}$.
+No value of $c_{\mathrm{mid}}$ satisfies it since the left-hand side is odd and the right-hand side is even, so the right-hand side of the equivalence is false.
+The left-hand side of the equivalence is 
 
-The remaining 14 rows are one of these two kinds.
-If the sum of `x`, `y` and `carryIn` has the same parity as `z`, exactly one `carryMid` satisfies the least significant bit equation and the rest of the equation matches once we divide by two.
+$$1 + 2 \cdot a + 2 \cdot b = 2 \cdot d + 2 \cdot k$$ 
+
+which is also odd on one side and even on the other, so it's false as well.
+Both sides are false, so the case holds.
+
+The remaining 14 cases are one of these two kinds.
+If the sum of $x$, $y$ and $c_{\mathrm{in}}$ has the same parity as $z$, exactly one $c_{\mathrm{mid}}$ satisfies the least significant bit equation and the rest of the equation matches once we divide by two.
 If the parities differ, both sides are false.
 This concludes the proof.
 
-The second kind of row is how the dead state shows up on the arithmetic side.
+The second kind of case is how the dead state shows up on the arithmetic side.
 On the DFA side, a column with the wrong parity sends the run into the dead state, so it never ends in a carry state.
 On the arithmetic side, the same column makes both sides of the equivalence false.
 The lemma takes care of this for free, there is no separate case for it.
@@ -1069,64 +1080,37 @@ Now let's review what the proof looks like in Lean:
 lemma least_significant_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
     WholeRunAddition x y z carryIn a b d k ↔
       SplitRunAddition x y z carryIn a b d k := by
-  cases x <;> cases y <;> cases z <;> cases carryIn <;> simp [WholeRunAddition, SplitRunAddition] <;> omega
+  cases x <;> cases y <;> cases z <;> cases carryIn <;>
+    simp [WholeRunAddition, SplitRunAddition] <;>
+    omega
 ```
 
-The `cases <;>` chain splits on the four bits, which gives 16 goals, one per row.
+The `cases <;>` chain splits on the four bits, which gives 16 goals, one per case.
 `simp` then runs on each of them, and `omega` runs on whatever `simp` leaves behind.
 
-This time `simp` only gets the two definitions to unfold.
-Its default rule set does the rest of the work, which is turning the fixed bits into numbers, folding the constants and getting rid of the existential.
-Let's follow it on the first row from above.
-After `cases` and unfolding the definitions, the goal is:
+We're going to skip going through the steps `simp` performs here since we've seen it in action before.
+`simp` leaves one goal behind in each of the 16 cases, and the goals come in the same two kinds as the cases.
 
-```lean
-true + 2 * a + (true + 2 * b) + false = false + 2 * d + 2 * k ↔
-  ∃ carryMid,
-    true + true + false = false + 2 * carryMid ∧
-    a + b + carryMid = d + k
-```
+If there is a solution for `carryMid`, `simp` leaves an equivalence of two linear equations.
+This is the goal for the first example from above:
 
-`simp` replaces `true` with `1` and `false` with `0`, drops the zeros and adds up the constants:
+$$\begin{aligned}
+1 + 2 \cdot a + (1 + 2 \cdot b) &= 2 \cdot d + 2 \cdot k \iff \\
+1 + a + b &= d + k
+\end{aligned}$$
 
-```lean
-1 + 2 * a + (1 + 2 * b) = 2 * d + 2 * k ↔
-  ∃ carryMid,
-    ⟦2 = 2 * carryMid⟧ ∧
-    a + b + carryMid = d + k
-```
+If there is no solution for `carryMid`, `SplitRunAddition` is false, and `p ↔ False` is the same as `¬p`, so `simp` leaves the negation of `WholeRunAddition`.
+This is the goal for the second example from above:
 
-Then it works on the existential.
-It knows that `2 = 2 * n` holds exactly when `n = 1`, and that `carryMid` is `1` as a number exactly when it is `true` as a boolean, so the first conjunct becomes `carryMid = true`.
-That's the same situation as in `split_run`, and `simp` uses the same trick to substitute `true` for `carryMid` and drop the existential and the first conjunct:
+$$\neg\,(1 + 2 \cdot a + 2 \cdot b = 2 \cdot d + 2 \cdot k)$$
 
-```lean
-1 + 2 * a + (1 + 2 * b) = 2 * d + 2 * k ↔
-    a + b + ⟦1⟧ = d + k
-```
+`simp` can't go further, because it rewrites terms, but it doesn't reason about equations.
+This is where `omega` comes in, which is a decision procedure for linear arithmetic over natural numbers and integers.
 
-`simp` stops here.
-It rewrites terms, it doesn't reason about equations, so it can't see that dividing the left-hand side by two gives the right-hand side.
-`omega` is a decision procedure for linear arithmetic over natural numbers and integers.
-Linear means that variables are only added together and multiplied by constants, which is all we have here, so `omega` closes the goal automatically.
-
-In the second row from above, the least significant bit equation is `1 = 2 * carryMid` after the constants are folded, and there is no value to read `carryMid` off from.
-`simp` handles this by splitting the existential over the two booleans:
-
-```lean
-1 + 2 * a + 2 * b = 2 * d + 2 * k ↔
-  ⟦1 = 2 * false⟧ ∧ a + b + false = d + k ∨
-  ⟦1 = 2 * true⟧ ∧ a + b + true = d + k
-```
-
-The two highlighted equations evaluate to `1 = 0` and `1 = 2`, which are both `False`, and `False ∧ p` is `False`, so the whole right-hand side collapses to `False`.
-`p ↔ False` is the same as `¬p`, so `simp` leaves us with:
-
-```lean
-¬(1 + 2 * a + 2 * b = 2 * d + 2 * k)
-```
-
-`omega` proves this too: an odd number is never equal to an even number.
+`omega` proves a goal by contradiction: it assumes that the goal is false, and shows that no values of the variables can satisfy the equations and inequalities that follow from this.
+In the first goal, the left-hand side is the right-hand side multiplied by two, so no values of `a`, `b`, `d` and `k` can make one side true and the other false.
+In the second goal, the equation has an odd number on one side and an even number on the other, so no values can make it true.
+`omega` closes the remaining 14 goals the same way, which concludes the proof of `least_significant_bit_split`.
 
 ##### Putting It Together
 
