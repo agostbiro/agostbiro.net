@@ -1353,23 +1353,34 @@ The last part is the proof that the DFA accepts `B.reverse`, which is the theore
 #### $B$ Is Regular
 
 We've set out to prove that the language $B$ is regular and we're finally in a position to do so.
-All we need is the closure of regular languages under reversal:
-
-```lean
-theorem B_isRegular : B.IsRegular :=
-  Language.isRegular_reverse_iff.mp B_reverse_isRegular
-```
-
-`Language.isRegular_reverse_iff` is the theorem from Mathlib, and its type is:
+All we need is the closure of regular languages under reversal.
+Mathlib provides this as [`Language.isRegular_reverse_iff`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff), and its type is
 
 ```lean
 L.reverse.IsRegular ↔ L.IsRegular
 ```
 
-`.mp` takes the left-to-right direction of an equivalence, which gives us a function from proofs of `L.reverse.IsRegular` to proofs of `L.IsRegular`.
-We pass it `B_reverse_isRegular`, and we get back a proof that `B` is regular.
+where `L` is a generic `Mathlib.Computability.Language`.
 
-This concludes the proof that $B$ is regular.
+An equivalence holds in both directions and we have a proof that `B.reverse.isRegular`, so we can use the implication
+
+```lean
+L.reverse.IsRegular → L.IsRegular
+```
+
+to prove that $B$ is regular.
+
+The formalization in Lean is written as follows:
+
+```lean
+theorem B_isRegular : B.IsRegular :=
+  Language.isRegular_reverse_iff⟦.mp⟧ B_reverse_isRegular
+```
+
+`mp` is short for modus ponens which is the logical argument that if $a$ implies $b$ and $a$ holds, then $b$ holds as well.
+We use the `mp` field here to turn the theorem which has type `L.reverse.IsRegular ↔ L.IsRegular` into a function with type `L.reverse.IsRegular → L.IsRegular`.
+
+We pass this function `B_reverse_isRegular`, and we get back a term with type `B.IsRegular` which is the proof that `B` is regular.
 
 [^1]: Instead of using the `LE/BE` convention to distinguish between interpretations of lists of bits, we could introduce separate types for little- and big-endian lists of bits to prevent mixing them up. However this would require re-deriving many of the theorems that are already available for native lists, so it's not worth it for a project of this scope.
 
