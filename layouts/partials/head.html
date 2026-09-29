@@ -41,6 +41,12 @@
   {{ $codeSass := resources.Get "css/code.scss" }}
   {{ $codeStyle := $codeSass | css.Sass $options | resources.Fingerprint "sha512" }}
   <link rel="stylesheet" href="{{ $codeStyle.Permalink | relURL }}" integrity="{{ $codeStyle.Data.Integrity }}" />
+  {{- /* Only posts with `toc: true` pay for the table of contents styles. */ -}}
+  {{- if .Params.toc }}
+  {{ $tocSass := resources.Get "css/toc.scss" }}
+  {{ $tocStyle := $tocSass | css.Sass $options | resources.Fingerprint "sha512" }}
+  <link rel="stylesheet" href="{{ $tocStyle.Permalink | relURL }}" integrity="{{ $tocStyle.Data.Integrity }}" />
+  {{- end }}
   <style>
     /* The theme's .w wrapper keeps a flat 2rem side padding at every width,
        which costs 64px of an already narrow phone screen. */

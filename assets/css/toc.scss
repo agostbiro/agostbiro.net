@@ -1,0 +1,218 @@
+// Table of contents. Loaded by layouts/partials/head.html on posts with
+// `toc: true`, after the theme's stylesheet. The markup comes from
+// layouts/partials/toc.html, the behavior from assets/js/toc.js.
+//
+// There are two parts: a collapsed list at the start of the post, and with JS
+// a bar fixed to the top of the screen that opens the same list as a panel.
+//
+// The script marks the root element with classes, and everything that needs
+// JS hangs off them:
+//
+//   .toc-js        the script is running
+//   .toc-bar-show  the top bar is on screen
+//   .toc-open      the panel under the top bar is open
+
+// The content column, as set for `.w`: the width is in custom.scss, the side
+// padding in the theme's main.scss and, for phones, in head.html.
+$column: 720px;
+$column-padding: 2rem;
+$column-padding-phone: 1rem;
+
+// A thumb needs about this much to hit the bar.
+$bar-height: 2.75rem;
+
+// ---------------------- THE LIST ---------------------- //
+
+.toc-list {
+  font-size: 0.85em;
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  ul ul { padding-left: 0.9em; }
+
+  li { margin: 0; }
+
+  a {
+    display: block;
+    // Rows tall enough for thumbs.
+    padding: 0.35em 0;
+    // The theme has no gray of its own and paints links per appearance. Fading
+    // the text color gives a gray that follows light and dark by itself.
+    opacity: 0.6;
+  }
+
+  a:hover,
+  a:focus-visible,
+  a[aria-current] { opacity: 1; }
+
+  a:hover { text-decoration: none; }
+}
+
+// The theme colors links as `body[a="…"] a`, visited ones included.
+body[a] .toc-list a,
+body[a] .toc-list a:visited { color: inherit; }
+
+// ---------------------- INLINE ---------------------- //
+
+// The theme boxes every <details>, again as `body[a="…"] details`.
+body[a] details.toc-inline {
+  border: 0;
+  padding: 0;
+  margin: 1rem 0;
+
+  summary {
+    display: inline-block;
+    border: 0;
+    margin: 0;
+    padding: 0.25rem 0;
+    cursor: pointer;
+    // No disclosure triangle. The brackets mark it as a control.
+    list-style: none;
+    &::-webkit-details-marker { display: none; }
+  }
+}
+
+// ---------------------- TOP BAR AND PANEL ---------------------- //
+
+// The bar covers the page, so it needs the page's background. The theme sets
+// that on body per appearance and has no variable for it.
+//
+// Mirrors the appearance switching in the theme's main.scss.
+body[a="light"] .toc-bar { background: #ffffff; }
+body[a="dark"] .toc-bar { background: #000000; }
+
+@media (prefers-color-scheme: light) {
+  body[a="auto"] .toc-bar { background: #ffffff; }
+}
+
+@media (prefers-color-scheme: dark) {
+  body[a="auto"] .toc-bar { background: #000000; }
+}
+
+.toc-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+
+  // Off screen until the script shows it. `visibility` also takes it out of
+  // the tab order, and waits for the slide to finish before it flips.
+  transform: translateY(-100%);
+  visibility: hidden;
+  transition: transform 0.15s ease-out, visibility 0s linear 0.15s;
+}
+
+.toc-bar-show .toc-bar {
+  transform: none;
+  visibility: visible;
+  transition: transform 0.15s ease-out;
+}
+
+.toc-bar-row,
+.toc-panel {
+  box-sizing: border-box;
+  border-bottom: thin solid currentColor;
+}
+
+.toc-bar-row {
+  height: $bar-height;
+  font-size: 0.85em;
+}
+
+// Lines the text up with the column.
+.toc-bar-inner,
+.toc-panel .toc-list {
+  max-width: $column;
+  margin: 0 auto;
+  padding-left: $column-padding;
+  padding-right: $column-padding;
+}
+
+.toc-bar-inner {
+  display: flex;
+  height: 100%;
+  // Between [toc] and the appearance toggle, so a thumb hits the right one.
+  gap: 1.5rem;
+}
+
+// Buttons that read as bracketed text, like the appearance toggle.
+.toc-bar-open,
+.toc-bar-toggle {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.toc-bar-open {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  text-align: left;
+}
+
+.toc-bar-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toc-bar-hint,
+.toc-bar-toggle { flex: none; }
+
+.toc-panel {
+  display: none;
+  max-height: 70vh;
+  overflow-y: auto;
+  // Reaching the end of the list must not start scrolling the page.
+  overscroll-behavior: contain;
+}
+
+.toc-open .toc-panel { display: block; }
+
+.toc-panel .toc-list {
+  padding-top: 0.5rem;
+  padding-bottom: 1rem;
+}
+
+// Room for the bar above a heading that was jumped to, so the bar does not
+// cover it when it comes back. toc.js reads this value.
+.toc-js article :is(h2, h3, h4, h5) { scroll-margin-top: $bar-height + 0.5rem; }
+
+// The same breakpoint head.html uses to slim down `.w`.
+@media (max-width: 480px) {
+  .toc-bar-inner,
+  .toc-panel .toc-list {
+    padding-left: $column-padding-phone;
+    padding-right: $column-padding-phone;
+  }
+}
+
+// Only where there is a pointer to hover with. On a touch screen the hover
+// state sticks to the last thing tapped.
+@media (hover: hover) {
+  .toc-inline summary:hover,
+  .toc-bar-toggle:hover,
+  .toc-bar-open:hover .toc-bar-hint { text-decoration: underline; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toc-bar,
+  .toc-bar-show .toc-bar { transition: none; }
+}
+
+@media print {
+  .toc-inline,
+  .toc-bar { display: none; }
+}

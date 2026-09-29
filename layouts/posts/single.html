@@ -1,0 +1,16 @@
+{{/* Overrides the theme's posts/single.html. Identical to it, except that the
+     table of contents comes from partials/toc.html rather than a bare
+     .TableOfContents. Re-check against the theme's copy if the submodule is
+     updated. */ -}}
+{{ define "main" }}
+
+<article>
+    <h1>{{ .Title }}</h1>
+
+    {{ if .Params.toc }}
+        {{- partial "toc.html" . -}}
+    {{ end }}
+
+    {{ .Content }}
+</article>
+{{ end }}

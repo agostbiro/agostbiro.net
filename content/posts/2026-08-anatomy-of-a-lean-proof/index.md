@@ -2,6 +2,7 @@
 title: "Anatomy of a Lean Proof for Software Engineers"
 date: "2026-08-10"
 draft: true
+toc: true
 ---
 
 ## Intro
@@ -203,7 +204,7 @@ As discussed earlier, in order to show that a language is regular, we need to bu
 The Lean proof will consist of three parts:
 
 1. A **specification** of the language $B$.
-2. An executable **implementation** of the [adder DFA](#the-adder-DFA).
+2. An executable **implementation** of the [adder DFA](#adder-dfa).
 3. A **proof** showing that the implementation matches the specification.
 
 Lean's [Mathlib](https://lean-lang.org/use-cases/mathlib/) has first class support for formal languages and DFAs, so we will just need to instantiate structures from the library for the specification and the implementation.
@@ -415,9 +416,9 @@ And now back to our *regular* programming.
 
 ### The Proof
 
-As discussed earlier, in order to prove that the language $B$ is regular, we need to first show that the adder DFA accepts the reverse of the language. 
+As discussed earlier, in order to prove that the language $B$ is regular, we need to first show that the adder DFA accepts the reverse of the language, $B^{\mathcal{R}}$. 
 We can then use the closure property of the reversal of regular languages to prove that $B$ is regular.
-This is readily available as a theorem [from Mathlib,](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff) but we'll have to do some work to show that the adder DFA recognizes the language $B$. 
+This is readily available as a theorem [from Mathlib,](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff) but we'll have to do some work to show that the adder DFA recognizes $B^{\mathcal{R}}$. 
 
 Mathlib's [definition](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L353-L355) of regular languages boils down to this:[^6]
 
@@ -1114,80 +1115,145 @@ In the second goal, the equation has an odd number on one side and an even numbe
 
 ##### Putting It Together
 
-With the helper lemmas in place, the inductive step is a sequence of rewrites:
-
 ```lean
+lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
+    RunEndsWithCarry carryIn wLE carryOut ↔
+      WordAddsWithCarry wLE carryIn carryOut := by
+  induction wLE generalizing carryIn with
+  | nil => ...
   | cons column columnsLE induction_hypothesis =>
-    obtain ⟨x, y, z⟩ := column
-    rw [split_run]
-    simp_rw [first_step_adds, induction_hypothesis]
-    simp only [WordAddsWithCarry, row1LE_cons, row2LE_cons, row3LE_cons, List.length_cons, pow_succ]
-    simpa [WholeRunAddition, SplitRunAddition, Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm,
-      Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using
-        (least_significant_bit_split x y z carryIn
-          (row1LE columnsLE)
-          (row2LE columnsLE)
-          (row3LE columnsLE)
-          (carryOut.toNat * 2 ^ columnsLE.length)).symm
+    ...
 ```
 
-When writing a proof like this in an editor, Lean shows the goal after each tactic, so let's follow along the same way.
-The goal at the start of the inductive step is the invariant with `column :: columnsLE` substituted for `wLE`:
+With the helper lemmas in place, we can return to the inductive step of the run invariant.
+We're going to prove it by following the four steps of the plan: the first three turn the DFA on the left-hand side of the equivalence into arithmetic, and the fourth shows that the arithmetic on the two sides says the same thing.
+We'll run through the informal argument first and then we'll have a look at how it's formalized in Lean.
+
+In the inductive step the word is `column :: columnsLE`, so the goal is the run invariant for this word:
 
 ```lean
 RunEndsWithCarry carryIn (column :: columnsLE) carryOut ↔
   WordAddsWithCarry (column :: columnsLE) carryIn carryOut
 ```
 
+We also get to use the induction hypothesis, which is the run invariant for the remaining columns:
+
+```lean
+∀ carryIn,
+  RunEndsWithCarry carryIn columnsLE carryOut ↔
+    WordAddsWithCarry columnsLE carryIn carryOut
+```
+
+The `∀ carryIn` is there because of `generalizing carryIn`.
+It means that the induction hypothesis holds for every starting carry, and not just for the `carryIn` of the goal.
+
+Step 1 is to split the run.
+The left-hand side of the goal is the left-hand side of `split_run`, so we can replace it with the right-hand side of the lemma:
+
+```lean
+(⟦∃ carryMid,⟧
+  ⟦dfaStep (.carry carryIn) column = .carry carryMid ∧⟧
+  ⟦RunEndsWithCarry carryMid columnsLE carryOut⟧) ↔
+    WordAddsWithCarry (column :: columnsLE) carryIn carryOut
+```
+
+Step 2 is to turn the first step of the run into arithmetic.
+Let `x`, `y` and `z` be the three bits of `column`.
+The first part of the conjunction is then the left-hand side of `first_step_adds`, so we can replace it with the adder equation:
+
+```lean
+(∃ carryMid,
+  ⟦x + y + carryIn = z + 2 * carryMid⟧ ∧
+  RunEndsWithCarry carryMid columnsLE carryOut) ↔
+    WordAddsWithCarry (column :: columnsLE) carryIn carryOut
+```
+
+Step 3 is to turn the run over the remaining columns into arithmetic.
+The second part of the conjunction is the left-hand side of the induction hypothesis with `carryMid` as the starting carry, so we can replace it with the right-hand side:
+
+```lean
+(∃ carryMid,
+  x + y + carryIn = z + 2 * carryMid ∧
+  ⟦WordAddsWithCarry columnsLE carryMid carryOut⟧) ↔
+    WordAddsWithCarry (column :: columnsLE) carryIn carryOut
+```
+
+This is where `generalizing carryIn` pays off: the run over the remaining columns starts from `carryMid`, which is not necessarily the same as `carryIn`.
+
+The DFA is now gone from the goal and what remains is arithmetic on both sides, so we're going to switch to mathematical notation again.
+Let $w$ stand for the remaining columns and $w'$ for the whole word.
+Unfolding `WordAddsWithCarry` on both sides gives:
+
+$$\begin{aligned}
+&\bigl(\exists\, c_{\mathrm{mid}} :\; x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{mid}} \;\land \\
+&\phantom{\bigl(\exists\, c_{\mathrm{mid}} :\;} ⟦\mathrm{row}_1(w) + \mathrm{row}_2(w) + c_{\mathrm{mid}} = \mathrm{row}_3(w) + c_{\mathrm{out}} \cdot 2^{|w|}⟧\bigr) \iff \\
+&\qquad ⟦\mathrm{row}_1(w') + \mathrm{row}_2(w') + c_{\mathrm{in}} = \mathrm{row}_3(w') + c_{\mathrm{out}} \cdot 2^{|w'|}⟧
+\end{aligned}$$
+
+The whole word is one column longer than the remaining columns.
+So the value of each of its rows is the first bit plus twice the value of the remaining bits, and its carry out term is twice the carry out term of the remaining columns:
+
+$$\begin{aligned}
+\mathrm{row}_1(w') &= x + 2 \cdot \mathrm{row}_1(w) \\
+\mathrm{row}_2(w') &= y + 2 \cdot \mathrm{row}_2(w) \\
+\mathrm{row}_3(w') &= z + 2 \cdot \mathrm{row}_3(w) \\
+c_{\mathrm{out}} \cdot 2^{|w'|} &= 2 \cdot \bigl(c_{\mathrm{out}} \cdot 2^{|w|}\bigr)
+\end{aligned}$$
+
+If we write $a$, $b$ and $d$ for the values of the rows of the remaining columns and $k$ for their carry out term $c_{\mathrm{out}} \cdot 2^{|w|}$, the goal becomes:
+
+$$\begin{aligned}
+&\bigl(\exists\, c_{\mathrm{mid}} :\; x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{mid}} \;\land \\
+&\phantom{\bigl(\exists\, c_{\mathrm{mid}} :\;} ⟦a + b + c_{\mathrm{mid}} = d + k⟧\bigr) \iff \\
+&\qquad ⟦(x + 2 \cdot a) + (y + 2 \cdot b) + c_{\mathrm{in}} = (z + 2 \cdot d) + 2 \cdot k⟧
+\end{aligned}$$
+
+This brings us to step 4 of the plan.
+The goal is `least_significant_bit_split` with the two sides of the equivalence swapped.
+An equivalence holds in both directions, so the lemma closes the goal.
+This concludes the proof of the inductive step, and with it the proof of the run invariant.
+
+Now let's review what the proof looks like in Lean:
+
+```lean
+| cons column columnsLE induction_hypothesis =>
+  obtain ⟨x, y, z⟩ := column
+  rw [split_run]
+  simp_rw [first_step_adds, induction_hypothesis]
+  simp only [
+    WordAddsWithCarry,
+    row1LE_cons, row2LE_cons, row3LE_cons,
+    List.length_cons, pow_succ
+  ]
+  simpa [
+    WholeRunAddition, SplitRunAddition,
+    Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm,
+    Nat.add_assoc, Nat.add_comm, Nat.add_left_comm
+  ] using
+    (least_significant_bit_split x y z carryIn
+      (row1LE columnsLE)
+      (row2LE columnsLE)
+      (row3LE columnsLE)
+      (carryOut.toNat * 2 ^ columnsLE.length)).symm
+```
+
 `obtain ⟨x, y, z⟩ := column` destructures the column into its three bits, like `let (x, y, z) = column` would in a regular program.
 
 `rw [split_run]` is step 1 of the plan.
 `rw` looks for the left-hand side of a lemma in the goal and replaces it with the right-hand side.
-The left-hand side of the goal becomes:
-
-```lean
-∃ carryMid, dfaStep (.carry carryIn) (x, y, z) = .carry carryMid ∧
-  RunEndsWithCarry carryMid columnsLE carryOut
-```
 
 `simp_rw [first_step_adds, induction_hypothesis]` is steps 2 and 3.
-`simp_rw` is like `rw` but it can rewrite underneath the `∃` binder.
-It turns the first step into the adder equation and the rest of the run into `WordAddsWithCarry` for `columnsLE`.
-This is where `generalizing carryIn` pays off: the induction hypothesis is applied with `carryMid` as the starting carry.
-The left-hand side of the goal becomes:
+`simp_rw` is like `rw`, but it can also rewrite under the `∃`, which `rw` can't do.
 
-```lean
-∃ carryMid,
-  x.toNat + y.toNat + carryIn.toNat = z.toNat + 2 * carryMid.toNat ∧
-  WordAddsWithCarry columnsLE carryMid carryOut
-```
+The `simp only` line unfolds `WordAddsWithCarry` on both sides of the goal, and then splits the first column off from the whole word on the right-hand side.
+The `rowLE_cons` lemmas say that the value of a row of `column :: columnsLE` is the column's bit plus twice the value of the same row of `columnsLE`.
+`List.length_cons` says that `column :: columnsLE` is one longer than `columnsLE`, and `pow_succ` rewrites $2^{n+1}$ as $2^n \cdot 2$.
 
-The DFA is now gone from the goal.
-What remains is arithmetic on both sides.
-
-The `simp only` line unfolds `WordAddsWithCarry` on both sides of the goal into its equation, and then unfolds the right-hand side one level further.
-`simp only` differs from `simp` in that it uses only the rules that we list and not the default database, which keeps the goal in a predictable shape.
-The `rowLE_cons` lemmas say that the value of a row of `column :: columnsLE` is the column's bit plus twice the value of the same row of `columnsLE`, `List.length_cons` unfolds one step of the length, and `pow_succ` rewrites $2^{n+1}$ as $2^n \cdot 2$.
-On the left-hand side, `WordAddsWithCarry columnsLE carryMid carryOut` becomes:
-
-```lean
-row1LE columnsLE + row2LE columnsLE + carryMid.toNat
-  = row3LE columnsLE + carryOut.toNat * 2 ^ columnsLE.length
-```
-
-The right-hand side becomes:
-
-```lean
-x.toNat + 2 * row1LE columnsLE + (y.toNat + 2 * row2LE columnsLE) + carryIn.toNat
-  = z.toNat + 2 * row3LE columnsLE + carryOut.toNat * (2 ^ columnsLE.length * 2)
-```
-
-Now the goal is `least_significant_bit_split` with `a`, `b` and `d` set to the values of the remaining rows and `k` set to `carryOut.toNat * 2 ^ columnsLE.length`, which is step 4 of the plan.
-There are two small mismatches though.
-The two sides of the equivalence are the other way around, which `.symm` fixes by flipping the lemma.
-And the carry out term is grouped differently: the goal has `carryOut.toNat * (2 ^ n * 2)` while the lemma has `2 * (carryOut.toNat * 2 ^ n)`.
-`simpa` unfolds `WholeRunAddition` and `SplitRunAddition` in the lemma, and with the commutativity and associativity lemmas for `+` and `*` it normalizes both the goal and the lemma to the same form, and closes the goal.
-That completes the inductive step, and with it the proof of the run invariant.
+The last tactic is step 4 of the plan.
+We pass the values that $a$, $b$, $d$ and $k$ stand for to `least_significant_bit_split`, and `.symm` swaps the two sides of the equivalence to match the goal.
+There is still a small mismatch between the two: the carry out term is `carryOut * (2 ^ n * 2)` in the goal, while it is `2 * (carryOut * 2 ^ n)` in the lemma.
+`simpa` takes care of this.
+It unfolds `WholeRunAddition` and `SplitRunAddition` in the lemma, and then it uses the commutativity and associativity lemmas for `+` and `*` to bring the goal and the lemma to the same form, which closes the goal.
 
 All that remains for `adderDFA_accepts_B_reverse` is to instantiate the invariant with `false` for both carries, unfold `WordAddsWithCarry`, which cancels the carry terms, and to unfold the definitions of `accepts` and `B.reverse` on the two sides until they match.[^8]
 `B_isRegular` then follows from the Mathlib theorem that regular languages are closed under reversal.

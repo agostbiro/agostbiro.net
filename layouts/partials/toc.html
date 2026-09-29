@@ -1,0 +1,13 @@
+{{/* Table of contents for a post, rendered by layouts/posts/single.html when
+     the front matter has `toc: true`. Styled by assets/css/toc.scss and
+     brought to life by assets/js/toc.js.
+
+     This is a collapsed line at the start of the post, and works without JS.
+     The bar that follows the reader down the page is built by the script from
+     a copy of this list, so it never shows for a visitor without it. */ -}}
+<details class="toc-inline">
+  <summary>[Contents]</summary>
+  <nav class="toc-list" aria-label="Table of contents">
+    {{- partial "toc/list.html" .Fragments.Headings }}
+  </nav>
+</details>
