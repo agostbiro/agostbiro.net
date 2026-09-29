@@ -1317,7 +1317,7 @@ However, it's a good idea at this point to check out the [code](https://github.c
 
 #### $B$ Is Regular
 
-TODO
+We've set out to prove that the language $B$ is regular and we're finally in a position to do so.
 
 [^1]: Instead of using the `LE/BE` convention to distinguish between interpretations of lists of bits, we could introduce separate types for little- and big-endian lists of bits to prevent mixing them up. However this would require re-deriving many of the theorems that are already available for native lists, so it's not worth it for a project of this scope.
 
