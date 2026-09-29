@@ -1258,6 +1258,11 @@ It unfolds `WholeRunAddition` and `SplitRunAddition` in the lemma, and then it u
 #### $B^{\mathcal{R}}$ Is Regular
 
 Now that we have proven the `run_invariant` theorem, we can use it to prove that $B^{\mathcal{R}}$ is regular.
+We do this in two steps: first we show that the adder DFA accepts $B^{\mathcal{R}}$, and then that this makes $B^{\mathcal{R}}$ regular.
+
+##### Adder DFA Accepts $B^{\mathcal{R}}$
+
+The first step is the following theorem:
 
 ```lean
 theorem adderDFA_accepts_B_reverse : adderDFA.accepts = B.reverse := by
@@ -1315,9 +1320,56 @@ This concludes the proof of the `adderDFA_accepts_B_reverse` theorem.
 The Lean proof takes roughly the same steps, but it's about a dozen lines long, so we will not go through it in detail here.
 However, it's a good idea at this point to check out the [code](https://github.com/agostbiro/my-lean/blob/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32/Proof.lean) and step through it yourself, so you can see the proof unfold interactively.
 
+##### From Acceptance to Regularity
+
+With the `adderDFA_accepts_B_reverse` theorem in hand, we can show that $B^{\mathcal{R}}$ is regular.
+The theorem is just the statement that `IsRegular` holds for `B.reverse`:
+
+```lean
+theorem B_reverse_isRegular : B.reverse.IsRegular :=
+  ...
+```
+
+There is no `by` after the `:=`, so this is a term mode proof, which means that we write the term of the theorem's type directly instead of having tactics build it for us.
+As we saw earlier, `IsRegular` says that there exists a finite type of states and a DFA over those states that accepts the language:
+
+```lean
+def IsRegular (L : Language T) : Prop :=
+  ∃ σ [Fintype σ], ∃ M : DFA T σ, M.accepts = L
+```
+
+So we need to show that there is a finite type of states, a DFA over those states, and that the DFA accepts `B.reverse`, which we do by listing them between angle brackets:
+
+```lean
+theorem B_reverse_isRegular : B.reverse.IsRegular :=
+  ⟨DfaState, inferInstance, adderDFA, adderDFA_accepts_B_reverse⟩
+```
+
+`DfaState` is the type of states, and `adderDFA` is the DFA.
+`inferInstance` asks Lean to find the `Fintype` instance for `DfaState`, which was generated when we derived `Fintype` for it.
+The instance is a list of all the values of the type, together with a proof that the list is complete.
+The last part is the proof that the DFA accepts `B.reverse`, which is the theorem we've just proven.
+
 #### $B$ Is Regular
 
 We've set out to prove that the language $B$ is regular and we're finally in a position to do so.
+All we need is the closure of regular languages under reversal:
+
+```lean
+theorem B_isRegular : B.IsRegular :=
+  Language.isRegular_reverse_iff.mp B_reverse_isRegular
+```
+
+`Language.isRegular_reverse_iff` is the theorem from Mathlib, and its type is:
+
+```lean
+L.reverse.IsRegular ↔ L.IsRegular
+```
+
+`.mp` takes the left-to-right direction of an equivalence, which gives us a function from proofs of `L.reverse.IsRegular` to proofs of `L.IsRegular`.
+We pass it `B_reverse_isRegular`, and we get back a proof that `B` is regular.
+
+This concludes the proof that $B$ is regular.
 
 [^1]: Instead of using the `LE/BE` convention to distinguish between interpretations of lists of bits, we could introduce separate types for little- and big-endian lists of bits to prevent mixing them up. However this would require re-deriving many of the theorems that are already available for native lists, so it's not worth it for a project of this scope.
 
