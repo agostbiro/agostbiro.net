@@ -551,7 +551,7 @@ So we have a parameterized theorem that we'll have to prove for all possible val
 But we will only use it later on in the proof of `adderDFA_accepts_B_reverse` with both carries set to `false` which form corresponds to the definition of the language `B`:
 
 ```lean
-run_invariant wLE false false
+run_invariant (carryIn := false) wLE (carryOut := false)
 ```
 
 The proof is by induction on the word `wLE` which has type `List Sigma3`.
@@ -1255,18 +1255,69 @@ There is still a small mismatch between the two: the carry out term is `carryOut
 `simpa` takes care of this.
 It unfolds `WholeRunAddition` and `SplitRunAddition` in the lemma, and then it uses the commutativity and associativity lemmas for `+` and `*` to bring the goal and the lemma to the same form, which closes the goal.
 
-All that remains for `adderDFA_accepts_B_reverse` is to instantiate the invariant with `false` for both carries, unfold `WordAddsWithCarry`, which cancels the carry terms, and to unfold the definitions of `accepts` and `B.reverse` on the two sides until they match.[^8]
-`B_isRegular` then follows from the Mathlib theorem that regular languages are closed under reversal.
+#### $B^{\mathcal{R}}$ Is Regular
 
-## Working on Lean Proofs with LLMs
+Now that we have proven the `run_invariant` theorem, we can use it to prove that $B^{\mathcal{R}}$ is regular.
 
-State-of-the-art LLMs won't break a sweat producing a proof like this, but it took me several iterations to get the originally LLM produced into a shape that I find easy to understand.
+```lean
+theorem adderDFA_accepts_B_reverse : adderDFA.accepts = B.reverse := by
+  ...
+```
 
-In theory it should be enough for humans to verify the specs, but in practice, in order to understand the specs, one often has to look into the proofs.
-+ If there is is something weird in the proofs, that's a good indication that the spec is off.
+As we've seen before, both `adderDFA.accepts` and `B.reverse` are sets.
+Therefore, the equation in the theorem is equivalent to
 
-I'm not sure how things will shake out in the future, but that's where things stand in September 2026.
+```lean
+wLE ∈ adderDFA.accepts ↔ wLE ∈ B.reverse
+```
 
+The membership rule for `adderDFA.accepts` is
+
+```lean
+{ wLE | RunEndsWithCarry (carryIn := false) wLE (carryOut := false) }
+```
+
+Therefore,
+
+```lean
+wLE ∈ adderDFA.accepts ↔
+  RunEndsWithCarry (carryIn := false) wLE (carryOut := false)
+```
+
+And the membership rule for `B.reverse` is:
+
+```lean
+{ wLE | WordAddsWithCarry (carryIn := false) wLE (carryOut := false) }
+```
+
+Therefore,
+
+```lean
+wLE ∈ B.reverse ↔
+  WordAddsWithCarry (carryIn := false) wLE (carryOut := false)
+```
+
+So we need to prove that
+
+```lean
+RunEndsWithCarry (carryIn := false) wLE (carryOut := false) ↔
+  WordAddsWithCarry (carryIn := false) wLE (carryOut := false)
+```
+
+But this is just the `run_invariant` theorem instantiated with `false` for both carries which we've already proven:
+
+```lean
+run_invariant (carryIn := false) wLE (carryOut := false)
+```
+
+This concludes the proof of the `adderDFA_accepts_B_reverse` theorem.
+
+The Lean proof takes roughly the same steps, but it's about a dozen lines long, so we will not go through it in detail here.
+However, it's a good idea at this point to check out the [code](https://github.com/agostbiro/my-lean/blob/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32/Proof.lean) and step through it yourself, so you can see the proof unfold interactively.
+
+#### $B$ Is Regular
+
+TODO
 
 [^1]: Instead of using the `LE/BE` convention to distinguish between interpretations of lists of bits, we could introduce separate types for little- and big-endian lists of bits to prevent mixing them up. However this would require re-deriving many of the theorems that are already available for native lists, so it's not worth it for a project of this scope.
 

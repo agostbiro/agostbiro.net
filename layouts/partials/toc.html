@@ -8,6 +8,6 @@
 <details class="toc-inline">
   <summary>[Contents]</summary>
   <nav class="toc-list" aria-label="Table of contents">
-    {{- partial "toc/list.html" .Fragments.Headings }}
+    {{- partial "toc/list.html" (dict "page" . "headings" .Fragments.Headings) }}
   </nav>
 </details>

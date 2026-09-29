@@ -118,6 +118,18 @@
     panel.scrollTop += rect.top + rect.height / 2 - (box.top + box.height / 2);
   }
 
+  // The text of an element. KaTeX renders math twice, as MathML and as HTML
+  // hidden from screen readers, and keeps the source in an annotation. Only
+  // the MathML is kept, or the math would be in the text three times.
+  function plainText(element) {
+    var copy = element.cloneNode(true);
+    var extras = copy.querySelectorAll(".katex-html, annotation");
+    Array.prototype.forEach.call(extras, function (extra) {
+      extra.parentNode.removeChild(extra);
+    });
+    return copy.textContent;
+  }
+
   function setCurrent(entry) {
     if (current) {
       current.links.forEach(function (link) { link.removeAttribute("aria-current"); });
@@ -126,9 +138,16 @@
     if (current) {
       current.links.forEach(function (link) { link.setAttribute("aria-current", "location"); });
     }
-    var title = current ? current.panelLink.textContent : "Contents";
-    label.textContent = title;
-    opener.setAttribute("aria-label", "Table of contents, current section: " + title);
+    // The title can hold rendered math, so it is copied as markup.
+    label.textContent = "";
+    if (current) {
+      Array.prototype.forEach.call(current.panelLink.childNodes, function (node) {
+        label.appendChild(node.cloneNode(true));
+      });
+    } else {
+      label.textContent = "Contents";
+    }
+    opener.setAttribute("aria-label", "Table of contents, current section: " + plainText(label));
   }
 
   // ---------------------- SHOWING THE BAR ---------------------- //
