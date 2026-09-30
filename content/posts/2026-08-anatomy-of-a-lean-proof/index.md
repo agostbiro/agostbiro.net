@@ -33,7 +33,7 @@ After the last symbol, the machine either sits in an *accepting* state (input is
 If you've ever written a simple regular expression like `-?[0-9]+`, then you've constructed a DFA. 
 This regex matches integer literals like `12` and `-123` and the corresponding DFA looks like this (the arrows are annotated with the symbols that lead to the next state):
 
-![DFA figure for integer literal regex DFA](./assets/int-lit-regex-dfa.svg)
+![DFA for the integer literal regex](./assets/int-lit-regex-dfa.svg)
 
 This DFA has four states:
 - **Start:** this is where we start before processing the first character. Since the start state is not an accepting state, we reject the empty string.
@@ -47,9 +47,9 @@ In our regex example, $\Sigma = \left\{-, 0, 1, 2, \ldots, 9\right\}$.
 ### Regular Languages
 
 A **language** is just a set of strings, also called **words**, and a language is called **regular** if some DFA accepts exactly the strings in it. 
-Recognizing regular languages is the class of decision problems solvable with a constant amount of memory in the input size.
+Recognizing regular languages is the class of decision problems solvable with an amount of memory that does not grow with the input.
 
-Regular languages have useful closure properties: the union, intersection, complement, and (important for us) **reversal** of a regular language is regular.
+Regular languages have useful closure properties: the union and intersection of two regular languages are regular, and so are the complement and (important for us) the **reversal** of a regular language.
 
 The standard way to prove that a language is regular is to build a DFA and show that it accepts exactly that language.
 
@@ -57,7 +57,7 @@ We can describe a language $A$ with set-builder notation:
 $$A = \bigl\{\, w \in \Sigma^{*} \bigm| P(w) \,\bigr\}$$
 
 
-$\Sigma^{*}$ means the set of strings that are created by all possible concatenations of symbols in $\Sigma$ and $P(w)$ is the logical proposition that the string $w$ is well-formed.
+$\Sigma^{*}$ means the set of strings that are created by all possible concatenations of symbols in $\Sigma$ and $P(w)$ is the condition that a string $w$ must satisfy to be in the language.
 
 Let's apply this notation to our regex example: `-?[0-9]+`. Then $\Sigma^{*}$ contains strings like `""`, `"123"`, `"-111"`, `"2-625-"`, etc. and $P(w)$ can be defined as "$w$ is not empty and contains no negative sign, except that its first character may be a negative sign if $w$ has at least two characters". 
 
