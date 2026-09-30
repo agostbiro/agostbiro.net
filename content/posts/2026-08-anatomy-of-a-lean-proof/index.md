@@ -1238,18 +1238,10 @@ lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
     simp only [
       WordAddsWithCarry,
       row1LE_cons, row2LE_cons, row3LE_cons,
-      List.length_cons, pow_succ
+      List.length_cons, pow_succ'
     ]
-    simpa [
-      WholeRunAddition, SplitRunAddition,
-      Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm,
-      Nat.add_assoc, Nat.add_comm, Nat.add_left_comm
-    ] using
-      (least_significant_bit_split x y z carryIn
-        (row1LE columnsLE)
-        (row2LE columnsLE)
-        (row3LE columnsLE)
-        (carryOut.toNat * 2 ^ columnsLE.length)).symm
+    rw [Nat.mul_left_comm]
+    exact (least_significant_bit_split x y z carryIn _ _ _ _).symm
 ```
 
 `obtain ⟨x, y, z⟩ := column` destructures the column into its three bits, like `let (x, y, z) = column` would in a regular program.
@@ -1261,6 +1253,8 @@ lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
 `simp_rw` is like `rw`, but it can also rewrite under the `∃`, which `rw` can't do.
 
 At this point the DFA is gone from the goal and we're working with arithmetic only.
+In the informal proof we jumped straight to applying `
+
 The goal is now:
 
 ```lean
@@ -1270,7 +1264,7 @@ The goal is now:
     WordAddsWithCarry carryIn ((x, y, z) :: columnsLE) carryOut
 ```
 
-The `simp only` line first unfolds `WordAddsWithCarry` on both sides of the goal, but we'll just focus on the right hand-side of the equivalence, as the goal gets too large to fit otherwise.
+The `simp only` line first unfolds `WordAddsWithCarry` on both sides of the goal, but we'll just focus on the right hand-side of the equivalence, as the goal gets too large to follow otherwise.
 So `simp only` first rewrites
 
 ```lean
@@ -1293,16 +1287,27 @@ Then it splits the first column off from the whole word on the right-hand side u
 
 The `rowLE_cons` lemmas say that the value of a row of `column :: columnsLE` is the column's bit plus twice the value of the same row of `columnsLE`.
 
-Finally, it does the same for the carry out term using `List.length_cons` and `pow_succ`:
+Finally, it does the same for the carry out term using `List.length_cons` and `pow_succ'`:
 
 ```lean
 x + 2 * row1LE columnsLE + (y + 2 * row2LE columnsLE) + carryIn =
-  z + 2 * row3LE columnsLE + carryOut * ⟦(2 ^ columnsLE.length * 2)⟧
+  z + 2 * row3LE columnsLE + carryOut * ⟦(2 * 2 ^ columnsLE.length)⟧
 ```
 
-`List.length_cons` says that `column :: columnsLE` is one longer than `columnsLE`, and `pow_succ` rewrites $2^{n+1}$ as $2^n \cdot 2$.
+`List.length_cons` says that `column :: columnsLE` is one longer than `columnsLE`, and `pow_succ'` rewrites $2^{n+1}$ as $2 \cdot 2^n$.
 
-Adding back the left-hand side of the equivalence, the goal is now
+At this point there is just one small thing that we need to fix before can conclude the proof using `least_significant_bit_split`.
+The lemma has a $2 \cdot k$ term, where $k$ stands for the carry out term of the remaining columns, so it expects `2 * (carryOut * 2 ^ columnsLE.length)`, but we  have `carryOut * (2 * 2 ^ columnsLE.length)`.
+
+`rw [Nat.mul_left_comm]` fixes this.
+`Nat.mul_left_comm` states `a * (b * c) = b * (a * c)`, so rewriting with it swaps `carryOut` and `2` on the right-hand side of the equivalence:
+
+```lean
+x + 2 * row1LE columnsLE + (y + 2 * row2LE columnsLE) + carryIn =
+  z + 2 * row3LE columnsLE + ⟦2 * (carryOut * 2 ^ columnsLE.length)⟧
+```
+
+The goal is now
 
 ```lean
 (∃ carryMid,
@@ -1310,16 +1315,19 @@ Adding back the left-hand side of the equivalence, the goal is now
   row1LE columnsLE + row2LE columnsLE + carryMid =
     row3LE columnsLE + carryOut * 2 ^ columnsLE.length) ↔
     x + 2 * row1LE columnsLE + (y + 2 * row2LE columnsLE) + carryIn =
-      z + 2 * row3LE columnsLE + carryOut * (2 ^ columnsLE.length * 2)
+      z + 2 * row3LE columnsLE + 2 * (carryOut * 2 ^ columnsLE.length)
 ```
 
-This isn't pretty, but it's actually pretty close to the shape of the `least_significant_bit_split` lemma, so the end is in sight.
-
 The last tactic is step 4 of the plan.
-We pass the values that $a$, $b$, $d$ and $k$ stand for to `least_significant_bit_split`, and `.symm` swaps the two sides of the equivalence to match the goal.
-There is still a small mismatch between the two: the carry out term is `carryOut * (2 ^ n * 2)` in the goal, while it is `2 * (carryOut * 2 ^ n)` in the lemma.
-`simpa` takes care of this.
-It unfolds `WholeRunAddition` and `SplitRunAddition` in the lemma, and then it uses the commutativity and associativity lemmas for `+` and `*` to bring the goal and the lemma to the same form, which closes the goal.
+`exact` closes the goal if we give it a term whose type is the goal.
+The term here is `least_significant_bit_split` applied to its arguments.
+We pass `x`, `y`, `z` and `carryIn` ourselves.
+Each `_` is a placeholder that Lean fills in by matching the lemma against the goal: the values of the three rows of `columnsLE` for $a$, $b$ and $d$, and `carryOut * 2 ^ columnsLE.length` for $k$.
+`.symm` swaps the two sides of the equivalence to match the goal.
+
+The lemma is stated in terms of `WholeRunAddition` and `SplitRunAddition`, while the goal has the equations written out.
+This isn't a problem, because Lean unfolds the definitions when it compares the type of the term with the goal.
+After unfolding the two are the same, which closes the goal.
 
 #### $B^{\mathcal{R}}$ Is Regular
 
