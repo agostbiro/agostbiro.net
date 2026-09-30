@@ -54,6 +54,6 @@
   <path class="brk" d="M193 12 H190 V46 H193"/>
   <path class="brk" d="M203 12 H206 V46 H203"/>
   <text class="b"><tspan x="198" y="17">0</tspan><tspan x="198" y="29">0</tspan><tspan x="198" y="41">1</tspan></text>
-  <text class="bad" x="198" y="82">0 &#8853; 0 &#8853; 0 = 0 &#8800; 1 &#10007;</text>
+  <text class="bad" x="198" y="82">0 &#8853; 0 &#8853; 0 &#8800; 1 &#10007;</text>
   <text class="chk" x="198" y="98">sum bit does not match</text>
 </svg>

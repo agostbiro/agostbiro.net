@@ -97,20 +97,20 @@ The rule to decide whether a string is in the language is to add the first two r
 For example, the following string is in the language:
 
 ```
-011 # x row: first term is 3 in decimal
-001 # y row: second term is 1 in decimal
+011 # x row: first addend is 3 in decimal
+001 # y row: second addend is 1 in decimal
 100 # z row: sum is 4 which is equal to 3 + 1
 ```
 
 But the following string is not in the language:
 
 ```
-01 # x row: first term is 1 in decimal
-00 # y row: second term is 0
+01 # x row: first addend is 1 in decimal
+00 # y row: second addend is 0
 11 # z row: sum is 3 which is not equal to 1 + 0
 ```
 
-While a language like this may look weird at first, it's actually a lot easier to write a program that recognizes this language as opposed to a program that recognizes a natural language, since we just need to check the equation
+While a language like this may look weird at first, it's actually easy to recognize: we just need to check the equation
 
 $$ x + y = z$$
 
@@ -123,26 +123,28 @@ The trick is to remember how you add numbers by hand: you work from the least si
 
 But a DFA reads left to right, and the problem presents the numbers most significant bit first.
 So we don't recognize $B$ directly. 
-Instead we build a DFA to recognize its reversal $B^R$ which is the same strings that are in $B$ written backwards, so the machine sees the least significant column first.
+Instead we build a DFA to recognize its reversal $B^{\mathcal{R}}$, which consists of the strings of $B$ written backwards, so the machine sees the least significant column first.
 
-If we can build a DFA to recognize $B^R$, then we can conclude that $B^R$ is a regular language.
-Since $B^R$ reversed is $B$, we can use the closure property of the reversal of regular languages to conclude that $B$ is regular as well which completes the solution.
+If we can build a DFA to recognize $B^{\mathcal{R}}$, then we can conclude that $B^{\mathcal{R}}$ is a regular language.
+Since $B^{\mathcal{R}}$ reversed is $B$, we can use the closure property of the reversal of regular languages to conclude that $B$ is regular as well, which completes the solution.
 
 ### Adder Arithmetic
 
-When doing the arithmetic column-by-column, we compute the sum bit at each step as follows: 
+When doing the arithmetic column-by-column, we compute the sum bit at each step with the *adder equation*: 
 
-$$x_i \oplus y_i \oplus c_{in} = z_i$$ 
+$$x_i \oplus y_i \oplus c_{\mathrm{in}} = z_i$$ 
 
-where $x, y$ are the addend bits, $z$ is the sum bit, $i$ denotes the ordinal of the current column, and $c_{in}$ is the input carry from the previous step.
-We compute the output carry denoted $c_{out}$ for the next step as follows:
+where $x, y$ are the addend bits, $z$ is the sum bit, $i$ denotes the index of the current column, and $c_{\mathrm{in}}$ is the input carry from the previous step.
+We compute the output carry denoted $c_{\mathrm{out}}$ for the next step as follows:
 
-$$c_{out} = (x_i \wedge y_i) \vee \left( c_{in} \wedge (x_i \oplus y_i) \right)$$
-This means that there is a carry either if both terms are $\mathtt{1}$ or there was an input carry and at least one of the terms is $\mathtt{1}$. Note that a simpler way to compute $c_{out}$ is to check if at least two of $x_i$, $y_i$ and $c_{in}$ are $\mathtt{1}$ (we'll make use of this in the Lean proof).
+$$c_{\mathrm{out}} = (x_i \wedge y_i) \vee \left( c_{\mathrm{in}} \wedge (x_i \oplus y_i) \right)$$
+
+This means that there is a carry either if both addends are $\mathtt{1}$ or there was an input carry and exactly one of the addends is $\mathtt{1}$. 
+Note that a simpler way to compute $c_{\mathrm{out}}$ is to check if at least two of $x_i$, $y_i$ and $c_{\mathrm{in}}$ are $\mathtt{1}$ (we'll make use of this in the Lean proof).
 
 ### Adder DFA
 
-With this in mind, here is the DFA that recognizes $B^R$:
+With this in mind, here is the DFA that recognizes $B^{\mathcal{R}}$:
 
 ![DFA figure for the 1-bit full adder recognizing B reversed](./assets/carry-dfa.svg)
 
@@ -150,7 +152,7 @@ The adder DFA has three states:
 
 - **Carry 0:** We're in this state if the carry is 0 before processing the next column. This is both the starting and the accepting state, since a leftover carry at the end would mean the sum overflowed the bottom row. 
 - **Carry 1:** We're in this state if the carry is 1 before processing the next column. This state is non-accepting, since a word ending here has a carry left over, so the sum overflowed. But unlike the dead state we can still leave it, since a $\left[\begin{smallmatrix}\mathtt{0}\\\mathtt{0}\\\mathtt{1}\end{smallmatrix}\right]$ column absorbs the pending carry and takes us back to carry 0. 
-- **Dead:** We end up in this state if the sum doesn't match. This is a sink state meaning it's terminal.
+- **Dead:** We end up in this state if the sum doesn't match. This is a sink state, meaning we can never leave it.
 
 
 The arrows are annotated with the columns that lead from the input state to the output state.
@@ -166,13 +168,13 @@ Let's trace the first example from the problem through the DFA:
 100 # z row: 4 in decimal
 ```
 
-The DFA recognizes $B^R$, so it reads the columns backwards.
-Unrolling the run turns it into a straight line with one copy of the state per step.
+The DFA recognizes $B^{\mathcal{R}}$, so it reads the columns backwards.
+Unrolling the run gives a straight line with one state per step.
 
 ![The run of the carry automaton on the accepted word, unrolled into a chain of states](./assets/carry-dfa-run-accept.svg)
 
-The run ends in carry 0 (the accepting state), so the reversed word is in $B^R$. 
-By the definition of $B^R$, the original word is in $B$ as well.
+The run ends in carry 0 (the accepting state), so the reversed word is in $B^{\mathcal{R}}$. 
+By the definition of $B^{\mathcal{R}}$, the original word is in $B$ as well.
 
 Note that the machine passes *through* the non-accepting carry 1 state twice.
 Had the word stopped after either of the first two columns, it would have been rejected, since $\mathtt{1} + \mathtt{1} = \mathtt{0}$ and $\mathtt{11} + \mathtt{01} = \mathtt{00}$ are both wrong without somewhere to put the carry.
@@ -483,18 +485,18 @@ adderDFA.evalFrom (.carry false) wLE = .carry false ↔
 
 which reads as
 
-> Running the adder DFA over a (little-endian) word $w$ starting with carry $0$ ends in state carry $0$ if and only if
+> Running the adder DFA over a (little-endian) word $w$ starting with carry 0 ends in state carry 0 if and only if
 >
 > $$\mathrm{row}_1(w) + \mathrm{row}_2(w) = \mathrm{row}_3(w)$$
 >
 > where the rows are read as little-endian binary numbers.
 
 This is what we need ultimately. 
-We always start from carry $0$ and the only accepting state is also carry $0$, and the right-hand side of the equivalence matches the membership test for `B.reverse`.
-But as we saw earlier, carry $1$ can be a valid intermediate state as well, so this statement is too weak to serve as an induction hypothesis. 
+We always start from carry 0 and the only accepting state is also carry 0, and the right-hand side of the equivalence matches the membership test for `B.reverse`.
+But as we saw earlier, carry 1 can be a valid intermediate state as well, so this statement is too weak to serve as an induction hypothesis. 
 
 We cannot restrict our induction hypothesis to a certain carry value, but we still need to establish a connection between carry in and carry out.
-We can accomplish this by extending the right-hand side of the equivalence to include $c_{in}$ and $c_{out}$ terms: 
+We can accomplish this by extending the right-hand side of the equivalence to include $c_{\mathrm{in}}$ and $c_{\mathrm{out}}$ terms: 
 
 ```lean
   row1LE wLE + row2LE wLE + carryIn = 
@@ -503,7 +505,7 @@ We can accomplish this by extending the right-hand side of the equivalence to in
 
 Or with mathematical notation to make it easy to see that it's just the definition of binary addition:
 
-$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i + c_{in} = \sum_{i=0}^{n-1} z_i 2^i + c_{out} \cdot 2^n$$
+$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i + c_{\mathrm{in}} = \sum_{i=0}^{n-1} z_i 2^i + c_{\mathrm{out}} \cdot 2^n$$
 
 The full equivalence now becomes
 
@@ -1005,7 +1007,7 @@ $x$, $y$ and $z$ are the least significant bits of the three rows, $a$, $b$ and 
 
 As a reminder, binary addition is defined as follows:
 
-$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i + c_{in} = \sum_{i=0}^{n-1} z_i 2^i + c_{out} \cdot 2^n$$
+$$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i + c_{\mathrm{in}} = \sum_{i=0}^{n-1} z_i 2^i + c_{\mathrm{out}} \cdot 2^n$$
 
 The $x + 2 \cdot a$ term comes from splitting
 
@@ -1013,7 +1015,7 @@ $$\sum_{i=0}^{n-1} x_i 2^i = x_0 + 2 \cdot \sum_{i=1}^{n-1} x_i 2^{i-1}$$
 
 so $x + 2 \cdot a$ is the value of a row whose first bit is $x$ and whose remaining bits have value $a$ (same applies to terms with $y$ and $z$).
 
-$k$ stands for the carry out term of the remaining bits, which is $c_{out} \cdot 2^{n-1}$, so the carry out term of the whole word, $c_{out} \cdot 2^n$, is $2 \cdot k$.
+$k$ stands for the carry out term of the remaining bits, which is $c_{\mathrm{out}} \cdot 2^{n-1}$, so the carry out term of the whole word, $c_{\mathrm{out}} \cdot 2^n$, is $2 \cdot k$.
 Notice how `WholeRunAddition` has a $2 \cdot k$ term in it while `SplitRunAddition` has just $k$ in the equation for the remaining bits.
 This is because `WholeRunAddition` is one bit longer than the remaining bits in `SplitRunAddition`.
 
@@ -1036,7 +1038,7 @@ If there is no solution, `SplitRunAddition` is false, and we'll show that `Whole
 Let's work through an example of each kind before we look at the Lean proof.
 
 First, consider the case where $x$ and $y$ are $1$ and $z$ and $c_{\mathrm{in}}$ are $0$.
-This is again the column where $1 + 1 = 0$ with $c_{out} = 1$.
+This is again the column where $1 + 1 = 0$ with $c_{\mathrm{out}} = 1$.
 
 ![The addition in this case split into an equation for the least significant bits that lands in carry mid, followed by an equation for the remaining bits from carry mid](./assets/least-significant-bit-split-row.svg "The equation for the whole word is an equation for the least significant bits followed by an equation for the rest")
 

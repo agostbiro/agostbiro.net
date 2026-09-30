@@ -72,6 +72,6 @@
   <path class="brk" d="M535 12 H532 V46 H535"/>
   <path class="brk" d="M545 12 H548 V46 H545"/>
   <text class="b"><tspan x="540" y="17">0</tspan><tspan x="540" y="29">0</tspan><tspan x="540" y="41">1</tspan></text>
-  <text class="bad" x="540" y="82">0 &#8853; 0 &#8853; 0 = 0 &#8800; 1 &#10007;</text>
+  <text class="bad" x="540" y="82">0 &#8853; 0 &#8853; 0 &#8800; 1 &#10007;</text>
   <text class="chk" x="540" y="98">sum bit does not match</text>
 </svg>
