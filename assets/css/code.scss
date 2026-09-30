@@ -103,3 +103,34 @@ body[a="dark"] { @include code-dark-appearance; }
 @media (prefers-color-scheme: dark) {
   body[a="auto"] { @include code-dark-appearance; }
 }
+
+// On a phone a 72 char line doesn't fit even at the smaller size set in
+// custom.scss, so soft-wrap long lines instead of scrolling sideways. The part
+// of a line that wraps is indented 4 columns past the line's own indent, taken
+// from `--indent` that layouts/_markup/render-codeblock.html sets per line. The
+// padding moves every row of the line in by that much and the negative
+// text-indent pulls the first row back out.
+//
+// `body[a]` and the position at the end of this file are there to beat the
+// `display: flex` from the generated tables, which are nested under
+// `body[a="..."]` above.
+@media (max-width: 779px) {
+  .chroma code {
+    width: auto;
+    min-width: 0;
+  }
+
+  body[a] .chroma .line {
+    display: block;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding-left: calc((var(--indent, 0) + 4) * 1ch);
+    text-indent: calc((var(--indent, 0) + 4) * -1ch);
+  }
+
+  // Blocks fenced without a language skip Chroma and have no lines to indent.
+  pre:not(.chroma) {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}

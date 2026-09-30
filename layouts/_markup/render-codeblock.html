@@ -1,7 +1,8 @@
 {{- /*
-Fenced code block render hook. Same output as Hugo's default, plus one
-addition: a run of code wrapped in ⟦ and ⟧ renders inside <mark>, so a post
-can highlight part of a line where `hl_lines` would take the whole line.
+Fenced code block render hook. Same output as Hugo's default, plus two
+additions. First, a run of code wrapped in ⟦ and ⟧ renders inside <mark>, so
+a post can highlight part of a line where `hl_lines` would take the whole
+line. Second, each line carries its indent (see the end of this comment).
 
 A marker usually gets a Chroma span of its own, but a lexer may glue it to a
 neighboring operator, as Lean's does with `↔⟧`. So the span holding a marker
@@ -13,9 +14,25 @@ styled in assets/css/code.scss.
 `.Inner` drops the trailing newline that the default renderer keeps, so it is
 put back to leave every block without markers byte-identical to before.
 `.Options` carries the fence attributes such as `hl_lines`.
+
+Each line also gets its leading indent, in spaces, as the `--indent` custom
+property. On a narrow screen assets/css/code.scss soft-wraps long lines and
+uses it to indent the wrapped part under the line it belongs to. Chroma puts
+the leading spaces of a line in a whitespace span of their own, right after
+the line's opening tags.
 */ -}}
 {{- $html := highlight (printf "%s\n" .Inner) .Type .Options -}}
 {{- $html = replaceRE `<span class="([^"]*)">([^<]*)⟦([^<]*)</span>` `<span class="$1">$2</span><mark><span class="$1">$3</span>` $html -}}
 {{- $html = replaceRE `<span class="([^"]*)">([^<]*)⟧([^<]*)</span>` `<span class="$1">$2</span></mark><span class="$1">$3</span>` $html -}}
 {{- $html = replaceRE `<span class="[^"]*"></span>` `` $html -}}
-{{- $html | safeHTML -}}
+{{- $lineStart := `<span class="line"><span class="cl">` -}}
+{{- $parts := split $html $lineStart -}}
+{{- $out := index $parts 0 -}}
+{{- range after 1 $parts -}}
+  {{- $indent := 0 -}}
+  {{- with findRESubmatch `^<span class="w">( +)` . 1 -}}
+    {{- $indent = len (index (index . 0) 1) -}}
+  {{- end -}}
+  {{- $out = printf `%s<span class="line" style="--indent: %d"><span class="cl">%s` $out $indent . -}}
+{{- end -}}
+{{- $out | safeHTML -}}

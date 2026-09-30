@@ -527,10 +527,12 @@ For members of `B.reverse` where the starting and ending carry are both 0, this 
 Here is the run invariant as a theorem, with the proof left out for now:
 
 ```lean
-def RunEndsWithCarry (carryIn : Bool) (wLE : List Sigma3) (carryOut : Bool) : Prop :=
+def RunEndsWithCarry (carryIn : Bool) (wLE : List Sigma3)
+    (carryOut : Bool) : Prop :=
   adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut
 
-def WordAddsWithCarry (carryIn : Bool) (wLE : List Sigma3) (carryOut : Bool) : Prop :=
+def WordAddsWithCarry (carryIn : Bool) (wLE : List Sigma3)
+    (carryOut : Bool) : Prop :=
   row1LE wLE + row2LE wLE + carryIn.toNat
     = row3LE wLE + carryOut.toNat * 2 ^ wLE.length
 
@@ -700,7 +702,8 @@ Steps 1, 2 and 4 each get their own helper lemma, so let's look at those first.
 ##### Splitting the Run
 
 ```lean
-lemma split_run (column : Sigma3) (columns : List Sigma3) (carryIn carryOut : Bool) :
+lemma split_run (column : Sigma3) (columns : List Sigma3)
+    (carryIn carryOut : Bool) :
     RunEndsWithCarry carryIn (column :: columns) carryOut ↔
       ∃ carryMid,
         dfaStep (.carry carryIn) column = .carry carryMid ∧
@@ -714,14 +717,16 @@ The lemma says that a run over the word in the inductive step (`column :: column
 As a reminder, the definition of `RunEndsWithCarry` is:
 
 ```lean
-def RunEndsWithCarry (carryIn : Bool) (wLE : List Sigma3) (carryOut : Bool) : Prop :=
+def RunEndsWithCarry (carryIn : Bool) (wLE : List Sigma3)
+    (carryOut : Bool) : Prop :=
   adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut
 ```
 
 so unfolding `RunEndsWithCarry` leaves us with the following goal:
 
 ```lean
-⟦adderDFA.evalFrom (.carry carryIn) (column :: columns) = .carry carryOut ↔⟧
+⟦adderDFA.evalFrom (.carry carryIn) (column :: columns) =⟧
+    ⟦.carry carryOut ↔⟧
   ∃ carryMid,
     dfaStep (.carry carryIn) column = .carry carryMid ∧
     ⟦adderDFA.evalFrom (.carry carryMid) columns = .carry carryOut⟧
@@ -734,7 +739,8 @@ We'll run through the informal argument first and then we'll have a look at how 
 First, we split the left-hand side into a single step on the first column followed by a run over `columns` from the state that the step lands in:
 
 ```lean
-adderDFA.evalFrom ⟦(dfaStep (.carry carryIn) column)⟧ columns = .carry carryOut ↔
+adderDFA.evalFrom ⟦(dfaStep (.carry carryIn) column)⟧ columns =
+    .carry carryOut ↔
   ∃ carryMid,
     dfaStep (.carry carryIn) column = .carry carryMid ∧
     adderDFA.evalFrom (.carry carryMid) columns = .carry carryOut
@@ -772,7 +778,8 @@ Both sides are false, so the equivalence holds, which concludes the proof.
 Now let's review what the proof looks like in Lean:
 
 ```lean
-lemma split_run (column : Sigma3) (columns : List Sigma3) (carryIn carryOut : Bool) :
+lemma split_run (column : Sigma3) (columns : List Sigma3)
+    (carryIn carryOut : Bool) :
     RunEndsWithCarry carryIn (column :: columns) carryOut ↔
       ∃ carryMid,
         dfaStep (.carry carryIn) column = .carry carryMid ∧
@@ -789,7 +796,8 @@ lemma split_run (column : Sigma3) (columns : List Sigma3) (carryIn carryOut : Bo
 The first `simp only` line rewrites the lemma to a form with `dfaStep` on both sides of the equivalence:
 
 ```lean
-adderDFA.evalFrom ⟦(dfaStep (.carry carryIn) column)⟧ columns = .carry carryOut ↔
+adderDFA.evalFrom ⟦(dfaStep (.carry carryIn) column)⟧ columns =
+    .carry carryOut ↔
   ∃ carryMid,
     dfaStep (.carry carryIn) column = .carry carryMid ∧
     adderDFA.evalFrom (.carry carryMid) columns = .carry carryOut
@@ -937,7 +945,8 @@ Now let's review what the proof looks like in Lean:
 lemma first_step_adds (x y z carryIn carryOut : Bool) :
     dfaStep (.carry carryIn) (x, y, z) = .carry carryOut ↔
       x + y + carryIn = z + 2 * carryOut := by
-  cases x <;> cases y <;> cases z <;> cases carryIn <;> cases carryOut <;>
+  cases x <;> cases y <;> cases z <;> cases carryIn <;>
+    cases carryOut <;>
     simp [dfaStep]
 ```
 
@@ -960,7 +969,8 @@ def SplitRunAddition (x y z carryIn : Bool) (a b d k : Nat) : Prop :=
     x + y + carryIn = z + 2 * carryMid ∧
     a + b + carryMid = d + k
 
-lemma least_significant_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
+lemma least_significant_bit_split
+    (x y z carryIn : Bool) (a b d k : Nat) :
     WholeRunAddition x y z carryIn a b d k ↔
       SplitRunAddition x y z carryIn a b d k := by
   ...
@@ -1084,7 +1094,8 @@ On the arithmetic side, the same column makes both sides of the equivalence fals
 Now let's review what the proof looks like in Lean:
 
 ```lean
-lemma least_significant_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
+lemma least_significant_bit_split
+    (x y z carryIn : Bool) (a b d k : Nat) :
     WholeRunAddition x y z carryIn a b d k ↔
       SplitRunAddition x y z carryIn a b d k := by
   cases x <;> cases y <;> cases z <;> cases carryIn <;>
@@ -1281,15 +1292,18 @@ WordAddsWithCarry carryIn ((x, y, z) :: columnsLE) carryOut
 as
 
 ```lean
-row1LE ((x, y, z) :: columnsLE) + row2LE ((x, y, z) :: columnsLE) + carryIn =
-  row3LE ((x, y, z) :: columnsLE) + carryOut * 2 ^ ((x, y, z) :: columnsLE).length
+row1LE ((x, y, z) :: columnsLE) +
+    row2LE ((x, y, z) :: columnsLE) + carryIn =
+  row3LE ((x, y, z) :: columnsLE) +
+    carryOut * 2 ^ ((x, y, z) :: columnsLE).length
 ```
 
 Then it splits the first column off from the whole word on the right-hand side using the `rowLE_cons` lemmas:
 
 ```lean
 ⟦x + 2 * row1LE columnsLE⟧ + (⟦y + 2 * row2LE columnsLE⟧) + carryIn =
-  ⟦z + 2 * row3LE columnsLE⟧ + carryOut * 2 ^ ((x, y, z) :: columnsLE).length
+  ⟦z + 2 * row3LE columnsLE⟧ +
+    carryOut * 2 ^ ((x, y, z) :: columnsLE).length
 ```
 
 The `rowLE_cons` lemmas say that the value of a row of `column :: columnsLE` is the column's bit plus twice the value of the same row of `columnsLE`.

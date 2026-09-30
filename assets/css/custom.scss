@@ -41,8 +41,30 @@ pre, code, kbd, samp {
 // here so the two stay on one value; matching its specificity, source order
 // decides. Deliberately not `pre, code`, which would hit `pre > code` a second
 // time and compound to 0.64em.
-pre { font-size: 0.8em; }
+//
+// Code in posts is wrapped by hand to 72 chars. At 0.8em that is 691px, and
+// the 720px column leaves 696px inside a block once the theme's 1em side
+// padding is cut to 0.75em. A phone fits far fewer, so there code blocks are
+// set smaller and soft-wrap instead, see assets/css/code.scss.
+pre {
+  font-size: 0.8em;
+  padding-left: 0.75em;
+  padding-right: 0.75em;
+}
 code:not(pre > code) { font-size: 0.8em; }
+
+// The column only reaches its full 720px from a 784px wide viewport (2rem
+// padding each side), and 72 chars stop fitting just below 780px. Same
+// breakpoint as the soft-wrap rule in assets/css/code.scss.
+@media (max-width: 779px) {
+  pre { font-size: 0.55em; }
+}
+
+// Give the text more of a phone's width.
+@media (max-width: 600px) {
+  .w { padding-left: 1rem; padding-right: 1rem; }
+  pre { padding: 1em 0.5rem; }
+}
 
 // Dates. The serif families above default to oldstyle, proportional figures,
 // which neither sit on the baseline nor line up down the post list.
