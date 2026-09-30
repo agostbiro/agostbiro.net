@@ -136,9 +136,21 @@ body[a="dark"] .toc-bar { background: #000000; }
 .toc-bar-inner {
   display: flex;
   height: 100%;
-  // Between [toc] and the appearance toggle, so a thumb hits the right one.
+  // Between the controls, so a thumb hits the right one.
   gap: 1.5rem;
 }
+
+.toc-bar-home {
+  flex: none;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+// Reads as bracketed text like the buttons next to it. The theme colors links
+// as `body[a="…"] a`, visited ones included.
+body[a] .toc-bar-home,
+body[a] .toc-bar-home:visited { color: inherit; }
 
 // Buttons that read as bracketed text, like the appearance toggle.
 .toc-bar-open,
@@ -204,6 +216,7 @@ body[a="dark"] .toc-bar { background: #000000; }
 @media (hover: hover) {
   .toc-inline summary:hover,
   .toc-bar-toggle:hover,
+  .toc-bar-home:hover,
   .toc-bar-open:hover .toc-bar-hint { text-decoration: underline; }
 }
 

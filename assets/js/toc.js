@@ -7,7 +7,7 @@
 //     opens a copy of the list as a panel. It hides on the way down the page
 //     and shows on the way up.
 //   - a mark on the current section in the lists
-//   - a copy of the appearance toggle in the bar
+//   - a copy of the appearance toggle and a [home] link in the bar
 (function () {
   "use strict";
 
@@ -54,6 +54,16 @@
   // From layouts/partials/appearance_toggle.html.
   if (window.createAppearanceToggle) {
     inner.appendChild(window.createAppearanceToggle("toc-bar-toggle"));
+  }
+
+  // Goes where the theme's back_link.html, above the post title, goes.
+  var back = document.querySelector(".post-meta a");
+  if (back) {
+    var home = document.createElement("a");
+    home.className = "toc-bar-home";
+    home.href = back.href;
+    home.textContent = "[home]";
+    inner.appendChild(home);
   }
 
   var panel = document.createElement("div");
