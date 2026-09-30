@@ -172,7 +172,7 @@ Unrolling the run turns it into a straight line with one copy of the state per s
 ![The run of the carry automaton on the accepted word, unrolled into a chain of states](./assets/carry-dfa-run-accept.svg)
 
 The run ends in carry 0 (the accepting state), so the reversed word is in $B^R$. 
-Due to the closure property of reversal, the original word is in $B$ as well.
+By the definition of $B^R$, the original word is in $B$ as well.
 
 Note that the machine passes *through* the non-accepting carry 1 state twice.
 Had the word stopped after either of the first two columns, it would have been rejected, since $\mathtt{1} + \mathtt{1} = \mathtt{0}$ and $\mathtt{11} + \mathtt{01} = \mathtt{00}$ are both wrong without somewhere to put the carry.
