@@ -514,11 +514,16 @@ adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut ↔
 ```
 
 which reads as
+
+<div class="wide-math">
+
 > Running the adder DFA over a (little-endian) word $w$ starting with carry $c_{\mathrm{in}}$ ends in state $c_{\mathrm{out}}$ if and only if
 >
 > $$\mathrm{row}_1(w) + \mathrm{row}_2(w) + c_{\mathrm{in}} = \mathrm{row}_3(w) + c_{\mathrm{out}} \cdot 2^{|w|}$$
 >
 > where the rows are read as little-endian binary numbers.
+
+</div>
 
 For members of `B.reverse` where the starting and ending carry are both 0, this is equivalent to our first attempt, but it holds for intermediate steps as well where both carry in and carry out may be non-zero.
 
@@ -1037,11 +1042,15 @@ This is again the column where $1 + 1 = 0$ with $c_{out} = 1$.
 
 Substituting the values gives:
 
+<div class="wide-math">
+
 $$\begin{aligned}
 &(⟦1⟧ + 2 \cdot a) + (⟦1⟧ + 2 \cdot b) + ⟦0⟧ = (⟦0⟧ + 2 \cdot d) + 2 \cdot k \iff \\
 &\qquad \exists\, c_{\mathrm{mid}} :\; ⟦1 + 1 + 0⟧ = ⟦0⟧ + 2 \cdot c_{\mathrm{mid}} \;\land \\
 &\qquad \phantom{\exists\, c_{\mathrm{mid}} :\;} a + b + c_{\mathrm{mid}} = d + k
 \end{aligned}$$
+
+</div>
 
 On the right-hand side, the least significant bit equation is now $2 = 2 \cdot c_{\mathrm{mid}}$.
 The only value that satisfies it is $c_{\mathrm{mid}} = 1$, so we can drop the existential and substitute $1$ for $c_{\mathrm{mid}}$:
@@ -1067,11 +1076,15 @@ Now take a case where the column doesn't add up: $x$ is $1$ and $y$, $z$ and $c_
 
 Substituting the values gives:
 
+<div class="wide-math">
+
 $$\begin{aligned}
 &(⟦1⟧ + 2 \cdot a) + (⟦0⟧ + 2 \cdot b) + ⟦0⟧ = (⟦0⟧ + 2 \cdot d) + 2 \cdot k \iff \\
 &\qquad \exists\, c_{\mathrm{mid}} :\; ⟦1 + 0 + 0⟧ = ⟦0⟧ + 2 \cdot c_{\mathrm{mid}} \;\land \\
 &\qquad \phantom{\exists\, c_{\mathrm{mid}} :\;} a + b + c_{\mathrm{mid}} = d + k
 \end{aligned}$$
+
+</div>
 
 This time the least significant bit equation is $1 = 2 \cdot c_{\mathrm{mid}}$.
 No value of $c_{\mathrm{mid}}$ satisfies it since the left-hand side is odd and the right-hand side is even, so the right-hand side of the equivalence is false.
@@ -1203,6 +1216,8 @@ The DFA is now gone from the goal and we only have arithmetic on both sides, so 
 Let $w$ stand for the whole word and $w'$ for the remaining columns.
 Unfolding `WordAddsWithCarry` on both sides gives:
 
+<div class="wide-math">
+
 $$\begin{aligned}
 &\bigl(\exists\, c_{\mathrm{mid}} :\; x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{mid}} \;\land \\
 &\phantom{\bigl(\exists\, c_{\mathrm{mid}} :\;} ⟦\mathrm{row}_1(w') + \mathrm{row}_2(w') + c_{\mathrm{mid}} = \mathrm{row}_3(w') + c_{\mathrm{out}} \cdot 2^{|w'|}⟧\bigr) \iff \\
@@ -1226,6 +1241,8 @@ $$\begin{aligned}
 &\phantom{\bigl(\exists\, c_{\mathrm{mid}} :\;} ⟦a + b + c_{\mathrm{mid}} = d + k⟧\bigr) \iff \\
 &\qquad ⟦(x + 2 \cdot a) + (y + 2 \cdot b) + c_{\mathrm{in}} = (z + 2 \cdot d) + 2 \cdot k⟧
 \end{aligned}$$
+
+</div>
 
 This brings us to step 4 of the plan.
 The goal is `least_significant_bit_split` with the two sides of the equivalence swapped.
