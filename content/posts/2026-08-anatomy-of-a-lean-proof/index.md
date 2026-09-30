@@ -671,7 +671,7 @@ Here it unfolds `RunEndsWithCarry`, `WordAddsWithCarry`, the row values and `eva
 
 ##### Inductive Step
 
-Recall that in the inductive step we need to prove that if the induction hypothesis holds for some list, it also holds for that list with one more element added to the front.
+Recall that in the inductive step we need to prove that, if the induction hypothesis holds for some list, then it also holds for that list with one more element added to the front.
 
 In the inductive step, the word is `cons column columnsLE` which is the list created by prepending `column` to `columnsLE`. 
 Lean has an infix operator `::` for prepending to a list, so we can write `column :: columnsLE`.
@@ -750,7 +750,7 @@ adderDFA.evalFrom ⟦(.carry c)⟧ columns = .carry carryOut ↔
     adderDFA.evalFrom (.carry carryMid) columns = .carry carryOut
 ```
 
-The right-hand side of the equivalence is only true if `c = carryMid`, therefore we can drop the existential and rewrite it as
+The right-hand side of the equivalence is only true if `c = carryMid`, therefore we can drop the existential and the first conjunct and rewrite it as
 
 ```lean
 adderDFA.evalFrom (.carry c) columns = .carry carryOut ↔
@@ -799,9 +799,9 @@ The dead state case is proved with a helper lemma that we're going to skip over 
 In the carry case `c` is introduced as the carry value from the first step on the column:
 
 ```lean
-cases ⟦dfaStep (.carry carryIn) column⟧ with
+cases dfaStep (.carry carryIn) column with
 | dead => ...
-| ⟦carry c⟧ => 
+| carry c => 
   simp only [DfaState.carry.injEq, exists_eq_left']
 ```
 
@@ -814,7 +814,9 @@ adderDFA.evalFrom ⟦(.carry c)⟧ columns = .carry carryOut ↔
     adderDFA.evalFrom (.carry carryMid) columns = .carry carryOut
 ```
 
-We prove this goal by first using `DfaState.carry.injEq` to hoist `c` and `carryMid` out of the `.carry` constructor:
+Earlier we took it for granted that `.carry c = .carry carryMid` implies `c = carryMid`, but we need a formal argument for this now.
+Luckily constructors like `DfaState.carry` are injective in Lean, meaning that if two values built with the same constructor are equal, then their arguments are equal.
+This useful fact is provided by the automatically generated `DfaState.carry.injEq` theorem which `simp` uses to hoist `c` and `carryMid` out of the `.carry` constructor:
 
 ```lean
 adderDFA.evalFrom (.carry c) columns = .carry carryOut ↔
@@ -950,7 +952,7 @@ def WholeRunAddition (x y z carryIn : Bool) (a b d k : Nat) : Prop :=
 
 def SplitRunAddition (x y z carryIn : Bool) (a b d k : Nat) : Prop :=
   ∃ carryMid : Bool,
-    x + y + carryIn = z + 2 * carryMid ∧  -- ∧ means conjunction
+    x + y + carryIn = z + 2 * carryMid ∧
     a + b + carryMid = d + k
 
 lemma least_significant_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
@@ -962,7 +964,7 @@ lemma least_significant_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
 This is step 4 of the plan.
 As with the run invariant, both sides of the equivalence get their own name to make it easier to read: `WholeRunAddition` is the addition equation for the whole word, and `SplitRunAddition` is the same equation split in two.
 
-The lemma says that the addition equation for the whole word holds if and only if there is an intermediate carry `carryMid` such that the adder equation holds for the least significant bits and the addition equation holds for the remaining bits.[^9]
+The lemma says that the addition equation for the whole word holds if and only if there is an intermediate carry `carryMid` such that the adder equation holds for the least significant bits and the addition equation holds for the remaining bits.[^10]
 The shape of this lemma mirrors `split_run`, but it's just arithmetic, the DFA doesn't appear in it.
 
 We need this lemma to connect the two sides of the run invariant: `split_run`, `first_step_adds` and the induction hypothesis turn the DFA into an equation for the first column and an equation for the remaining columns. 
@@ -999,8 +1001,8 @@ Circling back to our goal, we need to show that `WholeRunAddition` and `SplitRun
 `WholeRunAddition` is a simple linear equation, but `SplitRunAddition` has an existential and a conjunction.
 If we can turn `SplitRunAddition` into linear equation, then we can close the goal by showing that the two linear equations are equivalent which is easy.
 
-We're going to use the same trick that we used when [splitting the run:](#splitting-the-run) if the first part of the conjunction is only true for a single value of $c_{\mathrm{mid}}$, then we can substitute that value in the second part and drop the existential and the first part.
-As a reminder, this is the first part of the conjunction:
+We're going to use the same trick that we used when [splitting the run:](#splitting-the-run) if the first part of the conjunction is only true for a single value of $c_{\mathrm{mid}}$, then we can substitute that value in the second conjunct and drop the existential and the first conjunct.
+As a reminder, this is the first conjunct:
 
 $$\exists\, c_{\mathrm{mid}} :\; x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{mid}}$$
 
@@ -1072,8 +1074,7 @@ This concludes the proof.
 
 The second kind of case is how the dead state shows up on the arithmetic side.
 On the DFA side, a column with the wrong parity sends the run into the dead state, so it never ends in a carry state.
-On the arithmetic side, the same column makes both sides of the equivalence false.
-The lemma takes care of this for free, there is no separate case for it.
+On the arithmetic side, the same column makes both sides of the equivalence false, so we don't need a separate case for it.
 
 Now let's review what the proof looks like in Lean:
 
@@ -1089,8 +1090,9 @@ lemma least_significant_bit_split (x y z carryIn : Bool) (a b d k : Nat) :
 The `cases <;>` chain splits on the four bits, which gives 16 goals, one per case.
 `simp` then runs on each of them, and `omega` runs on whatever `simp` leaves behind.
 
-We're going to skip going through the steps `simp` performs here since we've seen it in action before.
-`simp` leaves one goal behind in each of the 16 cases, and the goals come in the same two kinds as the cases.
+We won't go through the steps `simp` performs here, since we've seen it in action before.
+`simp` leaves one goal behind in each of the 16 cases.
+Each of these cases takes the shape of one the two examples that we worked through.
 
 If there is a solution for `carryMid`, `simp` leaves an equivalence of two linear equations.
 This is the goal for the first example from above:
@@ -1105,7 +1107,7 @@ This is the goal for the second example from above:
 
 $$\neg\,(1 + 2 \cdot a + 2 \cdot b = 2 \cdot d + 2 \cdot k)$$
 
-`simp` can't go further, because it rewrites terms, but it doesn't reason about equations.
+`simp` can't go further, because it cannot reason about equations.
 This is where `omega` comes in, which is a decision procedure for linear arithmetic over natural numbers and integers.
 
 `omega` proves a goal by contradiction: it assumes that the goal is false, and shows that no values of the variables can satisfy the equations and inequalities that follow from this.
@@ -1399,3 +1401,5 @@ We pass this function `B_reverse_isRegular`, and we get back a term with type `B
 [^8]: The informal argument about the equivalence of the little-endian interpretation of a word and the big-endian interpretation of its reversal (`rowNLE w = rowNBE w.reverse`) is formalized in the proof, but it's basically just bookkeeping, so I didn't include it in the post.
 
 [^9]: As before, we've dropped `.toNat` from the booleans in the lemma statement for brevity.
+
+[^10]: Dropped `.toNat` for brevity.
