@@ -45,12 +45,11 @@
   <circle cx="60" cy="60" r="32" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
   <text class="t" x="60" y="60" fill="#04342C" text-anchor="middle" dominant-baseline="central">carry 0</text>
 
-  <circle cx="336" cy="60" r="38" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-  <circle cx="336" cy="60" r="32" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-  <text class="t" x="336" y="60" fill="#04342C" text-anchor="middle" dominant-baseline="central">carry 1</text>
+  <circle cx="336" cy="60" r="34" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="t" x="336" y="60" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">carry 1</text>
 
   <!-- step -->
-  <line x1="102" y1="60" x2="296" y2="60" class="arr" marker-end="url(#arrow-carry-step)"/>
+  <line x1="102" y1="60" x2="300" y2="60" class="arr" marker-end="url(#arrow-carry-step)"/>
   <path class="brk" d="M193 12 H190 V46 H193"/>
   <path class="brk" d="M203 12 H206 V46 H203"/>
   <text class="b"><tspan x="198" y="17">1</tspan><tspan x="198" y="29">1</tspan><tspan x="198" y="41">0</tspan></text>

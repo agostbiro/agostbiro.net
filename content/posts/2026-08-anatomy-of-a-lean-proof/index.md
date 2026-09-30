@@ -59,7 +59,7 @@ $$A = \bigl\{\, w \in \Sigma^{*} \bigm| P(w) \,\bigr\}$$
 
 $\Sigma^{*}$ means the set of strings that are created by all possible concatenations of symbols in $\Sigma$ and $P(w)$ is the logical proposition that the string $w$ is well-formed.
 
-Let's apply this notation to our regex example: `-?[0-9]+`. Then $\Sigma^{*}$ contains strings like `""`, `"123"`, `"-111"`, `"2-625-"`, etc. and $P(w)$ can be defined as "$w$ is not empty and only its first character can be a negative sign". 
+Let's apply this notation to our regex example: `-?[0-9]+`. Then $\Sigma^{*}$ contains strings like `""`, `"123"`, `"-111"`, `"2-625-"`, etc. and $P(w)$ can be defined as "$w$ is not empty and contains no negative sign, except that its first character may be a negative sign if $w$ has at least two characters". 
 
 
 ## The Problem
