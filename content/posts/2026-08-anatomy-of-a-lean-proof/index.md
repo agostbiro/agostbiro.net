@@ -38,7 +38,7 @@ This regex matches integer literals like `12` and `-123` and the corresponding D
 This DFA has four states:
 - **Start:** this is where we start before processing the first character. Since the start state is not an accepting state, we reject the empty string.
 - **Sign:** we move to the sign state when we encounter the `-` character in the start state. We can skip the sign state and jump directly to digits from start, since the sign character is optional (`-?`). If we're in this state at the end of the string, then we reject the string.
-- **Digits:** we move from start or sign to digits when we encounter a digit character (`[0-9]`). If we're in the digits state and encounter a digit character again, then we stay in the digit state. The digit state is the only accepting state of the DFA. If we're in this state after we've processed the input string, then the DFA accepts the string.
+- **Digits:** we move from start or sign to digits when we encounter a digit character (`[0-9]`). If we're in the digits state and encounter a digit character again, then we stay in the digits state. The digits state is the only accepting state of the DFA. If we're in this state after we've processed the input string, then the DFA accepts the string.
 - **Dead:** we get into this state if we encounter any other character than a digit (unless it's a negative sign at the start). If we're in the dead state at the end of the string, then the DFA rejects the string. Once we're in the dead state, we stay in it, so the dead state in this DFA is a *sink*.
 
 The set of input **symbols** to the machine is defined by the set $\Sigma$. 
@@ -57,9 +57,9 @@ We can describe a language $A$ with set-builder notation:
 $$A = \bigl\{\, w \in \Sigma^{*} \bigm| P(w) \,\bigr\}$$
 
 
-$\Sigma^{*}$ means the set of strings that are created by all possible concatanations of symbols in $\Sigma$ and $P(w)$ is the logical proposition that the string $w$ is well-formed.
+$\Sigma^{*}$ means the set of strings that are created by all possible concatenations of symbols in $\Sigma$ and $P(w)$ is the logical proposition that the string $w$ is well-formed.
 
-Let's apply this notation to our regex example: `-?[0-9]+`. Then $\Sigma^{*}$ contains string like `""`, `"123"`, `"-111"`, `"2-625-"`, etc. and $P(w)$ can be defined as "$w$ is not empty and only its first character can be a negative sign". 
+Let's apply this notation to our regex example: `-?[0-9]+`. Then $\Sigma^{*}$ contains strings like `""`, `"123"`, `"-111"`, `"2-625-"`, etc. and $P(w)$ can be defined as "$w$ is not empty and only its first character can be a negative sign". 
 
 
 ## The Problem
@@ -76,13 +76,13 @@ The problem that we're going to solve is from the [Introduction to the Theory of
 >
 > $$B = \bigl\{\, w \in \Sigma_3^{*} \bigm| P(w)  \,\bigr\}$$
 >
-> where $P(w)$ is the proposition that the the bottom row of $w$ equals the sum of the top two rows.
+> where $P(w)$ is the proposition that the bottom row of $w$ equals the sum of the top two rows.
 >
 > Show that $B$ is regular. (Hint: it is easier to work with $B^{\mathcal{R}}$.)
 
 The problem defines an unusual alphabet.
 Instead of regular characters like `[a-z]`, the alphabet is made up of columns of three bits.
-So instead of a language that consists of strings like `"apple"`, `"banana"`, etc, the language consists of two dimensional bit strings like
+So instead of a language that consists of strings like `"apple"`, `"banana"`, etc., the language consists of two-dimensional bit strings like
 
 ```
 011
@@ -115,7 +115,7 @@ While a language like this may look weird at first, it's actually a lot easier t
 $$ x + y = z$$
 
 to determine whether a string is in the language. 
-The challenge is that we need to do this with a fixed amount of memory for arbitrarty long strings.
+The challenge is that we need to do this with a fixed amount of memory for arbitrarily long strings.
 
 ## The Solution
 
@@ -126,7 +126,7 @@ So we don't recognize $B$ directly.
 Instead we build a DFA to recognize its reversal $B^R$ which is the same strings that are in $B$ written backwards, so the machine sees the least significant column first.
 
 If we can build a DFA to recognize $B^R$, then we can conclude that $B^R$ is a regular language.
-Since $B^R$ reversed is $B$, we can use of the closure property of the reversal of natural languages to conlcude that $B$ is regular as well which completes the solution.
+Since $B^R$ reversed is $B$, we can use the closure property of the reversal of regular languages to conclude that $B$ is regular as well which completes the solution.
 
 ### Adder Arithmetic
 
@@ -138,7 +138,7 @@ where $x, y$ are the addend bits, $z$ is the sum bit, $i$ denotes the ordinal of
 We compute the output carry denoted $c_{out}$ for the next step as follows:
 
 $$c_{out} = (x_i \wedge y_i) \vee \left( c_{in} \wedge (x_i \oplus y_i) \right)$$
-This means that that there is a carry either if both terms are $\mathtt{1}$ or there was an input carry and least one of the terms is $\mathtt{1}$. Note that a simpler way to compute $c_{out}$ is to check if at least two of $x_i$, $y_i$ and $c_{in}$ are $\mathtt{1}$ (we'll make use of this in the Lean proof).
+This means that there is a carry either if both terms are $\mathtt{1}$ or there was an input carry and at least one of the terms is $\mathtt{1}$. Note that a simpler way to compute $c_{out}$ is to check if at least two of $x_i$, $y_i$ and $c_{in}$ are $\mathtt{1}$ (we'll make use of this in the Lean proof).
 
 ### Adder DFA
 
@@ -175,7 +175,7 @@ The run ends in carry 0 (the accepting state), so the reversed word is in $B^R$.
 Due to the closure property of reversal, the original word is in $B$ as well.
 
 Note that the machine passes *through* the non-accepting carry 1 state twice.
-Had the word stopped after either of the first two column, it would have been rejected, since $\mathtt{1} + \mathtt{1} = \mathtt{0}$ and $\mathtt{11} + \mathtt{01} = \mathtt{00}$ are both wrong without somewhere to put the carry.
+Had the word stopped after either of the first two columns, it would have been rejected, since $\mathtt{1} + \mathtt{1} = \mathtt{0}$ and $\mathtt{11} + \mathtt{01} = \mathtt{00}$ are both wrong without somewhere to put the carry.
 
 ### Example 2
 
@@ -246,8 +246,8 @@ $$z = x + y$$
 from our earlier examples.
 
 If you've used programming languages with set comprehensions, the set builder syntax might look familiar, but we're not constructing a collection here.
-anguage` is just a `Set` under the hood and `Set` in Lean is a function that tests whether an element is in the set.[^2]
- our definition of $B$ gets unrolled to a function definition under the hood:
+`Language` is just a `Set` under the hood and `Set` in Lean is a function that tests whether an element is in the set.[^2]
+So our definition of $B$ gets unrolled to a function definition under the hood:
 
 ```lean
 def B : List Sigma3 → Prop :=
@@ -348,7 +348,7 @@ example :
   decide
 ```
 
-The run starts from `.carry false`  and ends in `.dead` as expected.
+The run starts from `.carry false` and ends in `.dead` as expected.
 
 ### How Proofs Work
 
@@ -434,11 +434,11 @@ The return type is again `Prop`.
 The interesting part is `∃ M : DFA T σ, M.accepts = L` which says that a language is regular if the language accepted by some DFA over those states equals the language.
 So when does a DFA accept a language?
 
-The language a DFA accepts in Mathlib is [defined](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L123-L124) similar to this:[^7]
+The language a DFA accepts in Mathlib is [defined](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L123-L124) similarly to this:[^7]
 
 ```lean
 def accepts : Language α := 
-  { word | M.evalFrom M.start x ∈ M.accept }
+  { word | M.evalFrom M.start word ∈ M.accept }
 ```
 
 This means that the language that the DFA accepts is the set of words for which evaluating the DFA from the starting state leads to an accepting state.
@@ -458,7 +458,7 @@ B.reverse = { w | w.reverse ∈ B }
 ```
 
 `B` reads its rows most significant bit first with the `rowNBE` functions. 
-Reading the reversed string big-endian is the same as reading the original string least signifcant bit first.
+Reading the reversed string big-endian is the same as reading the original string least significant bit first.
 In other words, while we interpret bit strings big-endian for `B`, we interpret them as little-endian for `B.reverse`. 
 The membership test for `B.reverse` is therefore equivalent to:[^8]
 
@@ -489,7 +489,7 @@ which reads as
 >
 > where the rows are read as little-endian binary numbers.
 
-This what we need ultimately. 
+This is what we need ultimately. 
 We always start from carry $0$ and the only accepting state is also carry $0$, and the right-hand side of the equivalence matches the membership test for `B.reverse`.
 But as we saw earlier, carry $1$ can be a valid intermediate state as well, so this statement is too weak to serve as an induction hypothesis. 
 
@@ -545,10 +545,10 @@ Both sides of the equivalence get their own name, so that the lemma reads as "th
 `RunEndsWithCarry` is the left-hand side of the equivalence from the previous section, and `WordAddsWithCarry` is the right-hand side.
 The only difference from that equation is `.toNat`, which converts a boolean into `0` or `1` so that the carries can take part in the arithmetic (`.toNat` will be omitted in the following code blocks for brevity).
 
-Notice that that the theorem has arguments like a function.
-In fact a theorem is essiciantly a function: its arguments are the variables the statement talks about, its type is the proposition, and its body is the proof.
+Notice that the theorem has arguments like a function.
+In fact a theorem is essentially a function: its arguments are the variables the statement talks about, its type is the proposition, and its body is the proof.
 So we have a parameterized theorem that we'll have to prove for all possible values of its arguments. 
-But we will only use it later on in the proof of `adderDFA_accepts_B_reverse` with both carries set to `false` which form corresponds to the definition of the language `B`:
+But we will only use it later on in the proof of `adderDFA_accepts_B_reverse` with both carries set to `false` which corresponds to the definition of the language `B`:
 
 ```lean
 run_invariant (carryIn := false) wLE (carryOut := false)
@@ -569,7 +569,7 @@ A goal is a statement that Lean still needs a proof of.
 Each tactic transforms or closes the current goal.
 
 The initial goal is the theorem that we're trying to prove, but we cannot do that directly, so we use the `induction` tactic which gives us a goal to prove for each constructor of the list.
-`nil` is constructor for the empty list, and `cons` is the constructor that prepends an element to an existing list.
+`nil` is the constructor for the empty list, and `cons` is the constructor that prepends an element to an existing list.
 In the `cons` case we get to name the first column, the remaining columns, and the induction hypothesis, which is the run invariant assumed to be true for the remaining columns.
 
 The `generalizing carryIn` part is important.
@@ -610,7 +610,7 @@ def evalFrom (s : σ) : List α → σ :=
 
 on the left-hand side of the equivalence.
 
-Next, let's see what happens on the right hand-side in the base case.
+Next, let's see what happens on the right-hand side in the base case.
 Unfolding `WordAddsWithCarry` gives the equation:
 
 ```lean
@@ -762,7 +762,7 @@ adderDFA.evalFrom (.carry c) columns = .carry carryOut ↔
     adderDFA.evalFrom (.carry ⟦c⟧) columns = .carry carryOut
 ```
 
-which matches the left hand-side exactly.
+which matches the left-hand side exactly.
 
 So far we have assumed that `dfaStep (DfaState.carry carryIn) column` ends up in a carry state `c`, but the step on the column can also end up in a dead state.
 The right-hand side is explicitly only true if the first step ends in a carry state, but the left-hand side could potentially allow a dead state on the first step. 
@@ -999,12 +999,12 @@ $$\sum_{i=0}^{n-1} x_i 2^i = x_0 + 2 \cdot \sum_{i=1}^{n-1} x_i 2^{i-1}$$
 so $x + 2 \cdot a$ is the value of a row whose first bit is $x$ and whose remaining bits have value $a$ (same applies to terms with $y$ and $z$).
 
 The term $k$ stands for the term $c_{out} \cdot 2^n$ in the binary addition equation.
-Notice how `WholeRunAddition` has a $2 * k$ term in it while `SplitRunAddition` has just $k$ in the equation for the remaining bits.
+Notice how `WholeRunAddition` has a $2 \cdot k$ term in it while `SplitRunAddition` has just $k$ in the equation for the remaining bits.
 This is because `WholeRunAddition` is one bit longer than the remaining bits in `SplitRunAddition`.
 
 Circling back to our goal, we need to show that `WholeRunAddition` and `SplitRunAddition` are saying the same thing.
 `WholeRunAddition` is a simple linear equation, but `SplitRunAddition` has an existential and a conjunction.
-If we can turn `SplitRunAddition` into linear equation, then we can close the goal by showing that the two linear equations are equivalent which is easy.
+If we can turn `SplitRunAddition` into a linear equation, then we can close the goal by showing that the two linear equations are equivalent which is easy.
 
 We're going to use the same trick that we used when [splitting the run:](#splitting-the-run) if the first part of the conjunction is only true for a single value of $c_{\mathrm{mid}}$, then we can substitute that value in the second conjunct and drop the existential and the first conjunct.
 As a reminder, this is the first conjunct:
@@ -1097,7 +1097,7 @@ The `cases <;>` chain splits on the four bits, which gives 16 goals, one per cas
 
 We won't go through the steps `simp` performs here, since we've seen it in action before.
 `simp` leaves one goal behind in each of the 16 cases.
-Each of these cases takes the shape of one the two examples that we worked through.
+Each of these cases takes the shape of one of the two examples that we worked through.
 
 If there is a solution for `carryMid`, `simp` leaves an equivalence of two linear equations.
 This is the goal for the first example from above:
@@ -1271,7 +1271,7 @@ The goal is now:
     WordAddsWithCarry carryIn ((x, y, z) :: columnsLE) carryOut
 ```
 
-The `simp only` line first unfolds `WordAddsWithCarry` on both sides of the goal, but we'll just focus on the right hand-side of the equivalence, as the goal gets too large to follow otherwise.
+The `simp only` line first unfolds `WordAddsWithCarry` on both sides of the goal, but we'll just focus on the right-hand side of the equivalence, as the goal gets too large to follow otherwise.
 So `simp only` first rewrites
 
 ```lean
@@ -1303,8 +1303,8 @@ x + 2 * row1LE columnsLE + (y + 2 * row2LE columnsLE) + carryIn =
 
 `List.length_cons` says that `column :: columnsLE` is one longer than `columnsLE`, and `pow_succ'` rewrites $2^{n+1}$ as $2 \cdot 2^n$.
 
-At this point there is just one small thing that we need to fix before can conclude the proof using `least_significant_bit_split`.
-The lemma has a $2 \cdot k$ term, where $k$ stands for the carry out term of the remaining columns, so it expects `2 * (carryOut * 2 ^ columnsLE.length)`, but we  have `carryOut * (2 * 2 ^ columnsLE.length)`.
+At this point there is just one small thing that we need to fix before we can conclude the proof using `least_significant_bit_split`.
+The lemma has a $2 \cdot k$ term, where $k$ stands for the carry out term of the remaining columns, so it expects `2 * (carryOut * 2 ^ columnsLE.length)`, but we have `carryOut * (2 * 2 ^ columnsLE.length)`.
 
 `rw [Nat.mul_left_comm]` fixes this.
 `Nat.mul_left_comm` states `a * (b * c) = b * (a * c)`, so rewriting with it swaps `carryOut` and `2` on the right-hand side of the equivalence:
@@ -1314,7 +1314,7 @@ x + 2 * row1LE columnsLE + (y + 2 * row2LE columnsLE) + carryIn =
   z + 2 * row3LE columnsLE + ⟦2 * (carryOut * 2 ^ columnsLE.length)⟧
 ```
 
-The goal is now in the shape of `least_significant_bit_split` (with the sides of the equivalenced reversed).
+The goal is now in the shape of `least_significant_bit_split` (with the sides of the equivalence reversed).
 
 As the final step of the proof we switch into term mode using the `exact` tactic.
 This means that in order to conclude the proof, we need to construct a term that matches the type of the goal.
@@ -1451,7 +1451,7 @@ L.reverse.IsRegular ↔ L.IsRegular
 
 where `L` is a generic `Mathlib.Computability.Language`.
 
-An equivalence holds in both directions and we have a proof that `B.reverse.isRegular`, so we can use the implication
+An equivalence holds in both directions and we have a proof that `B.reverse.IsRegular`, so we can use the implication
 
 ```lean
 L.reverse.IsRegular → L.IsRegular
@@ -1483,7 +1483,7 @@ We pass this function `B_reverse_isRegular`, and we get back a term with type `B
 
 [^6]: Simplified version of Mathlib's definition. The actual definition spells out the universe of `T` and writes the finiteness as `∃ σ : Type, ∃ _ : Fintype σ`.
 
-[^7]: The actual Mathlib is a bit more verbose, so I'm not quoting it here.
+[^7]: The actual Mathlib definition is a bit more verbose, so I'm not quoting it here.
 
 [^8]: The informal argument about the equivalence of the little-endian interpretation of a word and the big-endian interpretation of its reversal (`rowNLE w = rowNBE w.reverse`) is formalized in the proof, but it's basically just bookkeeping, so I didn't include it in the post.
 
