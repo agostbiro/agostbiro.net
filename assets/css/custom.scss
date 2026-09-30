@@ -55,6 +55,10 @@ li > span:first-child { margin-right: 0.75em; }
 
 .w { max-width: 720px; }
 
+// Goldmark's footnotes at the end of a post. Asides, so a step down from the
+// body, the same size as the table of contents in toc.scss.
+.footnotes { font-size: 0.85em; }
+
 // ---------------------- SUBSCRIBE FORM ---------------------- //
 // Rendered by layouts/partials/subscribe.html.
 
