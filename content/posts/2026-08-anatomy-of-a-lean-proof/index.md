@@ -46,7 +46,7 @@ In our regex example, $\Sigma = \left\{-, 0, 1, 2, \ldots, 9\right\}$.
 
 ### Regular Languages
 
-A **language** is just a set of strings, also called **words**, and a language is called **regular** if some DFA accepts the strings in it. 
+A **language** is just a set of strings, also called **words**, and a language is called **regular** if some DFA accepts exactly the strings in it. 
 Recognizing regular languages is the class of decision problems solvable with a constant amount of memory in the input size.
 
 Regular languages have useful closure properties: the union, intersection, complement, and (important for us) **reversal** of a regular language is regular.
@@ -477,7 +477,7 @@ In order to prove a proposition by induction we need an induction hypothesis tha
 One idea for the induction hypothesis could be to propose the following equivalence
 
 ```lean
-adderDFA.evalFrom (.carry 0) wLE = .carry 0 ↔
+adderDFA.evalFrom (.carry false) wLE = .carry false ↔
   row1LE wLE + row2LE wLE = row3LE wLE
 ```
 
@@ -999,7 +999,7 @@ $$\begin{aligned}
 &\qquad \phantom{\exists\, c_{\mathrm{mid}} :\;} a + b + c_{\mathrm{mid}} = d + k
 \end{aligned}$$
 
-$x$, $y$ and $z$ are the least significant bits of the three rows, $a$, $b$ and $d$ are the values of the remaining bits, and $k$ stands for the carry out term.
+$x$, $y$ and $z$ are the least significant bits of the three rows, $a$, $b$ and $d$ are the values of the remaining bits, and $k$ stands for the carry out term of the remaining bits.
 
 ![The equations of the lemma laid out as a run: the equation for the whole word spans the run, the equation for the least significant bits x, y and z spans the first step, and the equation for the values of the remaining bits a, b and d spans the rest](./assets/least-significant-bit-split-variables.svg "The equations of the lemma laid out as a run, least significant bits first")
 
@@ -1013,7 +1013,7 @@ $$\sum_{i=0}^{n-1} x_i 2^i = x_0 + 2 \cdot \sum_{i=1}^{n-1} x_i 2^{i-1}$$
 
 so $x + 2 \cdot a$ is the value of a row whose first bit is $x$ and whose remaining bits have value $a$ (same applies to terms with $y$ and $z$).
 
-The term $k$ stands for the term $c_{out} \cdot 2^n$ in the binary addition equation.
+$k$ stands for the carry out term of the remaining bits, which is $c_{out} \cdot 2^{n-1}$, so the carry out term of the whole word, $c_{out} \cdot 2^n$, is $2 \cdot k$.
 Notice how `WholeRunAddition` has a $2 \cdot k$ term in it while `SplitRunAddition` has just $k$ in the equation for the remaining bits.
 This is because `WholeRunAddition` is one bit longer than the remaining bits in `SplitRunAddition`.
 
