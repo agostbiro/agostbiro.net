@@ -209,15 +209,15 @@ The Lean proof will consist of three parts:
 2. An executable **implementation** of the [adder DFA](#adder-dfa).
 3. A **proof** showing that the implementation matches the specification.
 
-Lean's [Mathlib](https://lean-lang.org/use-cases/mathlib/) has first class support for formal languages and DFAs, so we will just need to instantiate structures from the library for the specification and the implementation.
+Lean's [Mathlib](https://lean-lang.org/use-cases/mathlib/) has first-class support for formal languages and DFAs, so we will just need to build on structures from the library for the specification and the implementation.
 
 For the proof, we'll have to do more work, but Mathlib will be helpful here as well, as it contains the theorem that regular languages are closed under reversal, which will save a lot of work.
 The proof will contain some unfamiliar syntax, but under the hood it's just a program.
 In fact, the proof is accepted if the program compiles.
 
-Below is a figure laying out the components of the program. The full code can be found on [Github.](https://github.com/agostbiro/my-lean/tree/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32)
+Below is a figure laying out the components of the program. The full code can be found on [GitHub.](https://github.com/agostbiro/my-lean/tree/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32)
 
-![Diagram of the three layers of the Lean file and the dependencies between their definitions and theorems](./assets/proof-structure.svg "The specification and the implementation meet in the proof layer")
+![Diagram of the three files of the Lean code and the dependencies between their definitions and theorems](./assets/proof-structure.svg "The specification and the implementation meet in the proof")
 
 
 ### The Specification
@@ -237,9 +237,9 @@ def B : Language Sigma3 :=
 ```
 
 `Language` is a generic implementation of formal languages that comes with standard operations and associated theorems.
-We instantiate it using our alphabet `Sigma3` and the predicate for membership in $B$ (recall that a language is a set of strings).
+We build it using our alphabet `Sigma3` and the predicate for membership in $B$ (recall that a language is a set of strings).
 
-`wBE` is a big-endian word in the language, which is a list of `Sigma3` values, i.e. a 2D list of binary values with three rows.
+`wBE` is a candidate word, read big-endian, which is a list of `Sigma3` values, i.e. a 2D list of binary values with three rows.
 `rowNBE` is a function that selects the nth row of the 2D list from the top and turns it into a natural number using a big-endian interpretation.[^1]
 So the predicate is just 
 
