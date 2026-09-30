@@ -1241,7 +1241,14 @@ lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
       List.length_cons, pow_succ'
     ]
     rw [Nat.mul_left_comm]
-    exact (least_significant_bit_split x y z carryIn _ _ _ _).symm
+    exact
+      Iff.symm
+        (least_significant_bit_split 
+          x y z carryIn 
+          (row1LE columnsLE) 
+          (row2LE columnsLE)
+          (row3LE columnsLE) 
+          (carryOut * 2 ^ columnsLE.length))
 ```
 
 `obtain ⟨x, y, z⟩ := column` destructures the column into its three bits, like `let (x, y, z) = column` would in a regular program.
@@ -1253,7 +1260,7 @@ lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
 `simp_rw` is like `rw`, but it can also rewrite under the `∃`, which `rw` can't do.
 
 At this point the DFA is gone from the goal and we're working with arithmetic only.
-In the informal proof we jumped straight to applying `
+The only thing left is to get the equations into a shape that matches `least_significant_bit_split`.
 
 The goal is now:
 
@@ -1307,7 +1314,11 @@ x + 2 * row1LE columnsLE + (y + 2 * row2LE columnsLE) + carryIn =
   z + 2 * row3LE columnsLE + ⟦2 * (carryOut * 2 ^ columnsLE.length)⟧
 ```
 
-The goal is now
+The goal is now in the shape of `least_significant_bit_split` (with the sides of the equivalenced reversed).
+
+As the final step of the proof we switch into term mode using the `exact` tactic.
+This means that in order to conclude the proof, we need to construct a term that matches the type of the goal.
+The full goal including the left-hand side of the equivalence is quite a mouthful, so I'll only show it for completeness:
 
 ```lean
 (∃ carryMid,
@@ -1318,16 +1329,20 @@ The goal is now
       z + 2 * row3LE columnsLE + 2 * (carryOut * 2 ^ columnsLE.length)
 ```
 
-The last tactic is step 4 of the plan.
-`exact` closes the goal if we give it a term whose type is the goal.
-The term here is `least_significant_bit_split` applied to its arguments.
-We pass `x`, `y`, `z` and `carryIn` ourselves.
-Each `_` is a placeholder that Lean fills in by matching the lemma against the goal: the values of the three rows of `columnsLE` for $a$, $b$ and $d$, and `carryOut * 2 ^ columnsLE.length` for $k$.
-`.symm` swaps the two sides of the equivalence to match the goal.
+We construct the necessary term by calling `least_significant_bit_split` with the carry arguments from the theorem and the column arguments from the induction hypothesis, and wrapping the result in `Iff.symm` to flip the sides of the equivalence:
 
-The lemma is stated in terms of `WholeRunAddition` and `SplitRunAddition`, while the goal has the equations written out.
-This isn't a problem, because Lean unfolds the definitions when it compares the type of the term with the goal.
-After unfolding the two are the same, which closes the goal.
+```lean
+Iff.symm
+  (least_significant_bit_split 
+    x y z carryIn 
+    (row1LE columnsLE) 
+    (row2LE columnsLE)
+    (row3LE columnsLE) 
+    (carryOut * 2 ^ columnsLE.length))
+```
+
+
+You don't have to convince yourself that this term has the type of the goal, you can trust Lean with this.
 
 #### $B^{\mathcal{R}}$ Is Regular
 
