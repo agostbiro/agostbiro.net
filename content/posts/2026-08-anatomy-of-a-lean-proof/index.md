@@ -530,13 +530,13 @@ Here is the run invariant as a theorem, with the proof left out for now:
 def RunEndsWithCarry (carryIn : Bool) (wLE : List Sigma3) (carryOut : Bool) : Prop :=
   adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut
 
-def WordAddsWithCarry (wLE : List Sigma3) (carryIn carryOut : Bool) : Prop :=
+def WordAddsWithCarry (carryIn : Bool) (wLE : List Sigma3) (carryOut : Bool) : Prop :=
   row1LE wLE + row2LE wLE + carryIn.toNat
     = row3LE wLE + carryOut.toNat * 2 ^ wLE.length
 
 lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
     RunEndsWithCarry carryIn wLE carryOut ↔
-      WordAddsWithCarry wLE carryIn carryOut := by
+      WordAddsWithCarry carryIn wLE carryOut := by
   ...
 ```
 
@@ -585,7 +585,7 @@ Recall the run invariant:
 
 ```lean
 RunEndsWithCarry carryIn wLE carryOut ↔ 
-  WordAddsWithCarry wLE carryIn carryOut
+  WordAddsWithCarry carryIn wLE carryOut
 ```
 
 Let's focus on what happens on the left-hand side of the equivalence first.
@@ -650,15 +650,20 @@ The equivalence holds if both sides have the same truth value in every row of th
 The same argument in Lean:
 
 ```lean
-| nil =>  -- base case
-  cases carryIn <;> cases carryOut <;>
-    simp [
-        RunEndsWithCarry, WordAddsWithCarry, 
-        row1LE, row2LE, row3LE, 
-        valueLE, 
-        row1, row2, row3, 
-        DFA.evalFrom
-    ]
+lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
+    RunEndsWithCarry carryIn wLE carryOut ↔
+      WordAddsWithCarry carryIn wLE carryOut := by
+  induction wLE generalizing carryIn with
+  | nil =>  -- base case
+    cases carryIn <;> cases carryOut <;>
+      simp [
+          RunEndsWithCarry, WordAddsWithCarry, 
+          row1LE, row2LE, row3LE, 
+          valueLE, 
+          row1, row2, row3, 
+          DFA.evalFrom
+      ]
+  | cons column columnsLE induction_hypothesis => ...
 ```
 
 The `cases` tactic splits a goal into one goal per constructor of a type, so `cases carryIn` gives us two goals, one with `carryIn` replaced by `false` and one with `true`.
@@ -1120,11 +1125,12 @@ In the second goal, the equation has an odd number on one side and an even numbe
 ```lean
 lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
     RunEndsWithCarry carryIn wLE carryOut ↔
-      WordAddsWithCarry wLE carryIn carryOut := by
+      WordAddsWithCarry carryIn wLE carryOut := by
   induction wLE generalizing carryIn with
+  -- base case
   | nil => ...
-  | cons column columnsLE induction_hypothesis =>
-    ...
+  -- inductive step
+  | cons column columnsLE induction_hypothesis => ...  
 ```
 
 With the helper lemmas in place, we can return to the inductive step of the run invariant.
@@ -1135,7 +1141,7 @@ In the inductive step the word is `column :: columnsLE`, so the goal is the run 
 
 ```lean
 RunEndsWithCarry carryIn (column :: columnsLE) carryOut ↔
-  WordAddsWithCarry (column :: columnsLE) carryIn carryOut
+  WordAddsWithCarry carryIn (column :: columnsLE) carryOut
 ```
 
 We also get to use the induction hypothesis, which is the run invariant for the remaining columns:
@@ -1143,7 +1149,7 @@ We also get to use the induction hypothesis, which is the run invariant for the 
 ```lean
 ∀ carryIn,
   RunEndsWithCarry carryIn columnsLE carryOut ↔
-    WordAddsWithCarry columnsLE carryIn carryOut
+    WordAddsWithCarry carryIn columnsLE carryOut
 ```
 
 The `∀ carryIn` is there because of `generalizing carryIn`.
@@ -1156,7 +1162,7 @@ The left-hand side of the goal is the left-hand side of `split_run`, so we can r
 (⟦∃ carryMid,⟧
   ⟦dfaStep (.carry carryIn) column = .carry carryMid ∧⟧
   ⟦RunEndsWithCarry carryMid columnsLE carryOut⟧) ↔
-    WordAddsWithCarry (column :: columnsLE) carryIn carryOut
+    WordAddsWithCarry carryIn (column :: columnsLE) carryOut
 ```
 
 Step 2 is to turn the first step of the run into arithmetic.
@@ -1167,7 +1173,7 @@ The first part of the conjunction is then the left-hand side of `first_step_adds
 (∃ carryMid,
   ⟦x + y + carryIn = z + 2 * carryMid⟧ ∧
   RunEndsWithCarry carryMid columnsLE carryOut) ↔
-    WordAddsWithCarry (column :: columnsLE) carryIn carryOut
+    WordAddsWithCarry carryIn (column :: columnsLE) carryOut
 ```
 
 Step 3 is to turn the run over the remaining columns into arithmetic.
@@ -1176,33 +1182,33 @@ The second part of the conjunction is the left-hand side of the induction hypoth
 ```lean
 (∃ carryMid,
   x + y + carryIn = z + 2 * carryMid ∧
-  ⟦WordAddsWithCarry columnsLE carryMid carryOut⟧) ↔
-    WordAddsWithCarry (column :: columnsLE) carryIn carryOut
+  ⟦WordAddsWithCarry carryMid columnsLE carryOut⟧) ↔
+    WordAddsWithCarry carryIn (column :: columnsLE) carryOut
 ```
 
-This is where `generalizing carryIn` pays off: the run over the remaining columns starts from `carryMid`, which is not necessarily the same as `carryIn`.
+This is why we needed `generalizing carryIn`: the run over the remaining columns starts from `carryMid`, which is not necessarily the same as `carryIn`.
 
-The DFA is now gone from the goal and what remains is arithmetic on both sides, so we're going to switch to mathematical notation again.
-Let $w$ stand for the remaining columns and $w'$ for the whole word.
+The DFA is now gone from the goal and we only have arithmetic on both sides, so we're going to switch to mathematical notation again.
+Let $w$ stand for the whole word and $w'$ for the remaining columns.
 Unfolding `WordAddsWithCarry` on both sides gives:
 
 $$\begin{aligned}
 &\bigl(\exists\, c_{\mathrm{mid}} :\; x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{mid}} \;\land \\
-&\phantom{\bigl(\exists\, c_{\mathrm{mid}} :\;} ⟦\mathrm{row}_1(w) + \mathrm{row}_2(w) + c_{\mathrm{mid}} = \mathrm{row}_3(w) + c_{\mathrm{out}} \cdot 2^{|w|}⟧\bigr) \iff \\
-&\qquad ⟦\mathrm{row}_1(w') + \mathrm{row}_2(w') + c_{\mathrm{in}} = \mathrm{row}_3(w') + c_{\mathrm{out}} \cdot 2^{|w'|}⟧
+&\phantom{\bigl(\exists\, c_{\mathrm{mid}} :\;} ⟦\mathrm{row}_1(w') + \mathrm{row}_2(w') + c_{\mathrm{mid}} = \mathrm{row}_3(w') + c_{\mathrm{out}} \cdot 2^{|w'|}⟧\bigr) \iff \\
+&\qquad ⟦\mathrm{row}_1(w) + \mathrm{row}_2(w) + c_{\mathrm{in}} = \mathrm{row}_3(w) + c_{\mathrm{out}} \cdot 2^{|w|}⟧
 \end{aligned}$$
 
 The whole word is one column longer than the remaining columns.
 So the value of each of its rows is the first bit plus twice the value of the remaining bits, and its carry out term is twice the carry out term of the remaining columns:
 
 $$\begin{aligned}
-\mathrm{row}_1(w') &= x + 2 \cdot \mathrm{row}_1(w) \\
-\mathrm{row}_2(w') &= y + 2 \cdot \mathrm{row}_2(w) \\
-\mathrm{row}_3(w') &= z + 2 \cdot \mathrm{row}_3(w) \\
-c_{\mathrm{out}} \cdot 2^{|w'|} &= 2 \cdot \bigl(c_{\mathrm{out}} \cdot 2^{|w|}\bigr)
+\mathrm{row}_1(w) &= x + 2 \cdot \mathrm{row}_1(w') \\
+\mathrm{row}_2(w) &= y + 2 \cdot \mathrm{row}_2(w') \\
+\mathrm{row}_3(w) &= z + 2 \cdot \mathrm{row}_3(w') \\
+c_{\mathrm{out}} \cdot 2^{|w|} &= 2 \cdot \bigl(c_{\mathrm{out}} \cdot 2^{|w'|}\bigr)
 \end{aligned}$$
 
-If we write $a$, $b$ and $d$ for the values of the rows of the remaining columns and $k$ for their carry out term $c_{\mathrm{out}} \cdot 2^{|w|}$, the goal becomes:
+If we write $a$, $b$ and $d$ for the values of the rows of the remaining columns and $k$ for their carry out term $c_{\mathrm{out}} \cdot 2^{|w'|}$, the goal becomes:
 
 $$\begin{aligned}
 &\bigl(\exists\, c_{\mathrm{mid}} :\; x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{mid}} \;\land \\
@@ -1215,28 +1221,35 @@ The goal is `least_significant_bit_split` with the two sides of the equivalence 
 An equivalence holds in both directions, so the lemma closes the goal.
 This concludes the proof of the inductive step, and with it the proof of the run invariant.
 
-Now let's review what the proof looks like in Lean:
+Next let's review what the proof of the inductive step looks like in Lean:
 
 ```lean
-| cons column columnsLE induction_hypothesis =>
-  obtain ⟨x, y, z⟩ := column
-  rw [split_run]
-  simp_rw [first_step_adds, induction_hypothesis]
-  simp only [
-    WordAddsWithCarry,
-    row1LE_cons, row2LE_cons, row3LE_cons,
-    List.length_cons, pow_succ
-  ]
-  simpa [
-    WholeRunAddition, SplitRunAddition,
-    Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm,
-    Nat.add_assoc, Nat.add_comm, Nat.add_left_comm
-  ] using
-    (least_significant_bit_split x y z carryIn
-      (row1LE columnsLE)
-      (row2LE columnsLE)
-      (row3LE columnsLE)
-      (carryOut.toNat * 2 ^ columnsLE.length)).symm
+lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
+    RunEndsWithCarry carryIn wLE carryOut ↔
+      WordAddsWithCarry carryIn wLE carryOut := by
+  induction wLE generalizing carryIn with
+  -- base case
+  | nil => ...
+  -- inductive step
+  | cons column columnsLE induction_hypothesis =>
+    obtain ⟨x, y, z⟩ := column
+    rw [split_run]
+    simp_rw [first_step_adds, induction_hypothesis]
+    simp only [
+      WordAddsWithCarry,
+      row1LE_cons, row2LE_cons, row3LE_cons,
+      List.length_cons, pow_succ
+    ]
+    simpa [
+      WholeRunAddition, SplitRunAddition,
+      Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm,
+      Nat.add_assoc, Nat.add_comm, Nat.add_left_comm
+    ] using
+      (least_significant_bit_split x y z carryIn
+        (row1LE columnsLE)
+        (row2LE columnsLE)
+        (row3LE columnsLE)
+        (carryOut.toNat * 2 ^ columnsLE.length)).symm
 ```
 
 `obtain ⟨x, y, z⟩ := column` destructures the column into its three bits, like `let (x, y, z) = column` would in a regular program.
@@ -1247,9 +1260,60 @@ Now let's review what the proof looks like in Lean:
 `simp_rw [first_step_adds, induction_hypothesis]` is steps 2 and 3.
 `simp_rw` is like `rw`, but it can also rewrite under the `∃`, which `rw` can't do.
 
-The `simp only` line unfolds `WordAddsWithCarry` on both sides of the goal, and then splits the first column off from the whole word on the right-hand side.
+At this point the DFA is gone from the goal and we're working with arithmetic only.
+The goal is now:
+
+```lean
+(∃ carryMid,
+  x + y + carryIn = z + 2 * carryMid ∧
+  WordAddsWithCarry carryMid columnsLE carryOut) ↔
+    WordAddsWithCarry carryIn ((x, y, z) :: columnsLE) carryOut
+```
+
+The `simp only` line first unfolds `WordAddsWithCarry` on both sides of the goal, but we'll just focus on the right hand-side of the equivalence, as the goal gets too large to fit otherwise.
+So `simp only` first rewrites
+
+```lean
+WordAddsWithCarry carryIn ((x, y, z) :: columnsLE) carryOut
+```
+
+as
+
+```lean
+row1LE ((x, y, z) :: columnsLE) + row2LE ((x, y, z) :: columnsLE) + carryIn =
+  row3LE ((x, y, z) :: columnsLE) + carryOut * 2 ^ ((x, y, z) :: columnsLE).length
+```
+
+Then it splits the first column off from the whole word on the right-hand side using the `rowLE_cons` lemmas:
+
+```lean
+⟦x + 2 * row1LE columnsLE⟧ + (⟦y + 2 * row2LE columnsLE⟧) + carryIn =
+  ⟦z + 2 * row3LE columnsLE⟧ + carryOut * 2 ^ ((x, y, z) :: columnsLE).length
+```
+
 The `rowLE_cons` lemmas say that the value of a row of `column :: columnsLE` is the column's bit plus twice the value of the same row of `columnsLE`.
+
+Finally, it does the same for the carry out term using `List.length_cons` and `pow_succ`:
+
+```lean
+x + 2 * row1LE columnsLE + (y + 2 * row2LE columnsLE) + carryIn =
+  z + 2 * row3LE columnsLE + carryOut * ⟦(2 ^ columnsLE.length * 2)⟧
+```
+
 `List.length_cons` says that `column :: columnsLE` is one longer than `columnsLE`, and `pow_succ` rewrites $2^{n+1}$ as $2^n \cdot 2$.
+
+Adding back the left-hand side of the equivalence, the goal is now
+
+```lean
+(∃ carryMid,
+  x + y + carryIn = z + 2 * carryMid ∧
+  row1LE columnsLE + row2LE columnsLE + carryMid =
+    row3LE columnsLE + carryOut * 2 ^ columnsLE.length) ↔
+    x + 2 * row1LE columnsLE + (y + 2 * row2LE columnsLE) + carryIn =
+      z + 2 * row3LE columnsLE + carryOut * (2 ^ columnsLE.length * 2)
+```
+
+This isn't pretty, but it's actually pretty close to the shape of the `least_significant_bit_split` lemma, so the end is in sight.
 
 The last tactic is step 4 of the plan.
 We pass the values that $a$, $b$, $d$ and $k$ stand for to `least_significant_bit_split`, and `.symm` swaps the two sides of the equivalence to match the goal.
