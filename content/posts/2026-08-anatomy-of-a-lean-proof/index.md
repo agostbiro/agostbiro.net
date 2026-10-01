@@ -1545,7 +1545,7 @@ I'm a bit skeptical about this, because in my experience the interface between p
 And if there is something weird in the proof, that's a good indication that the spec is off.
 So my feeling is that while we can probably start treating formally verified implementations as opaque artifacts, it's important going forward that we understand machine generated proofs.
 
-In any case, I think the future of software engineering is super exciting, because formal methods will let us work at a higher level of abstraction while making us more productive thanks to increased automation.
+In any case, I think the future of software engineering is super exciting, because formal methods will let us work at a higher level of abstraction while making us more productive as it enables more automation.
 
 [^1]: Instead of using the `LE/BE` convention to distinguish between interpretations of lists of bits, we could introduce separate types for little- and big-endian lists of bits to prevent mixing them up. However this would require re-deriving many of the theorems that are already available for native lists, so it's not worth it for a project of this scope.
 
