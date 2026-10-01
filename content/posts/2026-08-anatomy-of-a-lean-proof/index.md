@@ -27,7 +27,8 @@ For example, finite automata are relevant for parsers and regular expressions, w
 
 ### Deterministic Finite Automaton (DFA)
 
-A **deterministic finite automaton** (DFA) is a machine with a fixed, finite set of states that reads its input one symbol at a time, left to right, updating its state with each symbol using a deterministic transition function.
+A **deterministic finite automaton** (DFA) is a machine with a fixed, finite set of states that reads its input one symbol at a time, left to right.
+With each symbol, it updates its state using a deterministic transition function.
 After the last symbol, the machine either sits in an *accepting* state (input is accepted) or not (input is rejected).
 
 If you've ever written a simple regular expression like `-?[0-9]+`, then you've constructed a DFA. 
@@ -119,7 +120,8 @@ The challenge is that we need to do this with a fixed amount of memory for arbit
 
 ## The Solution
 
-The trick is to remember how you add numbers by hand: you work from the least significant digit to the most significant, and the only thing you carry from one column to the next is the carry.
+The trick is to remember how you add numbers by hand: you work from the least significant digit to the most significant.
+The only thing you carry from one column to the next is the carry.
 
 But a DFA reads left to right, and the problem presents the numbers most significant bit first.
 So we don't recognize $B$ directly. 
@@ -177,7 +179,8 @@ The run ends in carry 0 (the accepting state), so the reversed word is in $B^{\m
 By the definition of $B^{\mathcal{R}}$, the original word is in $B$ as well.
 
 Note that the machine passes *through* the non-accepting carry 1 state twice.
-Had the word stopped after either of the first two columns, it would have been rejected, since $\mathtt{1} + \mathtt{1} = \mathtt{0}$ and $\mathtt{11} + \mathtt{01} = \mathtt{00}$ are both wrong without somewhere to put the carry.
+Had the word stopped after either of the first two columns, it would have been rejected.
+$\mathtt{1} + \mathtt{1} = \mathtt{0}$ and $\mathtt{11} + \mathtt{01} = \mathtt{00}$ are both wrong without somewhere to put the carry.
 
 ### Example 2
 
@@ -211,7 +214,8 @@ The Lean proof will consist of three parts:
 
 Lean's [Mathlib](https://lean-lang.org/use-cases/mathlib/) has first-class support for formal languages and DFAs, so we will just need to build on structures from the library for the specification and the implementation.
 
-For the proof, we'll have to do more work, but Mathlib will be helpful here as well, as it contains the theorem that regular languages are closed under reversal, which will save a lot of work.
+For the proof, we'll have to do more work, but Mathlib will be helpful here as well.
+It contains the theorem that regular languages are closed under reversal, which will save a lot of work.
 The proof will contain some unfamiliar syntax, but under the hood it's just a program.
 In fact, the proof is accepted if the program compiles.
 
@@ -527,7 +531,8 @@ which reads as
 
 </div>
 
-For members of `B.reverse` where the starting and ending carry are both 0, this is equivalent to our first attempt, but it holds for intermediate steps as well where both carry in and carry out may be non-zero.
+With both carries set to 0, this is equivalent to our first attempt.
+But it holds for intermediate steps as well, where both carry in and carry out may be non-zero.
 
 #### Run Invariant Proof
 
@@ -583,7 +588,8 @@ In the `cons` case we get to name the first column, the remaining columns, and t
 
 The `generalizing carryIn` part is important.
 Without it, the induction hypothesis would only talk about runs that start with the same `carryIn` as the run we are looking at.
-But in the inductive step we peel off the first column, and the run over the remaining columns starts with the carry that the first column produced, which is not necessarily the same value that `carryIn` had.
+But in the inductive step we peel off the first column.
+The run over the remaining columns then starts with the carry that the first column produced, which is not necessarily the same value that `carryIn` had.
 `generalizing` makes the induction hypothesis hold for every starting carry.
 The ending carry is the same for the whole run, so `carryOut` can stay fixed.
 
@@ -680,7 +686,8 @@ The `<;>` combinator runs the tactic on its right on every goal produced by the 
 `simp` then closes each of them.
 
 `simp` is one of the most commonly used tactics in Lean.
-It rewrites the goal using a database of simplification rules plus the definitions and lemmas that we pass to it in the square brackets, and it closes the goal if the goal ends up as something trivially true.
+It rewrites the goal using a database of simplification rules plus the definitions and lemmas that we pass to it in the square brackets.
+It closes the goal if the goal ends up as something trivially true.
 Here it unfolds `RunEndsWithCarry`, `WordAddsWithCarry`, the row values and `evalFrom`, evaluates the arithmetic, and is left with goals like `false = false`, which it knows how to close.
 
 ##### Inductive Step
@@ -719,7 +726,8 @@ lemma split_run (column : Sigma3) (columns : List Sigma3)
 ```
 
 This is step 1 of the plan.
-The lemma says that a run over the word in the inductive step (`column :: columns`) ends in `carryOut` if and only if there is an intermediate carry `carryMid` such that the first column takes the DFA to `carryMid` and the rest of the run from `carryMid` ends in `carryOut`.
+The lemma says that a run over the word in the inductive step (`column :: columns`) ends in `carryOut` if and only if there is an intermediate carry `carryMid` with two properties.
+The first column takes the DFA to `carryMid`, and the rest of the run from `carryMid` ends in `carryOut`.
 
 As a reminder, the definition of `RunEndsWithCarry` is:
 
@@ -984,7 +992,8 @@ lemma least_significant_bit_split
 ```
 
 This is step 4 of the plan.
-As with the run invariant, both sides of the equivalence get their own name to make it easier to read: `WholeRunAddition` is the addition equation for the whole word, and `SplitRunAddition` is the same equation split in two.
+As with the run invariant, both sides of the equivalence get their own name to make it easier to read.
+`WholeRunAddition` is the addition equation for the whole word, and `SplitRunAddition` is the same equation split in two.
 
 The lemma says that the addition equation for the whole word holds if and only if there is an intermediate carry `carryMid` such that the adder equation holds for the least significant bits and the addition equation holds for the remaining bits.[^10]
 The shape of this lemma mirrors `split_run`, but it's just arithmetic, the DFA doesn't appear in it.
@@ -1023,7 +1032,9 @@ Circling back to our goal, we need to show that `WholeRunAddition` and `SplitRun
 `WholeRunAddition` is a simple linear equation, but `SplitRunAddition` has an existential and a conjunction.
 If we can turn `SplitRunAddition` into a linear equation, then we can close the goal by showing that the two linear equations are equivalent which is easy.
 
-We're going to use the same trick that we used when [splitting the run](#splitting-the-run): if the first part of the conjunction is only true for a single value of $c_{\mathrm{mid}}$, then we can substitute that value in the second conjunct and drop the existential and the first conjunct.
+We're going to use the same trick that we used when [splitting the run](#splitting-the-run).
+If the first part of the conjunction is only true for a single value of $c_{\mathrm{mid}}$, we can substitute that value in the second conjunct.
+Then we can drop the existential and the first conjunct.
 As a reminder, this is the first conjunct:
 
 $$\exists\, c_{\mathrm{mid}} :\; x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{mid}}$$
@@ -1160,7 +1171,8 @@ lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
 ```
 
 With the helper lemmas in place, we can return to the inductive step of the run invariant.
-We're going to prove it by following the four steps of the plan: the first three turn the DFA on the left-hand side of the equivalence into arithmetic, and the fourth shows that the arithmetic on the two sides says the same thing.
+We're going to prove it by following the four steps of the plan.
+The first three turn the DFA on the left-hand side of the equivalence into arithmetic, and the fourth shows that the arithmetic on the two sides says the same thing.
 We'll run through the informal argument first and then we'll have a look at how it's formalized in Lean.
 
 In the inductive step the word is `column :: columnsLE`, so the goal is the run invariant for this word:
@@ -1227,7 +1239,8 @@ $$\begin{aligned}
 \end{aligned}$$
 
 The whole word is one column longer than the remaining columns.
-So the value of each of its rows is the first bit plus twice the value of the remaining bits, and its carry out term is twice the carry out term of the remaining columns:
+So the value of each of its rows is the first bit plus twice the value of the remaining bits.
+Its carry out term is twice the carry out term of the remaining columns:
 
 $$\begin{aligned}
 \mathrm{row}_1(w) &= x + 2 \cdot \mathrm{row}_1(w') \\
@@ -1337,7 +1350,8 @@ x + 2 * row1LE columnsLE + (y + 2 * row2LE columnsLE) + carryIn =
 `List.length_cons` says that `column :: columnsLE` is one longer than `columnsLE`, and `pow_succ'` rewrites $2^{n+1}$ as $2 \cdot 2^n$.
 
 At this point there is just one small thing that we need to fix before we can conclude the proof using `least_significant_bit_split`.
-The lemma has a $2 \cdot k$ term, where $k$ stands for the carry out term of the remaining columns, so it expects `2 * (carryOut * 2 ^ columnsLE.length)`, but we have `carryOut * (2 * 2 ^ columnsLE.length)`.
+The lemma has a $2 \cdot k$ term, where $k$ stands for the carry out term of the remaining columns.
+So it expects `2 * (carryOut * 2 ^ columnsLE.length)`, but we have `carryOut * (2 * 2 ^ columnsLE.length)`.
 
 `rw [Nat.mul_left_comm]` fixes this.
 `Nat.mul_left_comm` states `a * (b * c) = b * (a * c)`, so rewriting with it swaps `carryOut` and `2` on the right-hand side of the equivalence:
