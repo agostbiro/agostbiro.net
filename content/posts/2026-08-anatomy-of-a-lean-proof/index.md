@@ -669,26 +669,29 @@ lemma run_invariant (wLE : List Sigma3) (carryIn carryOut : Bool) :
     RunEndsWithCarry carryIn wLE carryOut ↔
       WordAddsWithCarry carryIn wLE carryOut := by
   induction wLE generalizing carryIn with
-  | nil =>  -- base case
-    cases carryIn <;> cases carryOut <;>
-      simp [
-          RunEndsWithCarry, WordAddsWithCarry,
-          row1LE, row2LE, row3LE,
-          valueLE,
-          row1, row2, row3,
-          DFA.evalFrom
-      ]
+  -- base case
+  | nil =>
+    unfold RunEndsWithCarry WordAddsWithCarry
+    revert carryIn carryOut
+    decide
+  -- inductive step
   | cons column columnsLE induction_hypothesis => ...
 ```
 
-The `cases` tactic splits a goal into one goal per constructor of a type, so `cases carryIn` gives us two goals, one with `carryIn` replaced by `false` and one with `true`.
-The `<;>` combinator runs the tactic on its right on every goal produced by the tactic on its left, so `cases carryIn <;> cases carryOut` leaves us with four goals.
-`simp` then closes each of them.
+We let `decide` check the four rows of the table, like it checked the single `dfaStep` step in [How Proofs Work](#how-proofs-work), but it needs two things set up first.
 
-`simp` is one of the most commonly used tactics in Lean.
-It rewrites the goal using a database of simplification rules plus the definitions and lemmas that we pass to it in the square brackets.
-It closes the goal if the goal ends up as something trivially true.
-Here it unfolds `RunEndsWithCarry`, `WordAddsWithCarry`, the row values and `evalFrom`, evaluates both sides to true or false, and closes the goal when they agree.
+`decide` cannot see through a definition on its own, so `unfold RunEndsWithCarry WordAddsWithCarry` replaces the two names with their definitions.
+`decide` also needs a proposition without free variables, but `carryIn` and `carryOut` are arguments of the lemma.
+`revert carryIn carryOut` moves them back into the goal, which is now a statement about all values of both carries:
+
+```lean
+∀ carryOut carryIn : Bool,
+  adderDFA.evalFrom (.carry carryIn) [] = .carry carryOut ↔
+    row1LE [] + row2LE [] + carryIn =
+      row3LE [] + carryOut * 2 ^ [].length
+```
+
+A statement about all values of finitely many booleans is decidable, so `decide` evaluates both sides of the equivalence for each of the four rows and closes the goal because they always agree.
 
 ##### Inductive Step
 
@@ -808,6 +811,11 @@ lemma split_run (column : Sigma3) (columnsLE : List Sigma3)
     simp only [DFAState.carry.injEq, exists_eq_left']
 ```
 
+`simp` is one of the most commonly used tactics in Lean.
+It rewrites the goal using a database of simplification rules plus the definitions and lemmas that we pass to it in the square brackets.
+It closes the goal if the goal ends up as something trivially true.
+`simp only` restricts `simp` to the listed lemmas instead of its whole default set, which keeps the goal predictable.
+
 The first `simp only` line rewrites the lemma to a form with `dfaStep` on both sides of the equivalence:
 
 ```lean
@@ -818,9 +826,8 @@ adderDFA.evalFrom ⟦(dfaStep (.carry carryIn) column)⟧ columnsLE =
     adderDFA.evalFrom (.carry carryMid) columnsLE = .carry carryOut
 ```
 
-`simp only` restricts `simp` to the listed lemmas instead of its whole default set, which keeps the goal predictable.
-
-The `cases dfaStep (.carry carryIn) column` line introduces two new goals: one where the first step on the column ends up in dead state and one where it ends up in a carry state.
+The `cases` tactic splits a goal into one goal per constructor of a type.
+Here `cases dfaStep (.carry carryIn) column` introduces two new goals: one where the first step on the column ends up in dead state and one where it ends up in a carry state.
 
 The dead state case is proved with a helper lemma that we're going to skip over here as it follows directly from our definition of `dfaStep`.
 
@@ -960,16 +967,20 @@ Now let's review what the proof looks like in Lean:
 lemma first_step_adds (x y z carryIn carryOut : Bool) :
     dfaStep (.carry carryIn) (x, y, z) = .carry carryOut ↔
       x + y + carryIn = z + 2 * carryOut := by
-  cases x <;> cases y <;> cases z <;> cases carryIn <;>
-    cases carryOut <;>
-    simp [dfaStep]
+  revert x y z carryIn carryOut
+  decide
 ```
 
-The `cases <;>` chain is the same pattern as in the base case, with five booleans instead of two.
-Each `cases` doubles the number of goals, so after the chain we have 32 goals (one for each row of the truth table) with the 5 boolean variables replaced by true or false values.
+This is the same recipe as the base case of the run invariant. 
+`revert` moves the five boolean arguments back into the goal, so the goal becomes:
 
-Our old friend `simp` then closes each of these goals automatically by following the same procedure we did manually in the two examples.
-It unfolds `dfaStep` and evaluates both sides of the equivalence until each is either true or false, and closes the goal because the two sides always agree.
+```lean
+∀ x y z carryIn carryOut : Bool,
+  dfaStep (.carry carryIn) (x, y, z) = .carry carryOut ↔
+    x + y + carryIn = z + 2 * carryOut
+```
+
+`decide` then evaluates both sides of the equivalence for each of the 32 combinations.
 
 
 ##### Least Significant Bit Split
@@ -1129,7 +1140,8 @@ lemma least_significant_bit_split
     omega
 ```
 
-The `cases <;>` chain splits on the four bits, which gives 16 goals, one per case.
+The `<;>` combinator runs the tactic on its right on every goal produced by the tactic on its left.
+So `cases x <;> cases y` splits the goal on `x` and then splits each of the two resulting goals on `y`, and the chain of four `cases` gives 16 goals, one per combination of the four bits.
 `simp` then runs on each of them, and `omega` runs on whatever `simp` leaves behind.
 
 We won't go through the steps `simp` performs here, since we've seen it in action before.
