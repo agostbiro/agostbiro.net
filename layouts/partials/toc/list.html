@@ -1,0 +1,31 @@
+{{/* One level of the table of contents, as a <ul>. Calls itself for the levels
+     below. Takes a dict with `page`, the page the list is for, and `headings`,
+     a list of headings from .Fragments.
+
+     Only h2 to h5 are listed. The post title is the only h1, and Hugo puts an
+     empty placeholder at that level when the content has none, so anything
+     above h2 is skipped and only its children are rendered. */ -}}
+{{- $min := 2 -}}
+{{- $max := 5 -}}
+{{- $page := .page -}}
+{{- $items := slice -}}
+{{- range .headings -}}
+  {{- if and (ge .Level $min) (le .Level $max) .ID -}}
+    {{- $items = $items | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- range .headings -}}
+  {{- if and (lt .Level $min) .Headings -}}
+    {{- partial "toc/list.html" (dict "page" $page "headings" .Headings) -}}
+  {{- end -}}
+{{- end -}}
+{{- with $items }}
+<ul>
+  {{- range . }}
+  <li>
+    <a href="#{{ .ID }}">{{ partial "toc/title.html" (dict "page" $page "title" .Title) }}</a>
+    {{- with .Headings }}{{ partial "toc/list.html" (dict "page" $page "headings" .) }}{{ end }}
+  </li>
+  {{- end }}
+</ul>
+{{- end -}}

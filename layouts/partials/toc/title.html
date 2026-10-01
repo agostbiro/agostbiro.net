@@ -1,0 +1,14 @@
+{{/* The title of one heading in the table of contents. Takes a dict with
+     `page` and `title`, the .Title of a heading from .Fragments.
+
+     Hugo renders the title to HTML, but leaves math in it as the source text
+     with its delimiters. Each run of inline math is rendered here through
+     layouts/_markup/render-passthrough.html, the same as in the content. The
+     delimiters must match the inline ones in hugo.toml's passthrough config.
+
+     The title is HTML escaped, so the math is unescaped before rendering. */ -}}
+{{- $title := .title -}}
+{{- range findRE `\$[^$]+\$|\\\(.+?\\\)` .title | uniq -}}
+  {{- $title = replace $title . ($.page.RenderString (htmlUnescape .)) -}}
+{{- end -}}
+{{- $title | safeHTML -}}

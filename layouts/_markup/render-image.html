@@ -1,0 +1,37 @@
+{{- /* Inlines SVG figures instead of linking them.
+
+       An <img src="x.svg"> loads the SVG as its own document, so the styles
+       inside it can only see the OS colour scheme, never the page. This site
+       picks its appearance with a body[a="…"] attribute (see
+       partials/appearance_toggle.html), which such a figure cannot read: a
+       reader on a dark OS who switches the page to light gets light text on a
+       light page. Inlining puts the figure in the page's own document, so its
+       styles can key off body[a] like everything else.
+
+       Only SVG page resources are inlined. Anything else keeps the plain <img>
+       Hugo would have emitted. */ -}}
+{{- $src := strings.TrimPrefix "./" .Destination -}}
+{{- $res := "" -}}
+{{- with .PageInner -}}
+  {{- $res = .Resources.Get $src -}}
+{{- end -}}
+{{- if and $res (eq $res.MediaType.SubType "svg") -}}
+  {{- if .IsBlock -}}
+<figure>
+  {{ $res.Content | safeHTML }}
+  {{- with .Title }}
+  <figcaption>{{ . }}</figcaption>
+  {{- end }}
+</figure>
+  {{- else -}}
+    {{- $res.Content | safeHTML -}}
+  {{- end -}}
+{{- else -}}
+  {{- /* wrapStandAloneImageWithinParagraph is off for the sake of the <figure>
+         above, so the paragraph a block image used to get has to be put back
+         here. Without it these images lose the paragraph's vertical margins. */ -}}
+  {{- if .IsBlock }}<p>{{ end -}}
+  <img src="{{ .Destination | safeURL }}" alt="{{ .PlainText }}"
+    {{- with .Title }} title="{{ . }}"{{ end }}>
+  {{- if .IsBlock }}</p>{{ end -}}
+{{- end -}}

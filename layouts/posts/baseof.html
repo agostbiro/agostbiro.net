@@ -1,6 +1,6 @@
 {{/* Overrides the theme's posts/baseof.html. Identical to it, except for the
-     appearance_toggle partial right after <body> and the subscribe partial
-     after the main block. Posts carry no footer in the theme, so the signup
+     appearance_toggle partial right after <body>, the subscribe partial
+     after the main block, and the table of contents script. Posts carry no footer in the theme, so the signup
      form is the only thing following the article. Re-check against the
      theme's copy if the submodule is updated. */ -}}
 <!DOCTYPE html>
@@ -22,6 +22,11 @@
                 {{- partial "subscribe.html" . -}}
             </div>
         </main>
+        {{- /* Paired with layouts/partials/toc.html. */ -}}
+        {{- if .Params.toc -}}
+            {{ $tocJs := resources.Get "js/toc.js" | resources.Fingerprint "sha512" }}
+            <script src="{{ $tocJs.RelPermalink }}" integrity="{{ $tocJs.Data.Integrity }}"></script>
+        {{- end }}
     </body>
     {{- if .Params.custom_js -}}
         {{- range .Params.custom_js -}}

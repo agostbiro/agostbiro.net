@@ -35,15 +35,53 @@
   {{ $sass := resources.Get "css/custom.scss" }}
   {{ $style := $sass | css.Sass $options | resources.Fingerprint "sha512" }}
   <link rel="stylesheet" href="{{ $style.Permalink | relURL }}" integrity="{{ $style.Data.Integrity }}" />
+  {{- /* Syntax colors and code block backgrounds. Must come after the theme's
+         stylesheet: its `pre` background rule has the same specificity as the
+         one in code.scss, so source order decides. */ -}}
+  {{ $codeSass := resources.Get "css/code.scss" }}
+  {{ $codeStyle := $codeSass | css.Sass $options | resources.Fingerprint "sha512" }}
+  <link rel="stylesheet" href="{{ $codeStyle.Permalink | relURL }}" integrity="{{ $codeStyle.Data.Integrity }}" />
+  {{- /* Only posts with `toc: true` pay for the table of contents styles. */ -}}
+  {{- if .Params.toc }}
+  {{ $tocSass := resources.Get "css/toc.scss" }}
+  {{ $tocStyle := $tocSass | css.Sass $options | resources.Fingerprint "sha512" }}
+  <link rel="stylesheet" href="{{ $tocStyle.Permalink | relURL }}" integrity="{{ $tocStyle.Data.Integrity }}" />
+  {{- end }}
   <style>
     /* The theme's .w wrapper keeps a flat 2rem side padding at every width,
        which costs 64px of an already narrow phone screen. */
     @media (max-width: 480px) {
       .w { padding: 2rem 1rem; }
+
+      /* Browsers indent a blockquote by 40px on each side. That is a quarter
+         of a phone screen spent on nothing, and the theme puts a border and
+         another 1rem of padding inside it, so the text ends up in a very
+         narrow strip. Let the quote use the whole content column. */
+      blockquote { margin-left: 0; margin-right: 0; }
     }
 
     /* Paired with layouts/_markup/render-table.html. */
     .table-wrap { overflow-x: auto; }
+
+    /* Paired with layouts/_markup/render-image.html, which inlines SVG
+       figures. The theme's img rule cannot reach them, so they need the same
+       centring and shrink-to-fit treatment. width/height on the element would
+       otherwise pin an inlined SVG to its intrinsic size. */
+    figure { margin: 1rem 0; }
+    figure svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+    }
+    /* The theme paints figcaption with its secondary text colour, which is
+       #000000 in the dark palette: invisible on the dark background. Matching
+       its body[a="…"] specificity and coming later in the cascade, this wins.
+       The theme's own `opacity: 0.5` still sets the caption apart. */
+    body[a] figcaption { color: inherit; }
+    /* The theme leaves figcaption at body size, so a caption reads like a
+       paragraph. Smaller text marks it as a label for the figure above. */
+    figcaption { font-size: 0.875rem; }
 
     /* Injected by partials/appearance_toggle.html. Anchored to the content
        column rather than the viewport: a fixed element is placed against the
@@ -77,9 +115,60 @@
   {{- if and .RawContent (findRE `\$|\\\(|\\\[` .RawContent 1) }}
   <link rel="stylesheet" href="{{ "katex/katex.min.css" | relURL }}" />
   <style>
+    /* KaTeX ships `.katex { font: normal 1.21em … }`. That 1.21 is upstream's
+       correction for Computer Modern sitting small on a Times-like body: it
+       lifts the math x-height to roughly Times's. Charter's x-height is much
+       larger (0.481em against Times's 0.450em and Computer Modern's 0.435em),
+       so the same correction overshoots and the math ends up set noticeably
+       bigger than the prose around it.
+
+       No single factor can match both metrics, because Computer Modern's
+       x-height-to-cap ratio (0.63) is far below Charter's (0.72): matching
+       x-heights needs 1.11em and leaves the capitals 14% too tall, matching
+       capitals needs 0.97em and leaves the lowercase 10% too short. 1.05em
+       splits the difference, landing 5% under on x-height and 8% over on caps
+       — both small enough to read as the same size. Only the `font-size` is
+       overridden, so the shorthand's family and line-height still apply.
+
+       Note this also scales sub- and superscripts, which KaTeX sets at 0.7 of
+       the math size. They were already below the body size and now sit at
+       ~0.74em of it, which matters for a post leaning on $B^R$ inline. */
+    .katex { font-size: 1.05em; }
+
     /* A display formula wider than the column scrolls on its own rather than
        widening the page. */
     .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.2em 0; }
+
+    /* On a narrow screen display math shrinks with its box so that the
+       widest formula in a post still fits. All formulas get the same size,
+       rather than each shrinking only as much as it needs, so formulas that
+       follow each other match. The post body is a size container, so `cqi`
+       is the column width without the page padding. The factor is the widest
+       formula's font size over its width, rounded down a little, and has to
+       leave room for the blockquote indent too; re-measure it when a post
+       gets a wider formula. On a wide screen the `min` keeps the size set
+       above. Nothing inside <article> is position: fixed, which a container
+       would otherwise pin to itself instead of the screen.
+
+       A few formulas are much wider than the rest, and fitting everything to
+       them would leave most math tiny. A post can wrap such formulas in
+       <div class="wide-math">; they get a factor of their own and match each
+       other, while the rest is sized for the widest formula outside it. */
+    article { container-type: inline-size; }
+    .katex-display { --math-fit: 0.041; }
+    .wide-math .katex-display { --math-fit: 0.03; }
+    .katex-display > .katex {
+      font-size: min(1.05em, calc(100cqi * var(--math-fit)));
+    }
+
+    /* Highlighted math (layouts/_markup/render-passthrough.html) is a KaTeX
+       \colorbox, which pads its content by 0.3em on every side. That is a lot
+       more than the highlight in a code block has, and it pushes the math
+       around it apart. The side padding can simply be set. The top and bottom
+       padding is baked into inline heights, so the box is clipped there
+       instead. The colour itself is set in assets/css/code.scss. */
+    .katex .boxpad { padding: 0 0.1em; }
+    .katex .colorbox { clip-path: inset(0.2em 0); }
   </style>
   {{- end }}
 </head>
