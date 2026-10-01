@@ -59,8 +59,8 @@
   <circle cx="90" cy="98" r="38" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
   <text class="t" x="90" y="98" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central">carry 0</text>
 
-  <circle cx="380" cy="98" r="38" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
-  <text class="t" x="380" y="98" fill="#0C447C" text-anchor="middle" dominant-baseline="central">carry mid</text>
+  <circle cx="380" cy="98" r="38" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text class="t" x="380" y="98" fill="#04342C" text-anchor="middle" dominant-baseline="central">carry mid</text>
 
   <circle cx="670" cy="98" r="38" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
   <text class="t" fill="#2C2C2A" text-anchor="middle" dominant-baseline="central"><tspan x="670" y="89">carry out</tspan><tspan x="670" y="107">term k</tspan></text>
