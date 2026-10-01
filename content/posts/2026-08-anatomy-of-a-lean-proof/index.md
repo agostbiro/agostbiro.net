@@ -437,7 +437,7 @@ The `(L : Language T)` argument means that the language can have any type of sym
 The return type is again `Prop`.
 
 `∃ σ [Fintype σ]` says that there is a finite number of states.
-The interesting part is `∃ M : DFA T σ, M.accepts = L` which says that a language is regular if the language accepted by some DFA over those states equals the language.
+The interesting part is `∃ M : DFA T σ, M.accepts = L`, which says that `L` is regular if some DFA over those states accepts exactly `L`.
 So when does a DFA accept a language?
 
 The language a DFA accepts in Mathlib is [defined](https://github.com/leanprover-community/mathlib4/blob/v4.32.0/Mathlib/Computability/DFA.lean#L123-L124) like this:[^7]
