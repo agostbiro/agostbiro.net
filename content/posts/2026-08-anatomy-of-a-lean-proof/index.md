@@ -1518,6 +1518,35 @@ We use the `mp` field here to turn the theorem which has type `L.reverse.IsRegul
 
 We pass this function `B_reverse_isRegular`, and we get back a term with type `B.IsRegular` which is the proof that `B` is regular.
 
+## Outro
+
+We set out to formally prove that the language $B$ is regular and we now have a proof that Lean accepts, so we've achieved our goal.
+
+In the process we've also created a formally verified implementation of a DFA that we can use to recognize the language.
+Our implementation is in Lean, which is pretty fast as it compiles to C, but there are also techniques to generate implementations from Lean specs in other languages such as Rust.
+
+As you could see, the formal proof needed a lot of details that we'd normally skip over.
+It is a lot of work to write proofs like this even though we had it relatively easy with the adder DFA.
+We could turn its behavior into arithmetic until we were left with some simple linear equations to solve.
+
+Proofs are usually not this simple in formal verification.
+For example, distributed systems need temporal logic and cryptographic primitives often have game or simulation based proofs.
+Proofs involing these topics are a lot harder to work with.
+
+Fortunately in 2026 machines can write proofs for us.
+State-of-the-art coding agents can one-shot a proof like ours and they're rapidly getting better at tackling more complex ones as well.
+Simultaneously, interactive proof assistants are improving to make complex proofs more efficient to write.
+This means that the cost of formal verification is rapidly decreasing which is creating a lot of excitement in the field.
+
+As we've seen, formally verified software consists of a specification, an implementation and the proof that the implementation matches the specification. 
+It's tempting to think that with coding agents human can just focus on making sure the specs are correct and then the machine-generated proof and the implementation can be treated as opaque artifacts.
+
+I'm a bit skeptical about this, because in my experience the interface between proof and specification is not so clear, as one often has to look at the proof to understand the spec.
+And if there is something weird in the proof, that's a good indication that the spec is off.
+So my feeling is that while we can probably start treating formally verified implementations as opaque artifacts, it's important going forward that we understand machine generated proofs.
+
+In any case, I think the future of software engineering is super exciting, because formal methods will let us work at a higher level of abstraction while making us more productive thanks to increased automation.
+
 [^1]: Instead of using the `LE/BE` convention to distinguish between interpretations of lists of bits, we could introduce separate types for little- and big-endian lists of bits to prevent mixing them up. However this would require re-deriving many of the theorems that are already available for native lists, so it's not worth it for a project of this scope.
 
 [^2]: Set as a collection is available as `Std.HashSet` and `Std.TreeSet`.
