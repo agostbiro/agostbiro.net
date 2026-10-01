@@ -716,17 +716,17 @@ Steps 1, 2 and 4 each get their own helper lemma, so let's look at those first.
 ##### Splitting the Run
 
 ```lean
-lemma split_run (column : Sigma3) (columns : List Sigma3)
+lemma split_run (column : Sigma3) (columnsLE : List Sigma3)
     (carryIn carryOut : Bool) :
-    RunEndsWithCarry carryIn (column :: columns) carryOut ↔
+    RunEndsWithCarry carryIn (column :: columnsLE) carryOut ↔
       ∃ carryMid,
         dfaStep (.carry carryIn) column = .carry carryMid ∧
-        RunEndsWithCarry carryMid columns carryOut := by
+        RunEndsWithCarry carryMid columnsLE carryOut := by
     ...
 ```
 
 This is step 1 of the plan.
-The lemma says that a run over the word in the inductive step (`column :: columns`) ends in `carryOut` if and only if there is an intermediate carry `carryMid` with two properties.
+The lemma says that a run over the word in the inductive step (`column :: columnsLE`) ends in `carryOut` if and only if there is an intermediate carry `carryMid` with two properties.
 The first column takes the DFA to `carryMid`, and the rest of the run from `carryMid` ends in `carryOut`.
 
 As a reminder, the definition of `RunEndsWithCarry` is:
@@ -740,52 +740,52 @@ def RunEndsWithCarry (carryIn : Bool) (wLE : List Sigma3)
 so unfolding `RunEndsWithCarry` leaves us with the following goal:
 
 ```lean
-⟦adderDFA.evalFrom (.carry carryIn) (column :: columns) =⟧
+⟦adderDFA.evalFrom (.carry carryIn) (column :: columnsLE) =⟧
     ⟦.carry carryOut ↔⟧
   ∃ carryMid,
     dfaStep (.carry carryIn) column = .carry carryMid ∧
-    ⟦adderDFA.evalFrom (.carry carryMid) columns = .carry carryOut⟧
+    ⟦adderDFA.evalFrom (.carry carryMid) columnsLE = .carry carryOut⟧
 ```
 
 
 We're going to prove this by rewriting both sides to be the same statement. 
 We'll run through the informal argument first and then we'll have a look at how it's formalized in Lean.
 
-First, we split the left-hand side into a single step on the first column followed by a run over `columns` from the state that the step lands in:
+First, we split the left-hand side into a single step on the first column followed by a run over `columnsLE` from the state that the step lands in:
 
 ```lean
-adderDFA.evalFrom ⟦(dfaStep (.carry carryIn) column)⟧ columns =
+adderDFA.evalFrom ⟦(dfaStep (.carry carryIn) column)⟧ columnsLE =
     .carry carryOut ↔
   ∃ carryMid,
     dfaStep (.carry carryIn) column = .carry carryMid ∧
-    adderDFA.evalFrom (.carry carryMid) columns = .carry carryOut
+    adderDFA.evalFrom (.carry carryMid) columnsLE = .carry carryOut
 ```
 
 Below is a visual representation of the split:
 
-![The run over column :: columns split into a single step on column that lands in carry mid, followed by a run over columns from carry mid](./assets/split-run.svg "The run over the whole word is a single step on the first column followed by a run over the rest")
+![The run over column :: columnsLE split into a single step on column that lands in carry mid, followed by a run over columnsLE from carry mid](./assets/split-run.svg "The run over the whole word is a single step on the first column followed by a run over the rest")
 
-We now have `dfaStep (DfaState.carry carryIn) column` on both sides of the equivalence.
+We now have `dfaStep (.carry carryIn) column` on both sides of the equivalence.
 Next, let's assume that the first step on `column` ends in a carry state `c`.
 Then we have
 
 ```lean
-adderDFA.evalFrom ⟦(.carry c)⟧ columns = .carry carryOut ↔
+adderDFA.evalFrom ⟦(.carry c)⟧ columnsLE = .carry carryOut ↔
   ∃ carryMid,
     ⟦.carry c⟧ = .carry carryMid ∧
-    adderDFA.evalFrom (.carry carryMid) columns = .carry carryOut
+    adderDFA.evalFrom (.carry carryMid) columnsLE = .carry carryOut
 ```
 
 The right-hand side of the equivalence is only true if `c = carryMid`, therefore we can drop the existential and the first conjunct and rewrite it as
 
 ```lean
-adderDFA.evalFrom (.carry c) columns = .carry carryOut ↔
-    adderDFA.evalFrom (.carry ⟦c⟧) columns = .carry carryOut
+adderDFA.evalFrom (.carry c) columnsLE = .carry carryOut ↔
+    adderDFA.evalFrom (.carry ⟦c⟧) columnsLE = .carry carryOut
 ```
 
 which matches the left-hand side exactly.
 
-So far we have assumed that `dfaStep (DfaState.carry carryIn) column` ends up in a carry state `c`, but the step on the column can also end up in a dead state.
+So far we have assumed that `dfaStep (.carry carryIn) column` ends up in a carry state `c`, but the step on the column can also end up in a dead state.
 The right-hand side is explicitly only true if the first step ends in a carry state, but the left-hand side could potentially allow a dead state on the first step. 
 Except we know that the dead state is a sink (a run starting in a dead state ends in a dead state) which makes the left-hand side false too.
 Both sides are false, so the equivalence holds, which concludes the proof.
@@ -793,12 +793,12 @@ Both sides are false, so the equivalence holds, which concludes the proof.
 Now let's review what the proof looks like in Lean:
 
 ```lean
-lemma split_run (column : Sigma3) (columns : List Sigma3)
+lemma split_run (column : Sigma3) (columnsLE : List Sigma3)
     (carryIn carryOut : Bool) :
-    RunEndsWithCarry carryIn (column :: columns) carryOut ↔
+    RunEndsWithCarry carryIn (column :: columnsLE) carryOut ↔
       ∃ carryMid,
         dfaStep (.carry carryIn) column = .carry carryMid ∧
-        RunEndsWithCarry carryMid columns carryOut := by
+        RunEndsWithCarry carryMid columnsLE carryOut := by
   simp only [RunEndsWithCarry, DFA.evalFrom_cons, adderDFA_step]
   cases dfaStep (.carry carryIn) column with
   | dead => 
@@ -811,14 +811,14 @@ lemma split_run (column : Sigma3) (columns : List Sigma3)
 The first `simp only` line rewrites the lemma to a form with `dfaStep` on both sides of the equivalence:
 
 ```lean
-adderDFA.evalFrom ⟦(dfaStep (.carry carryIn) column)⟧ columns =
+adderDFA.evalFrom ⟦(dfaStep (.carry carryIn) column)⟧ columnsLE =
     .carry carryOut ↔
   ∃ carryMid,
     dfaStep (.carry carryIn) column = .carry carryMid ∧
-    adderDFA.evalFrom (.carry carryMid) columns = .carry carryOut
+    adderDFA.evalFrom (.carry carryMid) columnsLE = .carry carryOut
 ```
 
-`simp only` restricts `simp` to the listed lemmas instead of its whole default set which is useful and sometimes necessary to make things more explicit.
+`simp only` restricts `simp` to the listed lemmas instead of its whole default set, which keeps the goal predictable.
 
 The `cases dfaStep (.carry carryIn) column` line introduces two new goals: one where the first step on the column ends up in dead state and one where it ends up in a carry state.
 
@@ -836,32 +836,32 @@ cases dfaStep (.carry carryIn) column with
 Which leaves us with the following goal:
 
 ```lean
-adderDFA.evalFrom ⟦(.carry c)⟧ columns = .carry carryOut ↔
+adderDFA.evalFrom ⟦(.carry c)⟧ columnsLE = .carry carryOut ↔
   ∃ carryMid,
     ⟦.carry c⟧ = .carry carryMid ∧
-    adderDFA.evalFrom (.carry carryMid) columns = .carry carryOut
+    adderDFA.evalFrom (.carry carryMid) columnsLE = .carry carryOut
 ```
 
 Earlier we took it for granted that `.carry c = .carry carryMid` implies `c = carryMid`, but we need a formal argument for this now.
 Luckily constructors like `DfaState.carry` are injective in Lean, meaning that if two values built with the same constructor are equal, then their arguments are equal.
-This useful fact is provided by the automatically generated `DfaState.carry.injEq` theorem which `simp` uses to hoist `c` and `carryMid` out of the `.carry` constructor:
+This useful fact is provided by the automatically generated `DfaState.carry.injEq` theorem which `simp` uses to pull `c` and `carryMid` out of the `.carry` constructor:
 
 ```lean
-adderDFA.evalFrom (.carry c) columns = .carry carryOut ↔
+adderDFA.evalFrom (.carry c) columnsLE = .carry carryOut ↔
   ∃ carryMid,
     ⟦c⟧ = ⟦carryMid⟧ ∧
-    adderDFA.evalFrom (.carry carryMid) columns = .carry carryOut
+    adderDFA.evalFrom (.carry carryMid) columnsLE = .carry carryOut
 ```
 
 Then we use the theorem `exists_eq_left'` from the standard library to close the goal.
 The theorem states `(∃ a, a' = a ∧ p a) ↔ p a'` which lets us substitute `carryMid` with `c` and drop the existential and the first conjunct:
 
 ```lean
-adderDFA.evalFrom (.carry c) columns = .carry carryOut ↔
-    adderDFA.evalFrom (.carry ⟦c⟧) columns = .carry carryOut
+adderDFA.evalFrom (.carry c) columnsLE = .carry carryOut ↔
+    adderDFA.evalFrom (.carry ⟦c⟧) columnsLE = .carry carryOut
 ```
 
-This concludes the proof since both sides of the equivalence are the same now.
+Both sides of the equivalence are the same now, so `simp` closes this goal by itself, which concludes the proof.
 
 ##### First Step Adds
 

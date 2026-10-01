@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" class="fig-split-run" width="760" height="168" viewBox="0 0 760 168" role="img">
-  <title>Splitting a run: the run from carry in over column :: columns is the same as a single step on column, landing in an intermediate carry, followed by a run over columns from that carry.</title>
+  <title>Splitting a run: the run from carry in over column :: columnsLE is the same as a single step on column, landing in an intermediate carry, followed by a run over columnsLE from that carry.</title>
   <style>
     /* Labels, brackets and arrows sit on the page background, so they have to
        follow the page's colour scheme. The state circles keep their own light
@@ -39,7 +39,7 @@
   </defs>
 
   <!-- the whole run, spanning all three states -->
-  <text class="n" x="380" y="14">adderDFA.evalFrom (.carry carryIn) (column :: columns)</text>
+  <text class="n" x="380" y="14">adderDFA.evalFrom (.carry carryIn) (column :: columnsLE)</text>
   <path class="brk" d="M52 30 V24 H708 V30"/>
 
   <!-- states -->
@@ -56,14 +56,14 @@
   <line x1="132" y1="92" x2="340" y2="92" class="arr" marker-end="url(#arrow-split-run)"/>
   <text class="n" x="236" y="65">column</text>
 
-  <!-- the rest of the run, on columns -->
+  <!-- the rest of the run, on columnsLE -->
   <line x1="422" y1="92" x2="628" y2="92" class="arr" marker-end="url(#arrow-split-run)"/>
-  <text class="n" x="525" y="65">columns</text>
+  <text class="n" x="525" y="65">columnsLE</text>
 
   <!-- the two pieces -->
   <path class="brk" d="M132 136 V142 H340 V136"/>
   <text class="n" x="236" y="160">dfaStep (.carry carryIn) column</text>
 
   <path class="brk" d="M422 136 V142 H628 V136"/>
-  <text class="n" x="525" y="160">adderDFA.evalFrom (.carry carryMid) columns</text>
+  <text class="n" x="525" y="160">adderDFA.evalFrom (.carry carryMid) columnsLE</text>
 </svg>
