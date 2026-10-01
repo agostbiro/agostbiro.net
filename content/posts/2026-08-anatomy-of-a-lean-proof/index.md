@@ -64,7 +64,7 @@ Let's apply this notation to our regex example: `-?[0-9]+`. Then $\Sigma^{*}$ co
 
 ## The Problem
 
-The problem that we're going to solve is from the [Introduction to the Theory of Computation,](https://math.mit.edu/~sipser/book.html) 3rd ed. by Michael Sipser:
+The problem that we're going to solve is from the [Introduction to the Theory of Computation](https://math.mit.edu/~sipser/book.html), 3rd ed. by Michael Sipser:
 
 > **1.32** Let
 >
@@ -200,7 +200,7 @@ Note that since the dead state is a sink state, the string would get rejected ev
 
 ## The Lean Proof
 
-Our goal is to show that the language $B$ from the [problem](#the-problem) is [regular.](#regular-languages)
+Our goal is to show that the language $B$ from the [problem](#the-problem) is [regular](#regular-languages).
 As discussed earlier, in order to show that a language is regular, we need to build a [DFA](#deterministic-finite-automaton-dfa) and show that it accepts the language.
 
 The Lean proof will consist of three parts:
@@ -215,7 +215,7 @@ For the proof, we'll have to do more work, but Mathlib will be helpful here as w
 The proof will contain some unfamiliar syntax, but under the hood it's just a program.
 In fact, the proof is accepted if the program compiles.
 
-Below is a figure laying out the components of the program. The full code can be found on [GitHub.](https://github.com/agostbiro/my-lean/tree/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32)
+Below is a figure laying out the components of the program. The full code can be found on [GitHub](https://github.com/agostbiro/my-lean/tree/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32).
 
 ![Diagram of the three files of the Lean code and the dependencies between their definitions and theorems](./assets/proof-structure.svg "The specification and the implementation meet in the proof")
 
@@ -354,7 +354,7 @@ The run starts from `.carry false` and ends in `.dead` as expected.
 
 ### How Proofs Work
 
-Before we dig into the proof of the solution in the [next section,](#the-proof) let's review how proofs work in Lean using the `dfaStep` example:
+Before we dig into the proof of the solution in the [next section](#the-proof), let's review how proofs work in Lean using the `dfaStep` example:
 
 ```lean
 example :
@@ -420,7 +420,7 @@ And now back to our *regular* programming.
 
 As discussed earlier, in order to prove that the language $B$ is regular, we need to first show that the adder DFA accepts the reverse of the language, $B^{\mathcal{R}}$. 
 We can then use the closure property of the reversal of regular languages to prove that $B$ is regular.
-This is readily available as a theorem [from Mathlib,](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff) but we'll have to do some work to show that the adder DFA recognizes $B^{\mathcal{R}}$. 
+This is readily available as a theorem [from Mathlib](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff), but we'll have to do some work to show that the adder DFA recognizes $B^{\mathcal{R}}$. 
 
 Mathlib's [definition](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L353-L355) of regular languages boils down to this:[^6]
 
@@ -904,7 +904,7 @@ The equivalence holds if both sides have the same truth value in every row of th
 
 Let's review two of the 32 cases before we look at the Lean proof.
 Take the row where `x`, `y` and `carryOut` are `true` and `z` and `carryIn` are `false`.
-This is the same as our `dfaStep` example from [earlier:](#the-implementation)
+This is the same as our `dfaStep` example from [earlier](#the-implementation):
 
 ![A step of the carry automaton: the column (1,1,0) takes the machine from carry 0 to carry 1](./assets/carry-dfa-carry-step.svg)
 
@@ -1023,7 +1023,7 @@ Circling back to our goal, we need to show that `WholeRunAddition` and `SplitRun
 `WholeRunAddition` is a simple linear equation, but `SplitRunAddition` has an existential and a conjunction.
 If we can turn `SplitRunAddition` into a linear equation, then we can close the goal by showing that the two linear equations are equivalent which is easy.
 
-We're going to use the same trick that we used when [splitting the run:](#splitting-the-run) if the first part of the conjunction is only true for a single value of $c_{\mathrm{mid}}$, then we can substitute that value in the second conjunct and drop the existential and the first conjunct.
+We're going to use the same trick that we used when [splitting the run](#splitting-the-run): if the first part of the conjunction is only true for a single value of $c_{\mathrm{mid}}$, then we can substitute that value in the second conjunct and drop the existential and the first conjunct.
 As a reminder, this is the first conjunct:
 
 $$\exists\, c_{\mathrm{mid}} :\; x + y + c_{\mathrm{in}} = z + 2 \cdot c_{\mathrm{mid}}$$
