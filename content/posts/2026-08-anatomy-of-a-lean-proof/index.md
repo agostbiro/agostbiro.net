@@ -560,9 +560,9 @@ Both sides of the equivalence get their own name, so that the lemma reads as "th
 The only difference from that equation is `.toNat`, which converts a boolean into `0` or `1` so that the carries can take part in the arithmetic (`.toNat` will be omitted in the following code blocks for brevity).
 
 Notice that the theorem has arguments like a function.
-In fact a theorem is essentially a function: its arguments are the variables the statement talks about, its type is the proposition, and its body is the proof.
+In fact, a theorem is essentially a function: its arguments are the variables the statement talks about, its type is the proposition, and its body is the proof.
 So we have a parameterized theorem that we'll have to prove for all possible values of its arguments. 
-But we will only use it later on in the proof of `adderDFA_accepts_B_reverse` with both carries set to `false` which corresponds to the definition of the language `B`:
+But we will only use it later on in the proof of `adderDFA_accepts_B_reverse` with both carries set to `false`, which corresponds to the membership test for `B.reverse`:
 
 ```lean
 run_invariant (carryIn := false) wLE (carryOut := false)
@@ -582,7 +582,7 @@ Lean in tactic mode works by creating goals that need to be proved.
 A goal is a statement that Lean still needs a proof of.
 Each tactic transforms or closes the current goal.
 
-The initial goal is the theorem that we're trying to prove, but we cannot do that directly, so we use the `induction` tactic which gives us a goal to prove for each constructor of the list.
+The initial goal is the theorem that we're trying to prove, but we cannot prove it directly, so we use the `induction` tactic which gives us a goal to prove for each constructor of the list.
 `nil` is the constructor for the empty list, and `cons` is the constructor that prepends an element to an existing list.
 In the `cons` case we get to name the first column, the remaining columns, and the induction hypothesis, which is the run invariant assumed to be true for the remaining columns.
 
@@ -688,17 +688,17 @@ The `<;>` combinator runs the tactic on its right on every goal produced by the 
 `simp` is one of the most commonly used tactics in Lean.
 It rewrites the goal using a database of simplification rules plus the definitions and lemmas that we pass to it in the square brackets.
 It closes the goal if the goal ends up as something trivially true.
-Here it unfolds `RunEndsWithCarry`, `WordAddsWithCarry`, the row values and `evalFrom`, evaluates the arithmetic, and is left with goals like `false = false`, which it knows how to close.
+Here it unfolds `RunEndsWithCarry`, `WordAddsWithCarry`, the row values and `evalFrom`, evaluates both sides to true or false, and closes the goal when they agree.
 
 ##### Inductive Step
 
-Recall that in the inductive step we need to prove that, if the induction hypothesis holds for some list, then it also holds for that list with one more element added to the front.
+Recall that in the inductive step we need to prove that, if the invariant holds for some list, then it also holds for that list with one more element added to the front.
 
 In the inductive step, the word is `cons column columnsLE` which is the list created by prepending `column` to `columnsLE`. 
 Lean has an infix operator `::` for prepending to a list, so we can write `column :: columnsLE`.
 
 The induction hypothesis holds by assumption for `columnsLE`, but we need to prove the invariant for the whole word.
-We'll do this by introducing an intermediate carry after the first step of the DFA that runs on the first column (which is the least significant bit of the word).
+We'll do this by introducing an intermediate carry after the first step of the DFA that runs on the first column (which is the least significant column of the word).
 Then we rearrange the equation from `WordAddsWithCarry` to show that the arithmetic checks out.
 
 These are the high level steps:
