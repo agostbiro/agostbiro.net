@@ -1,7 +1,6 @@
 ---
 title: "Anatomy of a Lean Proof for Software Engineers"
 date: "2026-10-01"
-draft: true
 toc: true
 ---
 
