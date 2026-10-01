@@ -426,7 +426,7 @@ As discussed earlier, in order to prove that the language $B$ is regular, we nee
 We can then use the closure property of the reversal of regular languages to prove that $B$ is regular.
 This is readily available as a theorem [from Mathlib](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff), but we'll have to do some work to show that the adder DFA recognizes $B^{\mathcal{R}}$. 
 
-Mathlib's [definition](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L353-L355) of regular languages boils down to this:[^6]
+Mathlib's [definition](https://github.com/leanprover-community/mathlib4/blob/v4.32.0/Mathlib/Computability/DFA.lean#L353-L355) of regular languages boils down to this:[^6]
 
 ```lean
 def IsRegular (L : Language T) : Prop :=
@@ -440,16 +440,16 @@ The return type is again `Prop`.
 The interesting part is `∃ M : DFA T σ, M.accepts = L` which says that a language is regular if the language accepted by some DFA over those states equals the language.
 So when does a DFA accept a language?
 
-The language a DFA accepts in Mathlib is [defined](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L123-L124) similarly to this:[^7]
+The language a DFA accepts in Mathlib is [defined](https://github.com/leanprover-community/mathlib4/blob/v4.32.0/Mathlib/Computability/DFA.lean#L123-L124) like this:[^7]
 
 ```lean
-def accepts : Language α := 
+def accepts : Language T := 
   { word | M.evalFrom M.start word ∈ M.accept }
 ```
 
 This means that the language that the DFA accepts is the set of words for which evaluating the DFA from the starting state leads to an accepting state.
 
-Our job is now to prove that the set that is `B.reverse` is equal to the set that is `adderDFA.accepts`.
+Our job is now to prove that `adderDFA.accepts` and `B.reverse` are the same set.
 This is formalized in our proof as follows:
 
 ```lean
@@ -472,7 +472,7 @@ The membership test for `B.reverse` is therefore equivalent to:[^8]
 { wLE | row1LE wLE + row2LE wLE = row3LE wLE }
 ```
 
-The challenge in proving `adderDFA_accepts_B_reverse` is that the definition of the language is descriptive while the adder DFA is prescriptive and describes intermediate steps.
+The challenge in proving `adderDFA_accepts_B_reverse` is that the language definition states one equation about the whole word, while the adder DFA works one column at a time.
 
 #### Run Invariant
 
@@ -489,7 +489,7 @@ adderDFA.evalFrom (.carry false) wLE = .carry false ↔
 
 which reads as
 
-> Running the adder DFA over a (little-endian) word $w$ starting with carry 0 ends in state carry 0 if and only if
+> Running the adder DFA over a (little-endian) word $w$ (`wLE` in the code) starting with carry 0 ends in state carry 0 if and only if
 >
 > $$\mathrm{row}_1(w) + \mathrm{row}_2(w) = \mathrm{row}_3(w)$$
 >
@@ -503,8 +503,8 @@ We cannot restrict our induction hypothesis to a certain carry value, but we sti
 We can accomplish this by extending the right-hand side of the equivalence to include $c_{\mathrm{in}}$ and $c_{\mathrm{out}}$ terms: 
 
 ```lean
-  row1LE wLE + row2LE wLE + carryIn = 
-    row3LE wLE + carryOut * 2 ^ wLE.length
+row1LE wLE + row2LE wLE + carryIn = 
+  row3LE wLE + carryOut * 2 ^ wLE.length
 ```
 
 Or with mathematical notation to make it easy to see that it's just the definition of binary addition:
@@ -523,7 +523,7 @@ which reads as
 
 <div class="wide-math">
 
-> Running the adder DFA over a (little-endian) word $w$ starting with carry $c_{\mathrm{in}}$ ends in state $c_{\mathrm{out}}$ if and only if
+> Running the adder DFA over a (little-endian) word $w$ (`wLE` in the code) starting with carry $c_{\mathrm{in}}$ ends in state $c_{\mathrm{out}}$ if and only if
 >
 > $$\mathrm{row}_1(w) + \mathrm{row}_2(w) + c_{\mathrm{in}} = \mathrm{row}_3(w) + c_{\mathrm{out}} \cdot 2^{|w|}$$
 >
@@ -610,10 +610,10 @@ Unfolding `RunEndsWithCarry` gives:
 adderDFA.evalFrom (.carry carryIn) wLE = .carry carryOut
 ```
 
-`DFA.evalFrom` is [defined](https://github.com/leanprover-community/mathlib4/blob/bbcd1968ee6950abe88b85dba6995da346c4b2a8/Mathlib/Computability/DFA.lean#L74-L75) in Mathlib as follows:
+`DFA.evalFrom` is [defined](https://github.com/leanprover-community/mathlib4/blob/v4.32.0/Mathlib/Computability/DFA.lean#L74-L75) in Mathlib as follows:
 
 ```lean
-def evalFrom (s : σ) : List α → σ :=
+def evalFrom (s : σ) : List T → σ :=
   List.foldl M.step s
 ```
 
@@ -1227,7 +1227,7 @@ The second part of the conjunction is the left-hand side of the induction hypoth
 This is why we needed `generalizing carryIn`: the run over the remaining columns starts from `carryMid`, which is not necessarily the same as `carryIn`.
 
 The DFA is now gone from the goal and we only have arithmetic on both sides, so we're going to switch to mathematical notation again.
-Let $w$ stand for the whole word and $w'$ for the remaining columns.
+Let $w$ stand for the whole word (`(x, y, z) :: columnsLE` in the code) and $w'$ for the remaining columns (`columnsLE`).
 Unfolding `WordAddsWithCarry` on both sides gives:
 
 <div class="wide-math">
