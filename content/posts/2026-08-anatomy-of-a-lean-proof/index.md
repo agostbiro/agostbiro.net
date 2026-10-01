@@ -1392,7 +1392,7 @@ Iff.symm
 
 You don't have to convince yourself that this term has the type of the goal, you can trust Lean with this.
 
-#### $B^{\mathcal{R}}$ Is Regular
+#### $B^{\mathcal{R}}$ Is Regular {#b-reverse-is-regular}
 
 Now that we have proven the `run_invariant` theorem, we can use it to prove that $B^{\mathcal{R}}$ is regular.
 We do this in two steps: first we show that the adder DFA accepts $B^{\mathcal{R}}$, and then that this makes $B^{\mathcal{R}}$ regular.
@@ -1407,13 +1407,13 @@ theorem adderDFA_accepts_B_reverse : adderDFA.accepts = B.reverse := by
 ```
 
 As we've seen before, both `adderDFA.accepts` and `B.reverse` are sets.
-Therefore, the equation in the theorem is equivalent to
+Two sets are equal when they have the same members, so the equation in the theorem is equivalent to the following for every word `wLE`:
 
 ```lean
 wLE ∈ adderDFA.accepts ↔ wLE ∈ B.reverse
 ```
 
-The membership rule for `adderDFA.accepts` is
+Since `adderDFA.start` is `.carry false` and `.carry false` is the only accepting state, the membership rule for `adderDFA.accepts` is
 
 ```lean
 { wLE | RunEndsWithCarry (carryIn := false) wLE (carryOut := false) }
@@ -1426,7 +1426,7 @@ wLE ∈ adderDFA.accepts ↔
   RunEndsWithCarry (carryIn := false) wLE (carryOut := false)
 ```
 
-And the membership rule for `B.reverse` is:
+And the membership rule for `B.reverse` is equivalent to:[^8]
 
 ```lean
 { wLE | WordAddsWithCarry (carryIn := false) wLE (carryOut := false) }
@@ -1487,9 +1487,9 @@ theorem B_reverse_isRegular : B.reverse.IsRegular :=
 The instance is a list of all the values of the type, together with a proof that the list is complete.
 The last part is the proof that the DFA accepts `B.reverse`, which is the theorem we've just proven.
 
-#### $B$ Is Regular
+#### $B$ Is Regular {#b-is-regular}
 
-We've set out to prove that the language $B$ is regular and we're finally in a position to do so.
+We set out to prove that the language $B$ is regular and we're finally in a position to do so.
 All we need is the closure of regular languages under reversal.
 Mathlib provides this as [`Language.isRegular_reverse_iff`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/NFA.html#Language.isRegular_reverse_iff), and its type is
 
