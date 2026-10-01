@@ -136,7 +136,7 @@ When doing the arithmetic column-by-column, we compute the sum bit at each step 
 
 $$x_i \oplus y_i \oplus c_{\mathrm{in}} = z_i$$ 
 
-where $x, y$ are the addend bits, $z$ is the sum bit, $i$ denotes the index of the current column, and $c_{\mathrm{in}}$ is the input carry from the previous step.
+where $x_i, y_i$ are the addend bits, $z_i$ is the sum bit, $i$ denotes the index of the current column, and $c_{\mathrm{in}}$ is the input carry from the previous step.
 We compute the output carry denoted $c_{\mathrm{out}}$ for the next step as follows:
 
 $$c_{\mathrm{out}} = (x_i \wedge y_i) \vee \left( c_{\mathrm{in}} \wedge (x_i \oplus y_i) \right)$$
@@ -278,7 +278,7 @@ This way, a set membership test ends up being a type check, not a computation at
 We first define the [states of the DFA](#adder-dfa) (carry 0, carry 1, dead) as a sum type:
 
 ```lean
-inductive DfaState where
+inductive DFAState where
   | carry (c : Bool)
   | dead
   deriving DecidableEq, Fintype
@@ -296,7 +296,7 @@ Deriving `Fintype` lets us claim later on that the language can be recognized wi
 Next, we define the transition function of the DFA:
 
 ```lean
-def dfaStep : DfaState → Sigma3 → DfaState
+def dfaStep : DFAState → Sigma3 → DFAState
   | .dead, _ => .dead
   | .carry c, (x, y, z) =>
       if z = (x ^^ y ^^ c) then  -- ^^ is XOR
@@ -317,7 +317,7 @@ Otherwise we enter the dead state.
 
 ```lean
 #eval dfaStep (.carry false) (true, true, false)
--- Prints: DfaState.carry true
+-- Prints: DFAState.carry true
 ```
 
 If we want to make sure this holds, we can turn it into an example:
@@ -334,7 +334,7 @@ Finally, we use the generic [`Mathlib.Computability.DFA`](https://leanprover-com
 We give it the transition function and define the start and accept states:
 
 ```lean
-def adderDFA : DFA Sigma3 DfaState where
+def adderDFA : DFA Sigma3 DFAState where
   step := dfaStep
   start := .carry false
   accept := {.carry false}
@@ -805,7 +805,7 @@ lemma split_run (column : Sigma3) (columnsLE : List Sigma3)
     rw [dead_state_is_sink]
     simp
   | carry c =>
-    simp only [DfaState.carry.injEq, exists_eq_left']
+    simp only [DFAState.carry.injEq, exists_eq_left']
 ```
 
 The first `simp only` line rewrites the lemma to a form with `dfaStep` on both sides of the equivalence:
@@ -830,7 +830,7 @@ In the carry case `c` is introduced as the carry value from the first step on th
 cases dfaStep (.carry carryIn) column with
 | dead => ...
 | carry c =>
-  simp only [DfaState.carry.injEq, exists_eq_left']
+  simp only [DFAState.carry.injEq, exists_eq_left']
 ```
 
 Which leaves us with the following goal:
@@ -843,8 +843,8 @@ adderDFA.evalFrom ⟦(.carry c)⟧ columnsLE = .carry carryOut ↔
 ```
 
 Earlier we took it for granted that `.carry c = .carry carryMid` implies `c = carryMid`, but we need a formal argument for this now.
-Luckily constructors like `DfaState.carry` are injective in Lean, meaning that if two values built with the same constructor are equal, then their arguments are equal.
-This useful fact is provided by the automatically generated `DfaState.carry.injEq` theorem which `simp` uses to pull `c` and `carryMid` out of the `.carry` constructor:
+Luckily constructors like `DFAState.carry` are injective in Lean, meaning that if two values built with the same constructor are equal, then their arguments are equal.
+This useful fact is provided by the automatically generated `DFAState.carry.injEq` theorem which `simp` uses to pull `c` and `carryMid` out of the `.carry` constructor:
 
 ```lean
 adderDFA.evalFrom (.carry c) columnsLE = .carry carryOut ↔
@@ -885,7 +885,7 @@ We're going to prove it by unfolding the definition of `dfaStep` and then checki
 As a reminder, the definition of `dfaStep` is:
 
 ```lean
-def dfaStep : DfaState → Sigma3 → DfaState
+def dfaStep : DFAState → Sigma3 → DFAState
   | .dead, _ => .dead
   | .carry c, (x, y, z) =>
       if z = (x ^^ y ^^ c) then  -- ^^ is XOR
@@ -1479,11 +1479,11 @@ So we need to show that there is a finite type of states, a DFA over those state
 
 ```lean
 theorem B_reverse_isRegular : B.reverse.IsRegular :=
-  ⟨DfaState, inferInstance, adderDFA, adderDFA_accepts_B_reverse⟩
+  ⟨DFAState, inferInstance, adderDFA, adderDFA_accepts_B_reverse⟩
 ```
 
-`DfaState` is the type of states, and `adderDFA` is the DFA.
-`inferInstance` asks Lean to find the `Fintype` instance for `DfaState`, which was generated when we derived `Fintype` for it.
+`DFAState` is the type of states, and `adderDFA` is the DFA.
+`inferInstance` asks Lean to find the `Fintype` instance for `DFAState`, which was generated when we derived `Fintype` for it.
 The instance is a list of all the values of the type, together with a proof that the list is complete.
 The last part is the proof that the DFA accepts `B.reverse`, which is the theorem we've just proven.
 
@@ -1522,9 +1522,10 @@ We pass this function `B_reverse_isRegular`, and we get back a term with type `B
 ## Outro
 
 We set out to show that the language $B$ is regular, and we now have a proof that Lean accepts.
+You can verify this yourself by checking out the [code](https://github.com/agostbiro/my-lean/blob/main/theory-of-computation/TheoryOfComputation/Chapter1_Problem32/Proof.lean) and compiling it.
 
-In the process we've also created a formally verified implementation of a DFA that can be used to recognize the reversed language.
-Our implementation is in Lean, which is pretty fast as it compiles to C, but there are also techniques to generate verified implementations from Lean in other languages such as Rust.
+Along with our proof, we've also created a formally verified implementation of a DFA.
+Our implementation is in Lean, which is pretty fast as it compiles to C, but it's possible to generate verified implementations using Lean proofs in other languages such as Rust.
 
 As we've seen, the formal proof needed a lot of details that we'd normally skip.
 It is a lot of work to write proofs like this even though we had it relatively easy with the adder DFA.
@@ -1536,29 +1537,29 @@ For example, distributed systems often call for [temporal logic](https://proofsa
 Fortunately, in 2026 machines can write proofs for us.
 State-of-the-art coding agents can one-shot proofs like ours and they're rapidly getting better at tackling more complex ones as well.
 At the same time, Lean is improving to make complex proofs more efficient to write.[^11]
-Together, these are quickly driving down the cost of formal verification of software.
+Together, these are quickly driving down the cost of formal verification.
 
-Recall that formally verified software consists of a specification, an implementation and the proof that the implementation matches the specification.
+Formally verified software consists of a specification, an implementation and the proof that the implementation matches the specification.
 It's tempting to think that with coding agents humans can just focus on making sure the spec is correct and then the machine-generated implementation and proof can be treated as black boxes.
 
 I'm a bit skeptical about this, because in my experience, the interface between specification and proof is not so clear, as one often has to look at the proof to understand the spec.
 And if we see something weird in the proof, that's a good indication that something is off.
 
-Our proof has a small example of this: the run invariant introduced a carry out term that the definition of `B` never mentioned.
-That was not a bug in the spec, but it did surface a hidden requirement: all three rows of a word have the same length, so `B` rules out overflow.
+Our proof has a small example of this: the run invariant introduced a carry out term that the definition of $B$ never mentioned.
+That was not a bug in the spec, but it did surface a hidden requirement: all three rows of a word have the same length, so $B$ rules out sums that would overflow.
 
 My feeling is that while we can probably start treating formally verified implementations as black boxes, it's important going forward that we can understand machine-generated proofs.
 This is a challenge, because the proofs generated by coding agents are often convoluted in my experience.
 
-In any case, I think the future of software engineering is super exciting, because formal methods let us work at a higher level of abstraction while making us more productive as they unlock more automation.
+In any case, I think the future of software engineering is super exciting, because formal methods let us work at a higher level of abstraction while at the same time they make us more productive as they unlock more automation.
 
 [^1]: Instead of using the `LE/BE` convention to distinguish between interpretations of lists of bits, we could introduce separate types for little- and big-endian lists of bits to prevent mixing them up. However this would require re-deriving many of the theorems that are already available for native lists, so it's not worth it for a project of this scope.
 
 [^2]: Set as a collection is available as `Std.HashSet` and `Std.TreeSet`.
 
-[^3]: A decision procedure is a function that evaluates a proposition and returns `true` if it holds and `false` if it doesn't. We have this automatically for the `dfaStep` example, because the proposition is an equation between two `DfaState` values and we've derived `DecidableEq` for `DfaState` earlier.
+[^3]: A decision procedure is a function that evaluates a proposition and returns `true` if it holds and `false` if it doesn't. We have this automatically for the `dfaStep` example, because the proposition is an equation between two `DFAState` values and we've derived `DecidableEq` for `DFAState` earlier.
 
-[^4]: The evaluation in the type checker is guaranteed to terminate, because Lean rejects functions unless it can prove that they terminate. A definition can opt out explicitly, but then the type checker cannot unfold it, so it cannot be evaluated in a proof.
+[^4]: The evaluation in the type checker is guaranteed to terminate, because Lean rejects functions unless termination is proven (automatically or by the author). A definition can opt out explicitly, but then the type checker cannot unfold it, so it cannot be evaluated in a proof.
 
 [^5]: The actual term is `of_decide_eq_true (id (Eq.refl true))`. The `id` is a type ascription that `decide` needs because it builds the argument before it applies `of_decide_eq_true`, so it has to record that `Eq.refl true` is meant as a proof of `decide p = true` rather than `true = true`. When the proof is written by hand, the expected type is known from the `example` signature, so the `id` can be omitted.
 
@@ -1566,7 +1567,7 @@ In any case, I think the future of software engineering is super exciting, becau
 
 [^7]: The actual Mathlib definition is a bit more verbose, so I'm not quoting it here.
 
-[^8]: The informal argument about the equivalence of the little-endian interpretation of a word and the big-endian interpretation of its reversal (`rowNLE w = rowNBE w.reverse`) is formalized in the proof, but it's basically just bookkeeping, so I didn't include it in the post.
+[^8]: The informal argument about the equivalence of the little-endian interpretation of a word and the big-endian interpretation of its reversal (`rowNBE w.reverse = rowNLE w`) is formalized in the specification file, but it's basically just bookkeeping, so I didn't include it in the post.
 
 [^9]: As before, we've dropped `.toNat` from the booleans in the lemma statement for brevity.
 
