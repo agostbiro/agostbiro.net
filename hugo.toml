@@ -28,10 +28,22 @@ title = "Agost's Site"
     [markup.goldmark.renderer]
       unsafe = true
     [markup.goldmark.parser]
+      # layouts/_markup/render-image.html emits a <figure> for a standalone
+      # image, which cannot live inside the <p> Goldmark wraps it in by default.
+      wrapStandAloneImageWithinParagraph = false
       [markup.goldmark.parser.attribute]
         block = true
         title = true
+    [markup.goldmark.extensions.passthrough]
+      enable = true
+      [markup.goldmark.extensions.passthrough.delimiters]
+        block  = [['$$', '$$'], ['\[', '\]']]
+        inline = [['$', '$'], ['\(', '\)']]
 
+  # `noClasses = false` makes Chroma emit class names rather than inline styles,
+  # so the colors can follow the light/dark appearance. That also makes `style`
+  # irrelevant: the colors come from assets/css/_chroma-light.scss and
+  # _chroma-dark.scss instead.
   [markup.highlight]
     anchorLineNos      = false
     codeFences         = true
@@ -42,14 +54,15 @@ title = "Agost's Site"
     lineNoStart        = 1
     lineNos            = false
     lineNumbersInTable = true
-    noClasses          = true
+    noClasses          = false
     noHl               = false
-    style              = 'rrt'
     tabWidth           = 4
 
+  # layouts/partials/toc/list.html builds the list on a post from .Fragments
+  # and carries the same two levels. Keep them equal.
   [markup.tableOfContents]
     startLevel = 2
-    endLevel   = 3
+    endLevel   = 5
     ordered    = false
 
 [params]

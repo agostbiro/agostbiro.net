@@ -11,7 +11,9 @@
      first child means the attribute is set before anything paints, so there is
      no flash of the wrong theme.
 
-     The button is built in JS so it never renders for a visitor without it. */ -}}
+     The button is built in JS so it never renders for a visitor without it.
+     Other scripts can get more buttons, kept in sync with this one, from
+     window.createAppearanceToggle. */ -}}
 <script>
   (function () {
     var KEY = "appearance";
@@ -30,23 +32,37 @@
       return a === "dark" || a === "light" ? a : (media.matches ? "dark" : "light");
     }
 
-    var button = document.createElement("button");
-    button.className = "appearance-toggle";
-    button.type = "button";
+    // Every toggle on the page. There is a second one on a post with a table
+    // of contents, where assets/js/toc.js puts a copy in its top bar.
+    var buttons = [];
 
     // The label names where a click takes you, not where you are.
     function sync() {
       var next = active() === "dark" ? "light" : "dark";
-      button.textContent = "[" + next + "]";
-      button.setAttribute("aria-label", "Switch to " + next + " mode");
+      buttons.forEach(function (button) {
+        button.textContent = "[" + next + "]";
+        button.setAttribute("aria-label", "Switch to " + next + " mode");
+      });
     }
 
-    button.addEventListener("click", function () {
-      var next = active() === "dark" ? "light" : "dark";
-      body.setAttribute("a", next);
-      try { localStorage.setItem(KEY, next); } catch (e) { /* private mode */ }
+    function create(className) {
+      var button = document.createElement("button");
+      button.className = className;
+      button.type = "button";
+      button.addEventListener("click", function () {
+        var next = active() === "dark" ? "light" : "dark";
+        body.setAttribute("a", next);
+        try { localStorage.setItem(KEY, next); } catch (e) { /* private mode */ }
+        sync();
+      });
+      buttons.push(button);
       sync();
-    });
+      return button;
+    }
+
+    window.createAppearanceToggle = create;
+
+    var button = create("appearance-toggle");
 
     // Keep the label honest if the OS flips while we are still on "auto".
     if (media.addEventListener) {
@@ -54,8 +70,6 @@
     } else if (media.addListener) {
       media.addListener(sync);
     }
-
-    sync();
 
     // The button lives inside .w so it positions against the content column.
     // That element is not parsed yet, hence the wait.
