@@ -77,7 +77,7 @@
   <path class="brk" d="M520 50 H517 V84 H520"/>
   <path class="brk" d="M530 50 H533 V84 H530"/>
   <text class="b"><tspan x="525" y="55">a</tspan><tspan x="525" y="67">b</tspan><tspan x="525" y="79">d</tspan></text>
-  <text class="lbl" x="525" y="118">sums of the remaining bits</text>
+  <text class="lbl" x="525" y="118">values of the remaining bits</text>
 
   <!-- the two pieces -->
   <path class="brk" d="M132 142 V148 H340 V142"/>

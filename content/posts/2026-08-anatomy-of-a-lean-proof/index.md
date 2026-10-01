@@ -1014,7 +1014,7 @@ $x$, $y$ and $z$ are the least significant bits of the three rows, $a$, $b$ and 
 
 ![The equations of the lemma laid out as a run: the equation for the whole word spans the run, the equation for the least significant bits x, y and z spans the first step, and the equation for the values of the remaining bits a, b and d spans the rest](./assets/least-significant-bit-split-variables.svg "The equations of the lemma laid out as a run, least significant bits first")
 
-As a reminder, binary addition is defined as follows:
+As a reminder, the addition equation from the run invariant is:
 
 $$\sum_{i=0}^{n-1} x_i 2^i + \sum_{i=0}^{n-1} y_i 2^i + c_{\mathrm{in}} = \sum_{i=0}^{n-1} z_i 2^i + c_{\mathrm{out}} \cdot 2^n$$
 
@@ -1026,7 +1026,7 @@ so $x + 2 \cdot a$ is the value of a row whose first bit is $x$ and whose remain
 
 $k$ stands for the carry out term of the remaining bits, which is $c_{\mathrm{out}} \cdot 2^{n-1}$, so the carry out term of the whole word, $c_{\mathrm{out}} \cdot 2^n$, is $2 \cdot k$.
 Notice how `WholeRunAddition` has a $2 \cdot k$ term in it while `SplitRunAddition` has just $k$ in the equation for the remaining bits.
-This is because `WholeRunAddition` is one bit longer than the remaining bits in `SplitRunAddition`.
+This is because the word in `WholeRunAddition` is one bit longer than the remaining bits in `SplitRunAddition`.
 
 Circling back to our goal, we need to show that `WholeRunAddition` and `SplitRunAddition` are saying the same thing.
 `WholeRunAddition` is a simple linear equation, but `SplitRunAddition` has an existential and a conjunction.
@@ -1108,7 +1108,7 @@ $$1 + 2 \cdot a + 2 \cdot b = 2 \cdot d + 2 \cdot k$$
 which is also odd on one side and even on the other, so it's false as well.
 Both sides are false, so the case holds.
 
-The remaining 14 cases are one of these two kinds.
+Each of the remaining 14 cases is of one of these two kinds.
 If the sum of $x$, $y$ and $c_{\mathrm{in}}$ has the same parity as $z$, exactly one $c_{\mathrm{mid}}$ satisfies the least significant bit equation and the rest of the equation matches once we divide by two.
 If the parities differ, both sides are false.
 This concludes the proof.
@@ -1141,7 +1141,7 @@ This is the goal for the first example from above:
 
 $$\begin{aligned}
 1 + 2 \cdot a + (1 + 2 \cdot b) &= 2 \cdot d + 2 \cdot k \iff \\
-1 + a + b &= d + k
+a + b + 1 &= d + k
 \end{aligned}$$
 
 If there is no solution for `carryMid`, `SplitRunAddition` is false, and `p ↔ False` is the same as `¬p`, so `simp` leaves the negation of `WholeRunAddition`.
@@ -1149,11 +1149,12 @@ This is the goal for the second example from above:
 
 $$\neg\,(1 + 2 \cdot a + 2 \cdot b = 2 \cdot d + 2 \cdot k)$$
 
-`simp` can't go further, because it cannot reason about equations.
+`simp` can't go further, because it is a rewriting engine, not an arithmetic solver. 
+It won't notice that one equation is the other multiplied by two, or that an odd number can't equal an even one.
 This is where `omega` comes in, which is a decision procedure for linear arithmetic over natural numbers and integers.
 
 `omega` proves a goal by contradiction: it assumes that the goal is false, and shows that no values of the variables can satisfy the equations and inequalities that follow from this.
-In the first goal, the left-hand side is the right-hand side multiplied by two, so no values of `a`, `b`, `d` and `k` can make one side true and the other false.
+In the first goal, the first equation is the second multiplied by two, so no values of `a`, `b`, `d` and `k` can make one side true and the other false.
 In the second goal, the equation has an odd number on one side and an even number on the other, so no values can make it true.
 `omega` closes the remaining 14 goals the same way, which concludes the proof of `least_significant_bit_split`.
 
