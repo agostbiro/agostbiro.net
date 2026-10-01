@@ -280,14 +280,14 @@ inductive DfaState where
   deriving DecidableEq, Fintype
 ```
 
-We could define the same state using an enum in Rust or a discriminated union in TypeScript.
-Lean's `inductive` type does a bit more though than a recursive sum type in these languages: it also generates some scaffolding that makes it easy to use the type in proofs. 
+We could define the same type using an enum in Rust or a discriminated union in TypeScript.
+Lean's `inductive` type does a bit more than a recursive sum type in these languages, though: it also generates some scaffolding that makes it easy to use the type in proofs. 
 We'll see more of this later.
 
 Now onto the derives. 
 `DecidableEq` just says this type supports full equality checks (same as deriving `Eq` in Rust), but `Fintype` is something that's only available in proof assistants.
 It says that the type has finitely many values and it creates a list of them plus a proof that the list is complete.
-Deriving `Fintype` lets us claim later on that the language can be recognized with constant memory, therefore it's regular.
+Deriving `Fintype` lets us claim later on that the language can be recognized with constant memory, and therefore it's regular.
 
 Next, we define the transition function of the DFA:
 
@@ -304,7 +304,7 @@ def dfaStep : DfaState → Sigma3 → DfaState
 The function has two arguments, the current state and the next symbol, and returns the next state.
 
 As we saw earlier, the dead state is a sink, so it always maps to itself.
-If we're in the carry state, and the adder equation checks out, then the next state is the value of carry out.
+If we're in the carry state, and the adder equation checks out, then the next state is the carry state holding the value of the carry out.
 Otherwise we enter the dead state.
 
 `dfaStep` is just a regular function that we can execute, so let's run a quick sanity check.
@@ -336,7 +336,7 @@ def adderDFA : DFA Sigma3 DfaState where
   accept := {.carry false}
 ```
 
-`DFA` integrates with `Mathlib.Computability.Language` which will make it easy to prove later on that our language is regular.
+`DFA` integrates with `Mathlib.Computability.Language`, which will make it easy to prove later on that our language is regular.
 
 `DFA` also comes with [`evalFrom`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/DFA.html#DFA.evalFrom), which runs the machine step-by-step from a given starting state over a list of symbols.
 We can use it to evaluate [Example 2](#example-2) as a compile-time check:
@@ -1499,7 +1499,7 @@ theorem B_isRegular : B.IsRegular :=
   Language.isRegular_reverse_iff⟦.mp⟧ B_reverse_isRegular
 ```
 
-`mp` is short for modus ponens which is the logical argument that if $a$ implies $b$ and $a$ holds, then $b$ holds as well.
+`mp` is short for modus ponens.
 We use the `mp` field here to turn the theorem which has type `L.reverse.IsRegular ↔ L.IsRegular` into a function with type `L.reverse.IsRegular → L.IsRegular`.
 
 We pass this function `B_reverse_isRegular`, and we get back a term with type `B.IsRegular` which is the proof that `B` is regular.
