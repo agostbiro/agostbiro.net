@@ -81,6 +81,26 @@ li > span:first-child { margin-right: 0.75em; }
 // body, the same size as the table of contents in toc.scss.
 .footnotes { font-size: 0.85em; }
 
+// ---------------------- CONTROLS ---------------------- //
+
+// Bracketed text that does something when clicked but is not a link, like the
+// appearance toggle and the table of contents. It takes the link color so it
+// reads as clickable, and stays that color where a link would turn visited.
+//
+// The theme passes its link colors straight into a mixin and has no variable
+// for them, so these copy the values and the appearance switching from the
+// theme's main.scss.
+body[a="dark"] { --control-color: #79a8ff; }
+body[a="light"] { --control-color: #3548cf; }
+
+@media (prefers-color-scheme: dark) {
+  body[a="auto"] { --control-color: #79a8ff; }
+}
+
+@media (prefers-color-scheme: light) {
+  body[a="auto"] { --control-color: #3548cf; }
+}
+
 // ---------------------- SUBSCRIBE FORM ---------------------- //
 // Rendered by layouts/partials/subscribe.html.
 
