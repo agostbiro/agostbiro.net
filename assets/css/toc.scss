@@ -69,8 +69,11 @@ body[a] details.toc-inline {
     border: 0;
     margin: 0;
     padding: 0.25rem 0;
+    // Set in custom.scss.
+    color: var(--control-color);
     cursor: pointer;
-    // No disclosure triangle. The brackets mark it as a control.
+    // No disclosure triangle. The brackets and the link color mark it as a
+    // control.
     list-style: none;
     &::-webkit-details-marker { display: none; }
   }
@@ -147,10 +150,10 @@ body[a="dark"] .toc-bar { background: #000000; }
   text-decoration: none;
 }
 
-// Reads as bracketed text like the buttons next to it. The theme colors links
-// as `body[a="…"] a`, visited ones included.
+// Reads as bracketed text like the buttons next to it, so it skips the
+// visited color the theme gives links as `body[a="…"] a`.
 body[a] .toc-bar-home,
-body[a] .toc-bar-home:visited { color: inherit; }
+body[a] .toc-bar-home:visited { color: var(--control-color); }
 
 // Buttons that read as bracketed text, like the appearance toggle.
 .toc-bar-open,
@@ -181,7 +184,12 @@ body[a] .toc-bar-home:visited { color: inherit; }
 }
 
 .toc-bar-hint,
-.toc-bar-toggle { flex: none; }
+.toc-bar-toggle {
+  flex: none;
+  // Set in custom.scss. The label next to the hint keeps the text color: it
+  // names the current section.
+  color: var(--control-color);
+}
 
 .toc-panel {
   display: none;
