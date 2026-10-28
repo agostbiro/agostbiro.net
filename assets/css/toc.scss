@@ -79,6 +79,14 @@ body[a] details.toc-inline {
   }
 }
 
+// Triple-clicking the post title ends the selection at the start of the
+// next block. Here that is this list, and Chrome then copies the HTML of the
+// rest of the page along with the title. Making the list unselectable moves
+// the end past it, and taking the closed list out of the layout keeps its
+// markup out of the copy.
+.toc-inline { user-select: none; }
+.toc-inline:not([open]) > .toc-list { display: none; }
+
 // ---------------------- TOP BAR AND PANEL ---------------------- //
 
 // The bar covers the page, so it needs the page's background. The theme sets
